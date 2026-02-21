@@ -1,9 +1,12 @@
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsAdmin } from "@/hooks/useIsAdmin";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, LogOut } from "lucide-react";
+import { Dumbbell, LogOut, Shield } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function Index() {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useIsAdmin();
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
@@ -18,10 +21,20 @@ export default function Index() {
         <p className="text-sm text-muted-foreground">
           Dashboard e grupos serão implementados na próxima fase.
         </p>
-        <Button variant="outline" onClick={signOut} className="gap-2">
-          <LogOut className="h-4 w-4" />
-          Sair
-        </Button>
+        <div className="flex flex-col gap-3 items-center">
+          {isAdmin && (
+            <Button variant="outline" asChild className="gap-2">
+              <Link to="/admin">
+                <Shield className="h-4 w-4" />
+                Painel Admin
+              </Link>
+            </Button>
+          )}
+          <Button variant="ghost" onClick={signOut} className="gap-2">
+            <LogOut className="h-4 w-4" />
+            Sair
+          </Button>
+        </div>
       </div>
     </div>
   );
