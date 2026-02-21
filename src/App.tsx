@@ -5,9 +5,10 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { ProtectedShell } from "@/components/ProtectedShell";
+import { PWAUpdatePrompt } from "@/components/PWAUpdatePrompt";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import Index from "./pages/Index";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -35,11 +36,12 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <AuthProvider>
+            <PWAUpdatePrompt />
             <Routes>
               <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
               <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
+              <Route path="/*" element={<ProtectedRoute><ProtectedShell /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

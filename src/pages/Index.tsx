@@ -1,41 +1,317 @@
+import { useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
+import {
+  useMyGroups,
+  useCreateGroup,
+  useJoinGroupByCode,
+} from "@/hooks/useGroups";
+import { useGroupWorkouts } from "@/hooks/useWorkouts";
+import { useProfilesInGroup } from "@/hooks/useProfilesInGroup";
+import { useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
+import {
+  filterWorkoutsByPeriod,
+  computeRanking,
+  getMedalEmoji,
+} from "@/lib/ranking";
 import { Button } from "@/components/ui/button";
-import { Dumbbell, LogOut, Shield } from "lucide-react";
+import { CreateGroupDialog } from "@/components/CreateGroupDialog";
+import { JoinGroupDialog } from "@/components/JoinGroupDialog";
+import {
+  Dumbbell,
+  Shield,
+  Users,
+  PlusCircle,
+  LogIn,
+  Copy,
+  Check,
+} from "lucide-react";
 import { Link } from "react-router-dom";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
+import { GROUPS_STORAGE_KEY } from "@/lib/constants";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function Index() {
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
+  const { toast } = useToast();
+  const { openRegister } = useRegisterWorkout();
+  const userId = user?.id;
+  const { data: groups = [], isLoading: loadingGroups } = useMyGroups(userId);
+  const createGroup = useCreateGroup(userId);
+  const joinGroup = useJoinGroupByCode(userId);
+
+  const [createOpen, setCreateOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const selectedGroupId =
+    typeof window !== "undefined" ? localStorage.getItem(GROUPS_STORAGE_KEY) : null;
+  const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? groups[0];
+
+  const { data: workouts = [] } = useGroupWorkouts(selectedGroup?.id);
+  const { data: profilesMap = {} } = useProfilesInGroup(selectedGroup?.id);
+
+  const setSelectedGroup = (id: string) => {
+    localStorage.setItem(GROUPS_STORAGE_KEY, id);
+    setCopiedId(null);
+  };
+
+  const copyInviteCode = (code: string, groupId: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedId(groupId);
+    toast({ title: "Código copiado!" });
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleCreate = async (name: string) => {
+    const result = await createGroup.mutateAsync(name);
+    return result ?? null;
+  };
+
+  const handleJoin = async (code: string) => {
+    const result = await joinGroup.mutateAsync(code);
+    return result ?? null;
+  };
+
+  const weeklyWorkouts = filterWorkoutsByPeriod(workouts, "week");
+  const weeklyRanking = computeRanking(weeklyWorkouts, profilesMap);
+  const recentFeed = workouts.slice(0, 15);
+
+  if (loadingGroups) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  const hasGroups = groups.length > 0;
+
+  if (!hasGroups) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
+        <div className="w-full max-w-sm space-y-8 text-center">
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
+            <Dumbbell className="h-10 w-10 text-primary" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">FitRank</h1>
+            <p className="mt-2 text-muted-foreground">
+              Bem-vindo, {user?.user_metadata?.display_name || user?.email}!
+            </p>
+          </div>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Comece com um grupo
+              </CardTitle>
+              <CardDescription>
+                Crie um grupo e compartilhe o código com amigos, ou entre em um grupo existente com o código que receber.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex flex-col gap-3">
+              <Button
+                className="w-full gap-2"
+                onClick={() => setCreateOpen(true)}
+                disabled={createGroup.isPending}
+              >
+                <PlusCircle className="h-4 w-4" />
+                Criar grupo
+              </Button>
+              <Button
+                variant="outline"
+                className="w-full gap-2"
+                onClick={() => setJoinOpen(true)}
+                disabled={joinGroup.isPending}
+              >
+                <LogIn className="h-4 w-4" />
+                Entrar com código
+              </Button>
+            </CardContent>
+          </Card>
+          <div className="flex flex-col gap-3">
+            {isAdmin && (
+              <Button variant="outline" asChild className="gap-2">
+                <Link to="/admin">
+                  <Shield className="h-4 w-4" />
+                  Painel Admin
+                </Link>
+              </Button>
+            )}
+            <Button variant="ghost" onClick={signOut} className="gap-2">
+              Sair
+            </Button>
+          </div>
+        </div>
+        <CreateGroupDialog
+          open={createOpen}
+          onOpenChange={setCreateOpen}
+          onCreate={handleCreate}
+          isCreating={createGroup.isPending}
+        />
+        <JoinGroupDialog
+          open={joinOpen}
+          onOpenChange={setJoinOpen}
+          onJoin={handleJoin}
+          isJoining={joinGroup.isPending}
+        />
+      </div>
+    );
+  }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
-      <div className="text-center space-y-6">
-        <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
-          <Dumbbell className="h-10 w-10 text-primary" />
+    <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">FitRank</h1>
+          <p className="text-sm text-muted-foreground">
+            {user?.user_metadata?.display_name || user?.email}
+          </p>
         </div>
-        <h1 className="text-4xl font-bold tracking-tight">FitRank</h1>
-        <p className="text-muted-foreground">
-          Bem-vindo, {user?.user_metadata?.display_name || user?.email}!
-        </p>
-        <p className="text-sm text-muted-foreground">
-          Dashboard e grupos serão implementados na próxima fase.
-        </p>
-        <div className="flex flex-col gap-3 items-center">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => setCreateOpen(true)} className="gap-1.5">
+            <PlusCircle className="h-4 w-4" />
+            Criar
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => setJoinOpen(true)} className="gap-1.5">
+            <LogIn className="h-4 w-4" />
+            Entrar
+          </Button>
           {isAdmin && (
-            <Button variant="outline" asChild className="gap-2">
+            <Button variant="ghost" size="sm" asChild>
               <Link to="/admin">
                 <Shield className="h-4 w-4" />
-                Painel Admin
               </Link>
             </Button>
           )}
-          <Button variant="ghost" onClick={signOut} className="gap-2">
-            <LogOut className="h-4 w-4" />
-            Sair
-          </Button>
         </div>
       </div>
+
+      {groups.length > 1 && (
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {groups.map((g) => (
+            <Button
+              key={g.id}
+              variant={selectedGroup?.id === g.id ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedGroup(g.id)}
+            >
+              {g.name}
+            </Button>
+          ))}
+        </div>
+      )}
+
+      {selectedGroup && (
+        <>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">Ranking da semana</CardTitle>
+              <CardDescription>Quem mais treinou esta semana (segunda a domingo)</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {weeklyRanking.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">Nenhum treino registrado esta semana.</p>
+              ) : (
+                weeklyRanking.slice(0, 5).map((entry) => {
+                  const medal = getMedalEmoji(entry.position);
+                  const maxCount = Math.max(1, weeklyRanking[0]?.count ?? 1);
+                  return (
+                    <div key={entry.user_id} className="flex items-center gap-3">
+                      <span className="w-6 text-lg">{medal ?? `#${entry.position}`}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium truncate">{entry.display_name}</p>
+                        <div className="h-2 rounded-full bg-muted overflow-hidden mt-0.5">
+                          <div
+                            className="h-full bg-primary rounded-full transition-all"
+                            style={{ width: `${(entry.count / maxCount) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                      <span className="text-sm font-semibold text-muted-foreground">{entry.count} treinos</span>
+                    </div>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Atividade recente</CardTitle>
+              <CardDescription>Quem treinou o quê no grupo</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {recentFeed.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">Nenhum treino ainda.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {recentFeed.map((w) => (
+                    <li key={w.id} className="flex justify-between items-center text-sm py-1.5 border-b border-border/50 last:border-0">
+                      <span>
+                        <strong>{profilesMap[w.user_id] ?? "Alguém"}</strong> — {w.workout_type}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {format(new Date(w.workout_date), "dd/MM HH:mm", { locale: ptBR })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                {selectedGroup.name}
+              </CardTitle>
+              <CardDescription>Código para convidar amigos</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button className="w-full gap-2" size="lg" onClick={openRegister}>
+                <Dumbbell className="h-5 w-5" />
+                Registrar treino
+              </Button>
+              <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-4">
+                <code className="flex-1 text-center font-mono text-lg font-semibold tracking-widest text-foreground">
+                  {selectedGroup.invite_code}
+                </code>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => copyInviteCode(selectedGroup.invite_code, selectedGroup.id)}
+                >
+                  {copiedId === selectedGroup.id ? (
+                    <Check className="h-4 w-4 text-green-500" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      <CreateGroupDialog
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onCreate={handleCreate}
+        isCreating={createGroup.isPending}
+      />
+      <JoinGroupDialog
+        open={joinOpen}
+        onOpenChange={setJoinOpen}
+        onJoin={handleJoin}
+        isJoining={joinGroup.isPending}
+      />
     </div>
   );
 }
