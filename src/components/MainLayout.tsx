@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyGroups } from "@/hooks/useGroups";
-import { useAddWorkout } from "@/hooks/useWorkouts";
+import { useAddWorkouts } from "@/hooks/useWorkouts";
 import { RegisterWorkoutProvider, useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
 import { RegisterWorkoutSheet } from "@/components/RegisterWorkoutSheet";
 import { GROUPS_STORAGE_KEY } from "@/lib/constants";
@@ -24,7 +24,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const { user } = useAuth();
   const userId = user?.id;
   const { data: groups = [] } = useMyGroups(userId);
-  const addWorkout = useAddWorkout(userId);
+  const addWorkouts = useAddWorkouts(userId);
   const [registerOpen, setRegisterOpen] = useState(false);
 
   const selectedGroupId = typeof window !== "undefined" ? localStorage.getItem(GROUPS_STORAGE_KEY) : null;
@@ -78,8 +78,8 @@ export function MainLayout({ children }: MainLayoutProps) {
           onOpenChange={setRegisterOpen}
           groupId={selectedGroup.id}
           groupName={selectedGroup.name}
-          onRegister={addWorkout.mutateAsync}
-          isPending={addWorkout.isPending}
+          onRegister={addWorkouts.mutateAsync}
+          isPending={addWorkouts.isPending}
         />
       )}
       </div>

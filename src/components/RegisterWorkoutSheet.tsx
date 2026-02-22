@@ -11,13 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { WORKOUT_TYPES } from "@/lib/workout-types";
 import { useToast } from "@/hooks/use-toast";
 
@@ -37,7 +32,7 @@ type RegisterWorkoutSheetProps = {
   groupName: string;
   onRegister: (params: {
     group_id: string;
-    workout_type: string;
+    workout_types: string[];
     workout_date: string;
     notes?: string | null;
   }) => Promise<unknown>;
@@ -55,7 +50,7 @@ export function RegisterWorkoutSheet({
   const { toast } = useToast();
   const defaultDateTime = useMemo(() => toDateTimeLocalString(new Date()), []);
 
-  const [workoutType, setWorkoutType] = useState<string>("");
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [workoutDateTime, setWorkoutDateTime] = useState(defaultDateTime);
   const [notes, setNotes] = useState("");
 
@@ -65,23 +60,30 @@ export function RegisterWorkoutSheet({
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
-      setWorkoutType("");
+      setSelectedTypes([]);
       setWorkoutDateTime(toDateTimeLocalString(new Date()));
       setNotes("");
     }
     onOpenChange(next);
   };
 
+  const toggleType = (type: string) => {
+    setSelectedTypes((prev) =>
+      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!workoutType.trim()) {
-      toast({ title: "Selecione o tipo de treino", variant: "destructive" });
+    const types = selectedTypes.filter((t) => t.trim());
+    if (types.length === 0) {
+      toast({ title: "Selecione pelo menos um tipo de treino", variant: "destructive" });
       return;
     }
     try {
       await onRegister({
         group_id: groupId,
-        workout_type: workoutType.trim(),
+        workout_types: types,
         workout_date: parseDateTimeLocalToISO(workoutDateTime),
         notes: notes.trim() || null,
       });
@@ -99,24 +101,34 @@ export function RegisterWorkoutSheet({
         <SheetHeader>
           <SheetTitle>Registrar treino</SheetTitle>
           <SheetDescription>
-            Grupo: {groupName}. Múltiplos treinos no mesmo dia são permitidos.
+            Grupo: {groupName}. Selecione um ou mais tipos (ex: Costas e Tríceps).
           </SheetDescription>
         </SheetHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
-            <Label htmlFor="workout-type">Tipo de treino</Label>
-            <Select value={workoutType} onValueChange={setWorkoutType} required>
-              <SelectTrigger id="workout-type">
-                <SelectValue placeholder="Selecione o tipo" />
-              </SelectTrigger>
-              <SelectContent>
+            <Label>Tipo(s) de treino</Label>
+            <ScrollArea className="h-[200px] rounded-md border p-3">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 {WORKOUT_TYPES.map((type) => (
-                  <SelectItem key={type} value={type}>
-                    {type}
-                  </SelectItem>
+                  <label
+                    key={type}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50"
+                  >
+                    <Checkbox
+                      checked={selectedTypes.includes(type)}
+                      onCheckedChange={() => toggleType(type)}
+                      disabled={isPending}
+                    />
+                    <span className="text-sm">{type}</span>
+                  </label>
                 ))}
-              </SelectContent>
-            </Select>
+              </div>
+            </ScrollArea>
+            {selectedTypes.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {selectedTypes.length} selecionado(s): {selectedTypes.join(", ")}
+              </p>
+            )}
           </div>
           <div className="grid gap-2">
             <Label htmlFor="workout-datetime">Data e hora</Label>
@@ -144,7 +156,7 @@ export function RegisterWorkoutSheet({
             <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
               Cancelar
             </Button>
-            <Button type="submit" disabled={!workoutType.trim() || isPending}>
+            <Button type="submit" disabled={selectedTypes.length === 0 || isPending}>
               {isPending ? "Registrando…" : "Registrar treino"}
             </Button>
           </SheetFooter>

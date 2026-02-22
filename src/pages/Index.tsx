@@ -6,7 +6,7 @@ import {
   useCreateGroup,
   useJoinGroupByCode,
 } from "@/hooks/useGroups";
-import { useGroupWorkouts } from "@/hooks/useWorkouts";
+import { useGroupWorkouts, useDeleteWorkout } from "@/hooks/useWorkouts";
 import { useProfilesInGroup } from "@/hooks/useProfilesInGroup";
 import { useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
 import {
@@ -25,9 +25,20 @@ import {
   LogIn,
   Copy,
   Check,
+  Trash2,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { GROUPS_STORAGE_KEY } from "@/lib/constants";
 import { format } from "date-fns";
@@ -53,6 +64,9 @@ export default function Index() {
 
   const { data: workouts = [] } = useGroupWorkouts(selectedGroup?.id);
   const { data: profilesMap = {} } = useProfilesInGroup(selectedGroup?.id);
+  const deleteWorkout = useDeleteWorkout();
+
+  const [workoutToDelete, setWorkoutToDelete] = useState<{ id: string; group_id: string; label: string } | null>(null);
 
   const setSelectedGroup = (id: string) => {
     localStorage.setItem(GROUPS_STORAGE_KEY, id);
@@ -74,6 +88,20 @@ export default function Index() {
   const handleJoin = async (code: string) => {
     const result = await joinGroup.mutateAsync(code);
     return result ?? null;
+  };
+
+  const handleDeleteWorkout = async () => {
+    if (!workoutToDelete) return;
+    try {
+      await deleteWorkout.mutateAsync({
+        workout_id: workoutToDelete.id,
+        group_id: workoutToDelete.group_id,
+      });
+      toast({ title: "Treino excluído." });
+      setWorkoutToDelete(null);
+    } catch {
+      toast({ title: "Erro ao excluir treino", variant: "destructive" });
+    }
   };
 
   const weeklyWorkouts = filterWorkoutsByPeriod(workouts, "week");
@@ -251,13 +279,25 @@ export default function Index() {
               ) : (
                 <ul className="space-y-2">
                   {recentFeed.map((w) => (
-                    <li key={w.id} className="flex justify-between items-center text-sm py-1.5 border-b border-border/50 last:border-0">
-                      <span>
+                    <li key={w.id} className="flex items-center justify-between gap-2 text-sm py-1.5 border-b border-border/50 last:border-0">
+                      <span className="min-w-0 flex-1">
                         <strong>{profilesMap[w.user_id] ?? "Alguém"}</strong> — {w.workout_type}
                       </span>
-                      <span className="text-muted-foreground">
+                      <span className="text-muted-foreground shrink-0">
                         {format(new Date(w.workout_date), "dd/MM HH:mm", { locale: ptBR })}
                       </span>
+                      {w.user_id === userId && selectedGroup && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                          onClick={() => setWorkoutToDelete({ id: w.id, group_id: w.group_id, label: w.workout_type })}
+                          disabled={deleteWorkout.isPending}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </li>
                   ))}
                 </ul>
@@ -312,6 +352,30 @@ export default function Index() {
         onJoin={handleJoin}
         isJoining={joinGroup.isPending}
       />
+      <AlertDialog open={!!workoutToDelete} onOpenChange={(open) => !open && setWorkoutToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Excluir treino?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {workoutToDelete && (
+                <>O treino &quot;{workoutToDelete.label}&quot; será excluído. Esta ação não pode ser desfeita.</>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                e.preventDefault();
+                handleDeleteWorkout();
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteWorkout.isPending ? "Excluindo…" : "Excluir"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
