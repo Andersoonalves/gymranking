@@ -7,12 +7,13 @@ import { RegisterWorkoutProvider, useRegisterWorkout } from "@/contexts/Register
 import { RegisterWorkoutSheet } from "@/components/RegisterWorkoutSheet";
 import { GROUPS_STORAGE_KEY } from "@/lib/constants";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Trophy, PlusCircle, Settings } from "lucide-react";
+import { LayoutDashboard, Trophy, PlusCircle, Settings, ClipboardList } from "lucide-react";
 
 const navItems = [
   { path: "/", label: "Início", icon: LayoutDashboard },
   { path: "/rankings", label: "Rankings", icon: Trophy },
   { path: "/register", label: "Registrar", icon: PlusCircle, isAction: true },
+  { path: "/treinos", label: "Treinos", icon: ClipboardList },
   { path: "/settings", label: "Config", icon: Settings },
 ];
 

@@ -4,6 +4,7 @@ import { MainLayout } from "@/components/MainLayout";
 import { Routes, Route } from "react-router-dom";
 import Index from "@/pages/Index";
 import Rankings from "@/pages/Rankings";
+import Treinos from "@/pages/Treinos";
 import Settings from "@/pages/Settings";
 
 export function ProtectedShell() {
@@ -29,6 +30,7 @@ export function ProtectedShell() {
       <Routes>
         <Route index element={<Index />} />
         <Route path="rankings" element={<Rankings />} />
+        <Route path="treinos" element={<Treinos />} />
         <Route path="settings" element={<Settings />} />
       </Routes>
     </MainLayout>

@@ -97,6 +97,79 @@ export type Database = {
         }
         Relationships: []
       }
+      training_exercises: {
+        Row: {
+          created_at: string
+          id: string
+          load_kg: number | null
+          position: number
+          program_id: string
+          reps: number
+          sets: number
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          load_kg?: number | null
+          position?: number
+          program_id: string
+          reps?: number
+          sets?: number
+          title: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          load_kg?: number | null
+          position?: number
+          program_id?: string
+          reps?: number
+          sets?: number
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_exercises_program_id_fkey"
+            columns: ["program_id"]
+            isOneToOne: false
+            referencedRelation: "training_programs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_programs: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_programs_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
