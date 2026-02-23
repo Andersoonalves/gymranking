@@ -5,7 +5,9 @@ import { useMyGroups } from "@/hooks/useGroups";
 import { useAddWorkouts } from "@/hooks/useWorkouts";
 import { RegisterWorkoutProvider, useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
 import { RegisterWorkoutSheet } from "@/components/RegisterWorkoutSheet";
+import { supabase } from "@/integrations/supabase/client";
 import { GROUPS_STORAGE_KEY } from "@/lib/constants";
+import { notifyNewWorkout } from "@/lib/push";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Trophy, PlusCircle, Settings, ClipboardList } from "lucide-react";
 
@@ -19,10 +21,13 @@ const navItems = [
 
 type MainLayoutProps = { children: React.ReactNode };
 
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
 export function MainLayout({ children }: MainLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const userId = user?.id;
   const { data: groups = [] } = useMyGroups(userId);
   const addWorkouts = useAddWorkouts(userId);
@@ -30,6 +35,28 @@ export function MainLayout({ children }: MainLayoutProps) {
 
   const selectedGroupId = typeof window !== "undefined" ? localStorage.getItem(GROUPS_STORAGE_KEY) : null;
   const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? groups[0];
+
+  const handleRegister = async (params: {
+    group_id: string;
+    workout_types: string[];
+    workout_date: string;
+    notes?: string | null;
+  }) => {
+    await addWorkouts.mutateAsync(params);
+    if (session?.access_token && selectedGroup) {
+      const displayName =
+        (await supabase.from("profiles").select("display_name").eq("user_id", userId).single()).data?.display_name ??
+        user?.email ??
+        "Alguém";
+      notifyNewWorkout(supabaseUrl, anonKey, session.access_token, {
+        group_id: params.group_id,
+        group_name: selectedGroup.name,
+        exclude_user_id: userId!,
+        display_name: displayName,
+        workout_type: params.workout_types.join(", "),
+      }).catch(() => {});
+    }
+  };
 
   const handleNav = (item: (typeof navItems)[0]) => {
     if (item.isAction) {
@@ -79,7 +106,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           onOpenChange={setRegisterOpen}
           groupId={selectedGroup.id}
           groupName={selectedGroup.name}
-          onRegister={addWorkouts.mutateAsync}
+          onRegister={handleRegister}
           isPending={addWorkouts.isPending}
         />
       )}

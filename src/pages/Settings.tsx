@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMyGroups, useLeaveGroup } from "@/hooks/useGroups";
 import { supabase } from "@/integrations/supabase/client";
 import { GROUPS_STORAGE_KEY, NOTIFICATIONS_PREFERENCE_KEY } from "@/lib/constants";
+import { getVapidPublicKey, subscribePush, subscriptionToPayload } from "@/lib/push";
 import { useTheme } from "next-themes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ export default function Settings() {
   const [newPassword, setNewPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
   const [notifications, setNotifications] = useState(false);
+  const [notificationsLoading, setNotificationsLoading] = useState(false);
   const [copiedGroupId, setCopiedGroupId] = useState<string | null>(null);
   const [leaveGroupId, setLeaveGroupId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -56,6 +58,21 @@ export default function Settings() {
     const stored = localStorage.getItem(NOTIFICATIONS_PREFERENCE_KEY);
     setNotifications(stored === "true");
   }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+    supabase
+      .from("push_subscriptions")
+      .select("id")
+      .eq("user_id", userId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (data) {
+          setNotifications(true);
+          localStorage.setItem(NOTIFICATIONS_PREFERENCE_KEY, "true");
+        }
+      });
+  }, [userId]);
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,10 +105,55 @@ export default function Settings() {
     toast({ title: "Senha alterada!" });
   };
 
-  const handleNotificationsChange = (checked: boolean) => {
-    setNotifications(checked);
-    localStorage.setItem(NOTIFICATIONS_PREFERENCE_KEY, String(checked));
-    toast({ title: checked ? "Notificações ativadas" : "Notificações desativadas" });
+  const handleNotificationsChange = async (checked: boolean) => {
+    if (!userId) return;
+    setNotificationsLoading(true);
+    try {
+      if (checked) {
+        const permission = await Notification.requestPermission();
+        if (permission !== "granted") {
+          toast({ title: "Permissão de notificação negada", variant: "destructive" });
+          setNotificationsLoading(false);
+          return;
+        }
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const anonKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+        const publicKey = await getVapidPublicKey(supabaseUrl, anonKey);
+        const sub = await subscribePush(publicKey);
+        if (!sub) {
+          toast({ title: "Push não disponível neste dispositivo", variant: "destructive" });
+          setNotificationsLoading(false);
+          return;
+        }
+        const { endpoint, p256dh, auth } = subscriptionToPayload(sub);
+        const { error } = await supabase.from("push_subscriptions").upsert(
+          { user_id: userId, endpoint, p256dh, auth },
+          { onConflict: "user_id" }
+        );
+        if (error) throw error;
+        setNotifications(true);
+        localStorage.setItem(NOTIFICATIONS_PREFERENCE_KEY, "true");
+        toast({ title: "Notificações ativadas" });
+      } else {
+        await supabase.from("push_subscriptions").delete().eq("user_id", userId);
+        if ("serviceWorker" in navigator && "PushManager" in window) {
+          const reg = await navigator.serviceWorker.ready;
+          const sub = await reg.pushManager.getSubscription();
+          if (sub) await sub.unsubscribe();
+        }
+        setNotifications(false);
+        localStorage.setItem(NOTIFICATIONS_PREFERENCE_KEY, "false");
+        toast({ title: "Notificações desativadas" });
+      }
+    } catch (e) {
+      toast({
+        title: checked ? "Erro ao ativar notificações" : "Erro ao desativar notificações",
+        description: e instanceof Error ? e.message : undefined,
+        variant: "destructive",
+      });
+    } finally {
+      setNotificationsLoading(false);
+    }
   };
 
   const copyCode = (code: string, groupId: string) => {
@@ -205,12 +267,17 @@ export default function Settings() {
             <Bell className="h-5 w-5" />
             Notificações
           </CardTitle>
-          <CardDescription>Preparado para notificações push no futuro</CardDescription>
+          <CardDescription>Receba avisos quando alguém do grupo registrar um treino</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
             <Label htmlFor="notifications">Ativar notificações</Label>
-            <Switch id="notifications" checked={notifications} onCheckedChange={handleNotificationsChange} />
+            <Switch
+              id="notifications"
+              checked={notifications}
+              disabled={notificationsLoading}
+              onCheckedChange={handleNotificationsChange}
+            />
           </div>
         </CardContent>
       </Card>
