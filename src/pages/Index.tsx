@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -274,43 +275,68 @@ export default function Index() {
           </Card>
 
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle>Atividade recente</CardTitle>
               <CardDescription>Quem treinou o quê no grupo</CardDescription>
             </CardHeader>
             <CardContent>
-              {recentFeed.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">Nenhum treino ainda.</p>
-              ) : (
-                <ul className="space-y-2">
-                  {recentFeed.map((w) => (
-                    <li key={w.id} className="flex items-center justify-between gap-2 text-sm py-1.5 border-b border-border/50 last:border-0">
-                      <span className="min-w-0 flex-1 flex items-center gap-2">
-                        <Avatar className="h-6 w-6 shrink-0">
-                          {profilesMap[w.user_id]?.avatar_url && <AvatarImage src={profilesMap[w.user_id].avatar_url!} alt={profilesMap[w.user_id]?.display_name} />}
-                          <AvatarFallback className="text-xs">{(profilesMap[w.user_id]?.display_name ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <span><strong>{profilesMap[w.user_id]?.display_name ?? "Alguém"}</strong> — {w.workout_type}</span>
-                      </span>
-                      <span className="text-muted-foreground shrink-0">
-                        {format(new Date(w.workout_date), "dd/MM HH:mm", { locale: ptBR })}
-                      </span>
-                      {w.user_id === userId && selectedGroup && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                          onClick={() => setWorkoutToDelete({ id: w.id, group_id: w.group_id, label: w.workout_type })}
-                          disabled={deleteWorkout.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <Tabs defaultValue="feed">
+                <TabsList className="grid w-full grid-cols-2 mb-4">
+                  <TabsTrigger value="feed">Atividade</TabsTrigger>
+                  <TabsTrigger value="members">Membros</TabsTrigger>
+                </TabsList>
+                <TabsContent value="feed">
+                  {recentFeed.length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">Nenhum treino ainda.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {recentFeed.map((w) => (
+                        <li key={w.id} className="flex items-center justify-between gap-2 text-sm py-1.5 border-b border-border/50 last:border-0">
+                          <span className="min-w-0 flex-1 flex items-center gap-2">
+                            <Avatar className="h-6 w-6 shrink-0">
+                              {profilesMap[w.user_id]?.avatar_url && <AvatarImage src={profilesMap[w.user_id].avatar_url!} alt={profilesMap[w.user_id]?.display_name} />}
+                              <AvatarFallback className="text-xs">{(profilesMap[w.user_id]?.display_name ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
+                            </Avatar>
+                            <span><strong>{profilesMap[w.user_id]?.display_name ?? "Alguém"}</strong> — {w.workout_type}</span>
+                          </span>
+                          <span className="text-muted-foreground shrink-0">
+                            {format(new Date(w.workout_date), "dd/MM HH:mm", { locale: ptBR })}
+                          </span>
+                          {w.user_id === userId && selectedGroup && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+                              onClick={() => setWorkoutToDelete({ id: w.id, group_id: w.group_id, label: w.workout_type })}
+                              disabled={deleteWorkout.isPending}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </TabsContent>
+                <TabsContent value="members">
+                  {Object.keys(profilesMap).length === 0 ? (
+                    <p className="text-sm text-muted-foreground py-4 text-center">Nenhum membro encontrado.</p>
+                  ) : (
+                    <ul className="space-y-2">
+                      {Object.entries(profilesMap).map(([uid, profile]) => (
+                        <li key={uid} className="flex items-center gap-3 py-2 border-b border-border/50 last:border-0">
+                          <Avatar className="h-8 w-8">
+                            {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={profile.display_name} />}
+                            <AvatarFallback className="text-xs">{profile.display_name.charAt(0).toUpperCase()}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium">{profile.display_name}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
 
