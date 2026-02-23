@@ -1,9 +1,12 @@
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 
+const CHECK_UPDATE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
+
 export function PWAUpdatePrompt() {
   const [needRefresh, setNeedRefresh] = useState(false);
   const updateSWRef = useRef<(() => void) | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     import("virtual:pwa-register").then(({ registerSW }) => {
@@ -15,9 +18,28 @@ export function PWAUpdatePrompt() {
         onOfflineReady() {
           console.log("App ready to work offline");
         },
+        onRegisteredSW(swUrl, registration) {
+          if (!registration) return;
+          intervalRef.current = setInterval(async () => {
+            if (registration.installing || !navigator.onLine) return;
+            try {
+              const resp = await fetch(swUrl, {
+                cache: "no-store",
+                headers: { "Cache-Control": "no-cache" },
+              });
+              if (resp?.status === 200) await registration.update();
+            } catch {
+              // offline ou erro de rede
+            }
+          }, CHECK_UPDATE_INTERVAL_MS);
+        },
       });
       updateSWRef.current = updateSW;
     }).catch(() => {});
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
   }, []);
 
   const handleUpdate = () => {

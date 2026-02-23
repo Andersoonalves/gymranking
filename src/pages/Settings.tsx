@@ -310,6 +310,10 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      <p className="py-6 text-center text-xs text-muted-foreground">
+        v{typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev"}
+      </p>
+
       <AlertDialog open={!!leaveGroupId} onOpenChange={(open) => !open && setLeaveGroupId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
