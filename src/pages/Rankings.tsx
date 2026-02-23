@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useGroupWorkouts } from "@/hooks/useWorkouts";
 import { useProfilesInGroup } from "@/hooks/useProfilesInGroup";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   filterWorkoutsByPeriod,
   computeRanking,
@@ -107,7 +108,7 @@ function RankingCard({
   ranking,
   maxCount,
 }: {
-  ranking: { user_id: string; display_name: string; count: number; position: number }[];
+  ranking: { user_id: string; display_name: string; avatar_url: string | null; count: number; position: number }[];
   maxCount: number;
 }) {
   return (
@@ -128,6 +129,10 @@ function RankingCard({
                 <div className="flex items-center justify-between">
                   <span className="flex items-center gap-2">
                     <span className="text-lg w-7">{medal ?? `#${entry.position}`}</span>
+                    <Avatar className="h-7 w-7">
+                      {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name} />}
+                      <AvatarFallback className="text-xs">{entry.display_name.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
                     <span className="font-medium">{entry.display_name}</span>
                   </span>
                   <span className="text-sm font-semibold text-muted-foreground">{entry.count} treinos</span>
