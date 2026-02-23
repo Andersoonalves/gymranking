@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
 import {
@@ -251,6 +252,10 @@ export default function Index() {
                   return (
                     <div key={entry.user_id} className="flex items-center gap-3">
                       <span className="w-6 text-lg">{medal ?? `#${entry.position}`}</span>
+                      <Avatar className="h-7 w-7">
+                        {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name} />}
+                        <AvatarFallback className="text-xs">{entry.display_name.charAt(0).toUpperCase()}</AvatarFallback>
+                      </Avatar>
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{entry.display_name}</p>
                         <div className="h-2 rounded-full bg-muted overflow-hidden mt-0.5">
@@ -280,8 +285,12 @@ export default function Index() {
                 <ul className="space-y-2">
                   {recentFeed.map((w) => (
                     <li key={w.id} className="flex items-center justify-between gap-2 text-sm py-1.5 border-b border-border/50 last:border-0">
-                      <span className="min-w-0 flex-1">
-                        <strong>{profilesMap[w.user_id] ?? "Alguém"}</strong> — {w.workout_type}
+                      <span className="min-w-0 flex-1 flex items-center gap-2">
+                        <Avatar className="h-6 w-6 shrink-0">
+                          {profilesMap[w.user_id]?.avatar_url && <AvatarImage src={profilesMap[w.user_id].avatar_url!} alt={profilesMap[w.user_id]?.display_name} />}
+                          <AvatarFallback className="text-xs">{(profilesMap[w.user_id]?.display_name ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <span><strong>{profilesMap[w.user_id]?.display_name ?? "Alguém"}</strong> — {w.workout_type}</span>
                       </span>
                       <span className="text-muted-foreground shrink-0">
                         {format(new Date(w.workout_date), "dd/MM HH:mm", { locale: ptBR })}

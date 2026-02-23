@@ -1,3 +1,4 @@
+import type { ProfileInfo } from "@/hooks/useProfilesInGroup";
 import {
   startOfWeek,
   startOfMonth,
@@ -45,11 +46,11 @@ export function filterWorkoutsByPeriod<T extends { workout_date: string }>(
   });
 }
 
-export type RankingEntry = { user_id: string; display_name: string; count: number; position: number };
+export type RankingEntry = { user_id: string; display_name: string; avatar_url: string | null; count: number; position: number };
 
 export function computeRanking(
   workouts: { user_id: string }[],
-  profilesByUserId: Record<string, string>
+  profilesByUserId: Record<string, ProfileInfo>
 ): RankingEntry[] {
   const countByUser: Record<string, number> = {};
   for (const w of workouts) {
@@ -58,7 +59,8 @@ export function computeRanking(
   const entries = Object.entries(countByUser)
     .map(([user_id, count]) => ({
       user_id,
-      display_name: profilesByUserId[user_id] ?? "Sem nome",
+      display_name: profilesByUserId[user_id]?.display_name ?? "Sem nome",
+      avatar_url: profilesByUserId[user_id]?.avatar_url ?? null,
       count,
       position: 0,
     }))
