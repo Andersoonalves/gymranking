@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Copy, Check, LogOut, User, Key, Bell, Palette, Users } from "lucide-react";
+import { Copy, Check, LogOut, User, Key, Bell, Palette, Users, Camera } from "lucide-react";
+import { AvatarUpload } from "@/components/AvatarUpload";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,12 +40,14 @@ export default function Settings() {
   const [notifications, setNotifications] = useState(false);
   const [copiedGroupId, setCopiedGroupId] = useState<string | null>(null);
   const [leaveGroupId, setLeaveGroupId] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   useEffect(() => {
     if (!userId) return;
     (async () => {
-      const { data } = await supabase.from("profiles").select("display_name").eq("user_id", userId).single();
+      const { data } = await supabase.from("profiles").select("display_name, avatar_url").eq("user_id", userId).single();
       if (data?.display_name) setDisplayName(data.display_name);
+      if (data?.avatar_url) setAvatarUrl(data.avatar_url);
       setLoadingProfile(false);
     })();
   }, [userId]);
@@ -119,6 +122,26 @@ export default function Settings() {
         <h1 className="text-2xl font-bold tracking-tight">Configurações</h1>
         <p className="text-sm text-muted-foreground">{user?.email}</p>
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Camera className="h-5 w-5" />
+            Foto de perfil
+          </CardTitle>
+          <CardDescription>Adicione ou troque sua foto</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {userId && (
+            <AvatarUpload
+              userId={userId}
+              currentUrl={avatarUrl}
+              displayName={displayName}
+              onUploaded={(url) => setAvatarUrl(url)}
+            />
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
