@@ -4,7 +4,7 @@ import {
   exportApplicationServerKey,
   ApplicationServer,
   type PushSubscription,
-} from "https://jsr.io/@negrel/webpush@0.5.0";
+} from "jsr:@negrel/webpush@0.5.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

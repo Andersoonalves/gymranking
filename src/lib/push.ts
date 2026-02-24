@@ -20,7 +20,8 @@ export async function getVapidPublicKey(supabaseUrl: string, anonKey: string): P
 export async function subscribePush(applicationServerKey: string): Promise<PushSubscription | null> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return null;
   const reg = await navigator.serviceWorker.ready;
-  const sub = await reg.pushManager.subscribe({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const sub = await (reg as any).pushManager.subscribe({
     userVisibleOnly: true,
     applicationServerKey: urlBase64ToUint8Array(applicationServerKey),
   });
