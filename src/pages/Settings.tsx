@@ -138,7 +138,8 @@ export default function Settings() {
         await supabase.from("push_subscriptions").delete().eq("user_id", userId);
         if ("serviceWorker" in navigator && "PushManager" in window) {
           const reg = await navigator.serviceWorker.ready;
-          const sub = await reg.pushManager.getSubscription();
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const sub = await (reg as any).pushManager.getSubscription();
           if (sub) await sub.unsubscribe();
         }
         setNotifications(false);
