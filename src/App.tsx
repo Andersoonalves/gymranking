@@ -31,7 +31,7 @@ function PublicRoute({ children }: { children: React.ReactNode }) {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider defaultTheme="dark" storageKey="fitrank-theme">
+    <ThemeProvider attribute="class" defaultTheme="dark" storageKey="fitrank-theme">
       <TooltipProvider>
         <Toaster />
         <Sonner />
