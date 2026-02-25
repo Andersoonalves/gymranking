@@ -33,7 +33,9 @@ export default function Rankings() {
   const { user } = useAuth();
   const userId = user?.id;
   const { data: groups = [] } = useMyGroups(userId);
-  const selectedGroupId = typeof window !== "undefined" ? localStorage.getItem(GROUPS_STORAGE_KEY) : null;
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(() => {
+    return localStorage.getItem(GROUPS_STORAGE_KEY) ?? "";
+  });
   const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? groups[0];
 
   const { data: workouts = [] } = useGroupWorkouts(selectedGroup?.id);
@@ -60,9 +62,22 @@ export default function Rankings() {
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
-      <div>
+      <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold tracking-tight">Rankings</h1>
-        <p className="text-sm text-muted-foreground">{selectedGroup.name}</p>
+        {groups.length > 1 && (
+          <Select value={selectedGroup.id} onValueChange={setSelectedGroupId}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {groups.map((g) => (
+                <SelectItem key={g.id} value={g.id}>
+                  {g.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </div>
 
       <Tabs value={period} onValueChange={(v) => setPeriod(v as RankingPeriod)}>
