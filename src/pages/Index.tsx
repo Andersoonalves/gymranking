@@ -62,10 +62,11 @@ export default function Index() {
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(
+    () => (typeof window !== "undefined" ? localStorage.getItem(GROUPS_STORAGE_KEY) : null)
+  );
 
-  const selectedGroupId =
-    typeof window !== "undefined" ? localStorage.getItem(GROUPS_STORAGE_KEY) : null;
-  const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? groups[0];
+  const selectedGroup = groups.find((g) => g.id === activeGroupId) ?? groups[0];
 
   const { data: workouts = [] } = useGroupWorkouts(selectedGroup?.id);
   const { data: profilesMap = {} } = useProfilesInGroup(selectedGroup?.id);
@@ -77,6 +78,7 @@ export default function Index() {
 
   const setSelectedGroup = (id: string) => {
     localStorage.setItem(GROUPS_STORAGE_KEY, id);
+    setActiveGroupId(id);
     setCopiedId(null);
   };
 
