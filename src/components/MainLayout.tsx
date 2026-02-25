@@ -6,7 +6,7 @@ import { useAddWorkouts } from "@/hooks/useWorkouts";
 import { RegisterWorkoutProvider, useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
 import { RegisterWorkoutSheet } from "@/components/RegisterWorkoutSheet";
 import { supabase } from "@/integrations/supabase/client";
-import { GROUPS_STORAGE_KEY } from "@/lib/constants";
+// GROUPS_STORAGE_KEY no longer needed for registration
 import { notifyNewWorkout } from "@/lib/push";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Trophy, PlusCircle, Settings, ClipboardList } from "lucide-react";
@@ -33,28 +33,30 @@ export function MainLayout({ children }: MainLayoutProps) {
   const addWorkouts = useAddWorkouts(userId);
   const [registerOpen, setRegisterOpen] = useState(false);
 
-  const selectedGroupId = typeof window !== "undefined" ? localStorage.getItem(GROUPS_STORAGE_KEY) : null;
-  const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? groups[0];
+  const allGroupIds = groups.map((g) => g.id);
 
   const handleRegister = async (params: {
-    group_id: string;
+    group_ids: string[];
     workout_types: string[];
     workout_date: string;
     notes?: string | null;
   }) => {
     await addWorkouts.mutateAsync(params);
-    if (session?.access_token && selectedGroup) {
+    if (session?.access_token && allGroupIds.length > 0) {
       const displayName =
         (await supabase.from("profiles").select("display_name").eq("user_id", userId).single()).data?.display_name ??
         user?.email ??
         "Alguém";
-      notifyNewWorkout(supabaseUrl, anonKey, session.access_token, {
-        group_id: params.group_id,
-        group_name: selectedGroup.name,
-        exclude_user_id: userId!,
-        display_name: displayName,
-        workout_type: params.workout_types.join(", "),
-      }).catch(() => {});
+      // Notify for each group
+      for (const group of groups) {
+        notifyNewWorkout(supabaseUrl, anonKey, session.access_token, {
+          group_id: group.id,
+          group_name: group.name,
+          exclude_user_id: userId!,
+          display_name: displayName,
+          workout_type: params.workout_types.join(", "),
+        }).catch(() => {});
+      }
     }
   };
 
@@ -100,12 +102,11 @@ export function MainLayout({ children }: MainLayoutProps) {
         </div>
       </nav>
 
-      {selectedGroup && (
+      {allGroupIds.length > 0 && (
         <RegisterWorkoutSheet
           open={registerOpen}
           onOpenChange={setRegisterOpen}
-          groupId={selectedGroup.id}
-          groupName={selectedGroup.name}
+          groupIds={allGroupIds}
           onRegister={handleRegister}
           isPending={addWorkouts.isPending}
         />

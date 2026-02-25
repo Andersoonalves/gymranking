@@ -32,10 +32,9 @@ function parseDateTimeLocalToISO(value: string): string {
 type RegisterWorkoutSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  groupId: string;
-  groupName: string;
+  groupIds: string[];
   onRegister: (params: {
-    group_id: string;
+    group_ids: string[];
     workout_types: string[];
     workout_date: string;
     notes?: string | null;
@@ -46,15 +45,15 @@ type RegisterWorkoutSheetProps = {
 export function RegisterWorkoutSheet({
   open,
   onOpenChange,
-  groupId,
-  groupName,
+  groupIds,
   onRegister,
   isPending,
 }: RegisterWorkoutSheetProps) {
   const { toast } = useToast();
   const { user } = useAuth();
   const defaultDateTime = useMemo(() => toDateTimeLocalString(new Date()), []);
-  const { data: programs = [] } = useTrainingPrograms(groupId);
+  const firstGroupId = groupIds[0];
+  const { data: programs = [] } = useTrainingPrograms(firstGroupId);
   const myPrograms = programs.filter((p) => p.user_id === user?.id);
 
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -105,7 +104,7 @@ export function RegisterWorkoutSheet({
     }
     try {
       await onRegister({
-        group_id: groupId,
+        group_ids: groupIds,
         workout_types: types,
         workout_date: parseDateTimeLocalToISO(workoutDateTime),
         notes: notes.trim() || null,
@@ -124,7 +123,7 @@ export function RegisterWorkoutSheet({
         <SheetHeader>
           <SheetTitle>Registrar treino</SheetTitle>
           <SheetDescription>
-            Grupo: {groupName}. Selecione um tipo ou escolha um treino salvo.
+            Selecione um tipo ou escolha um treino salvo. O registro vale para todos os seus grupos.
           </SheetDescription>
         </SheetHeader>
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">

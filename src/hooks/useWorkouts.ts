@@ -50,34 +50,37 @@ export function useAddWorkout(userId: string | undefined) {
   });
 }
 
-/** Registra um único treino com um ou mais tipos (ex.: Costas e Tríceps = 1 treino, vários exercícios). */
+/** Registra um treino em TODOS os grupos do usuário de uma vez. */
 export function useAddWorkouts(userId: string | undefined) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: {
-      group_id: string;
+      group_ids: string[];
       workout_types: string[];
       workout_date: string;
       notes?: string | null;
     }) => {
       if (params.workout_types.length === 0) throw new Error("Selecione pelo menos um tipo.");
+      if (params.group_ids.length === 0) throw new Error("Você não participa de nenhum grupo.");
       const workout_type = params.workout_types.join(", ");
+      const rows = params.group_ids.map((group_id) => ({
+        user_id: userId!,
+        group_id,
+        workout_type,
+        workout_date: params.workout_date,
+        notes: params.notes ?? null,
+      }));
       const { data, error } = await supabase
         .from("workouts")
-        .insert({
-          user_id: userId!,
-          group_id: params.group_id,
-          workout_type,
-          workout_date: params.workout_date,
-          notes: params.notes ?? null,
-        })
-        .select()
-        .single();
+        .insert(rows)
+        .select();
       if (error) throw error;
-      return data as Workout;
+      return data as Workout[];
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["workouts", variables.group_id] });
+      for (const gid of variables.group_ids) {
+        queryClient.invalidateQueries({ queryKey: ["workouts", gid] });
+      }
     },
   });
 }
