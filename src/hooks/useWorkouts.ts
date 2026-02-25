@@ -85,17 +85,30 @@ export function useAddWorkouts(userId: string | undefined) {
   });
 }
 
-/** Exclui um treino (apenas os próprios). */
+/** Exclui um treino e todas as cópias nos outros grupos (mesmo user, type, date). */
 export function useDeleteWorkout() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: { workout_id: string; group_id: string }) => {
-      const { error } = await supabase.from("workouts").delete().eq("id", params.workout_id);
+      // Fetch the workout to get matching criteria
+      const { data: workout, error: fetchError } = await supabase
+        .from("workouts")
+        .select("user_id, workout_type, workout_date")
+        .eq("id", params.workout_id)
+        .single();
+      if (fetchError) throw fetchError;
+
+      // Delete all matching workouts across groups
+      const { error } = await supabase
+        .from("workouts")
+        .delete()
+        .eq("user_id", workout.user_id)
+        .eq("workout_type", workout.workout_type)
+        .eq("workout_date", workout.workout_date);
       if (error) throw error;
-      return params.group_id;
     },
-    onSuccess: (group_id) => {
-      queryClient.invalidateQueries({ queryKey: ["workouts", group_id] });
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workouts"] });
     },
   });
 }
