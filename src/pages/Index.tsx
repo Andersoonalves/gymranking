@@ -15,6 +15,7 @@ import {
   computeRanking,
   getMedalEmoji,
 } from "@/lib/ranking";
+import { WorkoutCalendar } from "@/components/WorkoutCalendar";
 import { Button } from "@/components/ui/button";
 import { CreateGroupDialog } from "@/components/CreateGroupDialog";
 import { JoinGroupDialog } from "@/components/JoinGroupDialog";
@@ -47,7 +48,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 const FEED_PAGE_SIZE = 10;
-const MY_ACTIVITIES_PAGE_SIZE = 15;
 
 export default function Index() {
   const { user, signOut } = useAuth();
@@ -74,7 +74,6 @@ export default function Index() {
 
   const [workoutToDelete, setWorkoutToDelete] = useState<{ id: string; group_id: string; label: string } | null>(null);
   const [feedPage, setFeedPage] = useState(1);
-  const [myActivitiesPage, setMyActivitiesPage] = useState(1);
 
   const setSelectedGroup = (id: string) => {
     localStorage.setItem(GROUPS_STORAGE_KEY, id);
@@ -121,11 +120,6 @@ export default function Index() {
     feedPage * FEED_PAGE_SIZE
   );
   const myWorkouts = workouts.filter((w) => w.user_id === userId);
-  const myWorkoutsTotalPages = Math.max(1, Math.ceil(myWorkouts.length / MY_ACTIVITIES_PAGE_SIZE));
-  const myWorkoutsPaginated = myWorkouts.slice(
-    (myActivitiesPage - 1) * MY_ACTIVITIES_PAGE_SIZE,
-    myActivitiesPage * MY_ACTIVITIES_PAGE_SIZE
-  );
 
   if (loadingGroups) {
     return (
@@ -297,10 +291,10 @@ export default function Index() {
               <CardDescription>Quem treinou o quê no grupo</CardDescription>
             </CardHeader>
             <CardContent>
-              <Tabs defaultValue="feed" onValueChange={() => { setFeedPage(1); setMyActivitiesPage(1); }}>
+              <Tabs defaultValue="feed" onValueChange={() => setFeedPage(1)}>
                 <TabsList className="grid w-full grid-cols-3 mb-4">
                   <TabsTrigger value="feed">Atividade</TabsTrigger>
-                  <TabsTrigger value="my">Minhas Atividades</TabsTrigger>
+                  <TabsTrigger value="my">Histório</TabsTrigger>
                   <TabsTrigger value="members">Membros</TabsTrigger>
                 </TabsList>
                 <TabsContent value="feed">
@@ -366,53 +360,11 @@ export default function Index() {
                   {myWorkouts.length === 0 ? (
                     <p className="text-sm text-muted-foreground py-4 text-center">Você ainda não registrou nenhum treino neste grupo.</p>
                   ) : (
-                    <>
-                      <ul className="space-y-2">
-                        {myWorkoutsPaginated.map((w) => (
-                          <li key={w.id} className="flex items-center justify-between gap-2 text-sm py-1.5 border-b border-border/50 last:border-0">
-                            <span className="min-w-0 flex-1">{w.workout_type}</span>
-                            <span className="text-muted-foreground shrink-0">
-                              {format(new Date(w.workout_date), "dd/MM HH:mm", { locale: ptBR })}
-                            </span>
-                            {selectedGroup && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                                onClick={() => setWorkoutToDelete({ id: w.id, group_id: w.group_id, label: w.workout_type })}
-                                disabled={deleteWorkout.isPending}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                      {myWorkoutsTotalPages > 1 && (
-                        <div className="flex items-center justify-between gap-2 pt-4 mt-2 border-t">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setMyActivitiesPage((p) => Math.max(1, p - 1))}
-                            disabled={myActivitiesPage <= 1}
-                          >
-                            Anterior
-                          </Button>
-                          <span className="text-xs text-muted-foreground">
-                            Página {myActivitiesPage} de {myWorkoutsTotalPages}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setMyActivitiesPage((p) => Math.min(myWorkoutsTotalPages, p + 1))}
-                            disabled={myActivitiesPage >= myWorkoutsTotalPages}
-                          >
-                            Próxima
-                          </Button>
-                        </div>
-                      )}
-                    </>
+                    <WorkoutCalendar
+                      workouts={myWorkouts}
+                      onDeleteWorkout={selectedGroup ? (w) => setWorkoutToDelete(w) : undefined}
+                      isDeleting={deleteWorkout.isPending}
+                    />
                   )}
                 </TabsContent>
                 <TabsContent value="members">
