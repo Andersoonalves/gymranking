@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, displayName: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, displayName: string, pendingGroupId?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -21,10 +21,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
+
+      // Auto-join pending group on first login
+      if (session?.user) {
+        const pendingGroupId = session.user.user_metadata?.pending_group_id;
+        if (pendingGroupId) {
+          try {
+            await supabase.from("group_members").insert({
+              group_id: pendingGroupId,
+              user_id: session.user.id,
+              role: "member",
+            });
+          } catch {
+            // Ignore duplicate or error
+          }
+          // Clear the pending_group_id from metadata
+          await supabase.auth.updateUser({
+            data: { pending_group_id: null },
+          });
+        }
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -36,12 +56,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, displayName: string) => {
+  const signUp = async (email: string, password: string, displayName: string, pendingGroupId?: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { display_name: displayName },
+        data: { display_name: displayName, pending_group_id: pendingGroupId },
         emailRedirectTo: window.location.origin,
       },
     });

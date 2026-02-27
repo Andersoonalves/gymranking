@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +13,7 @@ export default function Signup() {
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [inviteCode, setInviteCode] = useState("");
   const [loading, setLoading] = useState(false);
   const { signUp } = useAuth();
   const navigate = useNavigate();
@@ -22,8 +24,27 @@ export default function Signup() {
       toast.error("A senha deve ter pelo menos 6 caracteres");
       return;
     }
+    const code = inviteCode.trim().toUpperCase();
+    if (!code) {
+      toast.error("Informe o código do grupo");
+      return;
+    }
     setLoading(true);
-    const { error } = await signUp(email, password, displayName);
+
+    // Validate invite code exists
+    const { data: group, error: groupError } = await supabase
+      .from("groups")
+      .select("id")
+      .ilike("invite_code", code)
+      .maybeSingle();
+
+    if (groupError || !group) {
+      setLoading(false);
+      toast.error("Código de grupo inválido. Verifique e tente novamente.");
+      return;
+    }
+
+    const { error } = await signUp(email, password, displayName, group.id);
     setLoading(false);
     if (error) {
       toast.error(error.message);
@@ -47,6 +68,21 @@ export default function Signup() {
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite-code">Código do grupo</Label>
+              <Input
+                id="invite-code"
+                type="text"
+                placeholder="Ex: A1B2C3D4"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                required
+                className="font-mono tracking-widest uppercase"
+              />
+              <p className="text-xs text-muted-foreground">
+                Peça o código de convite para quem criou o grupo.
+              </p>
+            </div>
             <div className="space-y-2">
               <Label htmlFor="name">Nome</Label>
               <Input
