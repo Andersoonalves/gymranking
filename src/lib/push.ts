@@ -8,12 +8,30 @@ const urlBase64ToUint8Array = (base64: string): Uint8Array => {
 };
 
 export async function getVapidPublicKey(supabaseUrl: string, anonKey: string): Promise<string> {
-  const res = await fetch(`${supabaseUrl}/functions/v1/notify-new-workout`, {
-    headers: { apikey: anonKey },
-  });
-  if (!res.ok) throw new Error("Falha ao obter chave de notificação");
-  const { publicKey } = await res.json();
-  if (!publicKey) throw new Error("Chave de notificação não configurada");
+  const url = `${supabaseUrl}/functions/v1/notify-new-workout`;
+  let res: Response;
+  try {
+    res = await fetch(url, { headers: { apikey: anonKey } });
+  } catch (e) {
+    throw new Error(
+      "Não foi possível conectar ao servidor de notificações. Verifique se a Edge Function notify-new-workout está deployada (veja docs/EDGE-FUNCTIONS-DEPLOY.md)."
+    );
+  }
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const msg = body?.error ?? `Erro ${res.status}: ${res.statusText}`;
+    if (res.status === 503 || msg.includes("Not configured")) {
+      throw new Error(
+        "Notificações não configuradas no servidor. Configure o secret VAPID_KEYS_JWK no Supabase (Project Settings → Edge Functions → Secrets) e faça o deploy da função notify-new-workout."
+      );
+    }
+    if (res.status === 404) {
+      throw new Error("Função de notificações não encontrada. Faça o deploy: npx supabase functions deploy notify-new-workout");
+    }
+    throw new Error(`Falha ao obter chave: ${msg}`);
+  }
+  const publicKey = body?.publicKey;
+  if (!publicKey) throw new Error("Chave de notificação não configurada no servidor.");
   return publicKey;
 }
 

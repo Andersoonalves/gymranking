@@ -2,6 +2,14 @@
 
 O Lovable publica o **frontend**; as **Edge Functions** do Supabase não são deployadas automaticamente. Elas só passam a aparecer na lista do Dashboard depois que você faz o deploy pelo Supabase CLI.
 
+## ⚠️ Notificações: checklist para funcionar
+
+Se ao ativar notificações aparece **"Falha ao obter chave de notificação"** ou similar:
+
+1. **Edge Function deployada?** → A função `notify-new-workout` deve aparecer em **Supabase → Edge Functions**. Se não, rode `npx supabase functions deploy notify-new-workout`.
+2. **VAPID_KEYS_JWK configurado?** → Em **Supabase → Project Settings → Edge Functions → Secrets**, deve existir o secret `VAPID_KEYS_JWK` com o JSON gerado por `deno run scripts/generate-vapid-jwk.ts`.
+3. **App usando Supabase na nuvem?** → O `.env` deve ter `VITE_SUPABASE_URL` apontando para `https://SEU_PROJETO.supabase.co` (não localhost).
+
 ## Pré-requisitos
 
 - Supabase CLI (pode usar com `npx`):
