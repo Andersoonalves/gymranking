@@ -1,5 +1,5 @@
 
-CREATE TABLE public.push_subscriptions (
+CREATE TABLE IF NOT EXISTS public.push_subscriptions (
   id UUID NOT NULL DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL UNIQUE,
   endpoint TEXT NOT NULL,
@@ -10,18 +10,54 @@ CREATE TABLE public.push_subscriptions (
 
 ALTER TABLE public.push_subscriptions ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Users can view their own subscription"
-ON public.push_subscriptions FOR SELECT
-USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'push_subscriptions'
+      AND policyname = 'Users can view their own subscription'
+  ) THEN
+    CREATE POLICY "Users can view their own subscription"
+    ON public.push_subscriptions FOR SELECT
+    USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can insert their own subscription"
-ON public.push_subscriptions FOR INSERT
-WITH CHECK (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'push_subscriptions'
+      AND policyname = 'Users can insert their own subscription'
+  ) THEN
+    CREATE POLICY "Users can insert their own subscription"
+    ON public.push_subscriptions FOR INSERT
+    WITH CHECK (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can update their own subscription"
-ON public.push_subscriptions FOR UPDATE
-USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'push_subscriptions'
+      AND policyname = 'Users can update their own subscription'
+  ) THEN
+    CREATE POLICY "Users can update their own subscription"
+    ON public.push_subscriptions FOR UPDATE
+    USING (auth.uid() = user_id);
+  END IF;
+END $$;
 
-CREATE POLICY "Users can delete their own subscription"
-ON public.push_subscriptions FOR DELETE
-USING (auth.uid() = user_id);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies
+    WHERE schemaname = 'public'
+      AND tablename = 'push_subscriptions'
+      AND policyname = 'Users can delete their own subscription'
+  ) THEN
+    CREATE POLICY "Users can delete their own subscription"
+    ON public.push_subscriptions FOR DELETE
+    USING (auth.uid() = user_id);
+  END IF;
+END $$;

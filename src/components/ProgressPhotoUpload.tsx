@@ -6,33 +6,45 @@ import { cn } from "@/lib/utils";
 
 type Props = {
     userId: string;
-    onUploaded: (url: string) => void;
+    onUploaded: (path: string) => void; // returns storage path, not public URL
     onClear: () => void;
-    uploadedUrl: string | null;
+    uploadedPath: string | null;
 };
 
-export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedUrl }: Props) {
+export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath }: Props) {
     const fileRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
-    const [preview, setPreview] = useState<string | null>(uploadedUrl ?? null);
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
     const handleFile = async (file: File) => {
         if (!file) return;
         setUploading(true);
+
+        // Show local blob preview immediately while uploading
+        const objectUrl = URL.createObjectURL(file);
+        setPreviewUrl(objectUrl);
+
         const ext = file.name.split(".").pop();
         const filePath = `${userId}/${Date.now()}.${ext}`;
+
         const { error } = await supabase.storage
             .from("progress-photos")
             .upload(filePath, file, { upsert: true });
+
         if (error) {
             console.error("Upload error:", error);
+            setPreviewUrl(null);
             setUploading(false);
             return;
         }
-        const { data } = supabase.storage.from("progress-photos").getPublicUrl(filePath);
-        const url = data.publicUrl;
-        setPreview(url);
-        onUploaded(url);
+
+        // Generate a signed URL for preview (1 hour)
+        const { data: signed } = await supabase.storage
+            .from("progress-photos")
+            .createSignedUrl(filePath, 3600);
+
+        if (signed?.signedUrl) setPreviewUrl(signed.signedUrl);
+        onUploaded(filePath); // store only the path in the DB
         setUploading(false);
     };
 
@@ -42,17 +54,19 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedUrl }
     };
 
     const handleClear = () => {
-        setPreview(null);
+        setPreviewUrl(null);
         onClear();
         if (fileRef.current) fileRef.current.value = "";
     };
 
+    const hasPhoto = !!uploadedPath || !!previewUrl;
+
     return (
         <div className="space-y-2">
-            {preview ? (
+            {hasPhoto ? (
                 <div className="relative inline-block">
                     <img
-                        src={preview}
+                        src={previewUrl ?? ""}
                         alt="Preview do progresso"
                         className="h-40 w-40 rounded-xl object-cover border border-border shadow"
                     />
@@ -92,7 +106,7 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedUrl }
                 className="hidden"
                 onChange={handleChange}
             />
-            {!preview && (
+            {!hasPhoto && (
                 <Button
                     type="button"
                     variant="outline"

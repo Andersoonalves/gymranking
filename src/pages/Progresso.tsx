@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBodyProgress, useAddBodyProgress, useDeleteBodyProgress } from "@/hooks/useBodyProgress";
 import { ProgressPhotoUpload } from "@/components/ProgressPhotoUpload";
@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import {
@@ -43,9 +44,31 @@ export default function Progresso() {
     const [weightInput, setWeightInput] = useState("");
     const [dateInput, setDateInput] = useState(format(new Date(), "yyyy-MM-dd"));
     const [notes, setNotes] = useState("");
-    const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+    const [photoPath, setPhotoPath] = useState<string | null>(null);
     const [saving, setSaving] = useState(false);
     const [deleteId, setDeleteId] = useState<string | null>(null);
+
+    // Map of entry.id -> signed URL for photos
+    const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+
+    // Generate signed URLs for all entries that have a photo path
+    useEffect(() => {
+        const entriesWithPhoto = entries.filter((e) => e.photo_url);
+        if (entriesWithPhoto.length === 0) return;
+
+        (async () => {
+            const results: Record<string, string> = {};
+            await Promise.all(
+                entriesWithPhoto.map(async (e) => {
+                    const { data } = await supabase.storage
+                        .from("progress-photos")
+                        .createSignedUrl(e.photo_url!, 3600);
+                    if (data?.signedUrl) results[e.id] = data.signedUrl;
+                })
+            );
+            setSignedUrls((prev) => ({ ...prev, ...results }));
+        })();
+    }, [entries]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -60,12 +83,12 @@ export default function Progresso() {
                 weight_kg: weight,
                 recorded_at: new Date(dateInput + "T12:00:00").toISOString(),
                 notes: notes.trim() || null,
-                photo_url: photoUrl,
+                photo_url: photoPath, // store the storage path, not a public URL
             });
             toast({ title: "Registro salvo! 💪" });
             setWeightInput("");
             setNotes("");
-            setPhotoUrl(null);
+            setPhotoPath(null);
             setDateInput(format(new Date(), "yyyy-MM-dd"));
         } catch {
             toast({ title: "Erro ao salvar", variant: "destructive" });
@@ -216,9 +239,9 @@ export default function Progresso() {
                             {userId && (
                                 <ProgressPhotoUpload
                                     userId={userId}
-                                    uploadedUrl={photoUrl}
-                                    onUploaded={(url) => setPhotoUrl(url)}
-                                    onClear={() => setPhotoUrl(null)}
+                                    uploadedPath={photoPath}
+                                    onUploaded={(path) => setPhotoPath(path)}
+                                    onClear={() => setPhotoPath(null)}
                                 />
                             )}
                         </div>
@@ -234,56 +257,66 @@ export default function Progresso() {
             {entries.length > 0 && (
                 <div className="space-y-3">
                     <h2 className="font-semibold text-lg">Histórico</h2>
-                    {[...entries].reverse().map((entry) => (
-                        <Card key={entry.id} className="overflow-hidden">
-                            <CardContent className="p-4">
-                                <div className="flex items-start gap-4">
-                                    {/* Photo */}
-                                    <div className="shrink-0">
-                                        {entry.photo_url ? (
-                                            <a href={entry.photo_url} target="_blank" rel="noopener noreferrer">
-                                                <img
-                                                    src={entry.photo_url}
-                                                    alt="Foto de progresso"
-                                                    className="h-20 w-20 rounded-lg object-cover border border-border shadow-sm"
-                                                />
-                                            </a>
-                                        ) : (
-                                            <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-border bg-muted/40">
-                                                <ImageOff className="h-5 w-5 text-muted-foreground" />
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    {/* Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-start justify-between gap-2">
-                                            <div>
-                                                <p className="text-xl font-bold">{entry.weight_kg} kg</p>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {format(parseISO(entry.recorded_at), "dd 'de' MMMM 'de' yyyy", {
-                                                        locale: ptBR,
-                                                    })}
-                                                </p>
-                                            </div>
-                                            <Button
-                                                type="button"
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                                onClick={() => setDeleteId(entry.id)}
-                                            >
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
+                    {[...entries].reverse().map((entry) => {
+                        const photoUrl = signedUrls[entry.id];
+                        return (
+                            <Card key={entry.id} className="overflow-hidden">
+                                <CardContent className="p-4">
+                                    <div className="flex items-start gap-4">
+                                        {/* Photo */}
+                                        <div className="shrink-0">
+                                            {entry.photo_url ? (
+                                                photoUrl ? (
+                                                    <a href={photoUrl} target="_blank" rel="noopener noreferrer">
+                                                        <img
+                                                            src={photoUrl}
+                                                            alt="Foto de progresso"
+                                                            className="h-20 w-20 rounded-lg object-cover border border-border shadow-sm"
+                                                        />
+                                                    </a>
+                                                ) : (
+                                                    // Loading spinner while signed URL is being generated
+                                                    <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-border bg-muted/40">
+                                                        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                                    </div>
+                                                )
+                                            ) : (
+                                                <div className="flex h-20 w-20 items-center justify-center rounded-lg border border-dashed border-border bg-muted/40">
+                                                    <ImageOff className="h-5 w-5 text-muted-foreground" />
+                                                </div>
+                                            )}
                                         </div>
-                                        {entry.notes && (
-                                            <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{entry.notes}</p>
-                                        )}
+
+                                        {/* Info */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start justify-between gap-2">
+                                                <div>
+                                                    <p className="text-xl font-bold">{entry.weight_kg} kg</p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        {format(parseISO(entry.recorded_at), "dd 'de' MMMM 'de' yyyy", {
+                                                            locale: ptBR,
+                                                        })}
+                                                    </p>
+                                                </div>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                                    onClick={() => setDeleteId(entry.id)}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                            {entry.notes && (
+                                                <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{entry.notes}</p>
+                                            )}
+                                        </div>
                                     </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
                 </div>
             )}
 
