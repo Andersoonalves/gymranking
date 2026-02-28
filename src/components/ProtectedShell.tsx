@@ -6,6 +6,7 @@ import Index from "@/pages/Index";
 import Rankings from "@/pages/Rankings";
 import Treinos from "@/pages/Treinos";
 import Settings from "@/pages/Settings";
+import Progresso from "@/pages/Progresso";
 
 export function ProtectedShell() {
   const { user } = useAuth();
@@ -32,6 +33,7 @@ export function ProtectedShell() {
         <Route path="rankings" element={<Rankings />} />
         <Route path="treinos" element={<Treinos />} />
         <Route path="settings" element={<Settings />} />
+        <Route path="progresso" element={<Progresso />} />
       </Routes>
     </MainLayout>
   );

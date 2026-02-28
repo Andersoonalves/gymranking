@@ -9,13 +9,14 @@ import { supabase } from "@/integrations/supabase/client";
 // GROUPS_STORAGE_KEY no longer needed for registration
 import { notifyNewWorkout } from "@/lib/push";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Trophy, PlusCircle, Settings, ClipboardList } from "lucide-react";
+import { LayoutDashboard, Trophy, PlusCircle, Settings, ClipboardList, TrendingUp } from "lucide-react";
 
 const navItems = [
   { path: "/", label: "Início", icon: LayoutDashboard },
   { path: "/rankings", label: "Rankings", icon: Trophy },
   { path: "/register", label: "Registrar", icon: PlusCircle, isAction: true },
   { path: "/treinos", label: "Treinos", icon: ClipboardList },
+  { path: "/progresso", label: "Progresso", icon: TrendingUp },
   { path: "/settings", label: "Config", icon: Settings },
 ];
 
@@ -55,7 +56,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           exclude_user_id: userId!,
           display_name: displayName,
           workout_type: params.workout_types.join(", "),
-        }).catch(() => {});
+        }).catch(() => { });
       }
     }
   };
@@ -75,42 +76,42 @@ export function MainLayout({ children }: MainLayoutProps) {
           {children}
         </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="mx-auto flex max-w-2xl items-center justify-around px-2 py-2">
-          {navItems.map((item) => {
-            const isActive = !item.isAction && location.pathname === item.path;
-            const Icon = item.icon;
-            return (
-              <button
-                key={item.path}
-                type="button"
-                onClick={() => handleNav(item)}
-                className={cn(
-                  "flex flex-col items-center gap-1 rounded-lg px-4 py-2 text-xs font-medium transition-colors",
-                  item.isAction
-                    ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                    : isActive
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                <Icon className="h-5 w-5" />
-                {item.label}
-              </button>
-            );
-          })}
-        </div>
-      </nav>
+        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+          <div className="mx-auto flex max-w-2xl items-center justify-around px-2 py-2">
+            {navItems.map((item) => {
+              const isActive = !item.isAction && location.pathname === item.path;
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.path}
+                  type="button"
+                  onClick={() => handleNav(item)}
+                  className={cn(
+                    "flex flex-col items-center gap-1 rounded-lg px-4 py-2 text-xs font-medium transition-colors",
+                    item.isAction
+                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
+                      : isActive
+                        ? "text-primary"
+                        : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <Icon className="h-5 w-5" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </div>
+        </nav>
 
-      {allGroupIds.length > 0 && (
-        <RegisterWorkoutSheet
-          open={registerOpen}
-          onOpenChange={setRegisterOpen}
-          groupIds={allGroupIds}
-          onRegister={handleRegister}
-          isPending={addWorkouts.isPending}
-        />
-      )}
+        {allGroupIds.length > 0 && (
+          <RegisterWorkoutSheet
+            open={registerOpen}
+            onOpenChange={setRegisterOpen}
+            groupIds={allGroupIds}
+            onRegister={handleRegister}
+            isPending={addWorkouts.isPending}
+          />
+        )}
       </div>
     </RegisterWorkoutProvider>
   );
