@@ -14,36 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      body_progress: {
-        Row: {
-          id: string
-          user_id: string
-          weight_kg: number
-          photo_url: string | null
-          notes: string | null
-          recorded_at: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          weight_kg: number
-          photo_url?: string | null
-          notes?: string | null
-          recorded_at?: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          weight_kg?: number
-          photo_url?: string | null
-          notes?: string | null
-          recorded_at?: string
-          created_at?: string
-        }
-        Relationships: []
-      }
       group_members: {
         Row: {
           group_id: string
