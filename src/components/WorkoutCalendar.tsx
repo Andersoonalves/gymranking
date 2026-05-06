@@ -183,17 +183,18 @@ export function WorkoutCalendar({
           }}
           className={viewMode === "year" ? "p-2 sm:p-4" : undefined}
           classNames={{
-            row: "flex w-full mt-2 gap-2",
+            row: "flex w-full mt-2 gap-1",
             ...(viewMode === "year"
               ? {
-                  months: "grid w-full grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-8 sm:gap-10 lg:gap-x-12 lg:gap-y-10",
+                  months: "grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-10 gap-y-12",
                   month: "min-w-0 w-full flex flex-col shrink-0",
-                  caption: "flex justify-center pt-1 pb-2 relative",
-                  caption_label: "text-xs sm:text-sm",
+                  caption: "flex justify-center pt-1 pb-3 relative",
+                  caption_label: "text-sm sm:text-base font-semibold",
                   table: "w-full border-collapse",
-                  head_cell: "text-muted-foreground rounded w-6 sm:w-7 font-normal text-[0.6rem] sm:text-[0.65rem] p-0.5",
-                  cell: "h-6 w-6 sm:h-7 sm:w-7 text-center text-[0.65rem] sm:text-xs p-0 relative",
-                  day: "h-6 w-6 sm:h-7 sm:w-7 p-0 text-[0.65rem] sm:text-xs font-normal aria-selected:opacity-100",
+                  head_row: "flex w-full",
+                  head_cell: "text-muted-foreground flex-1 font-normal text-[0.7rem] sm:text-xs p-1 text-center",
+                  cell: "flex-1 aspect-square text-center text-xs sm:text-sm p-0 relative",
+                  day: "h-full w-full p-0 text-xs sm:text-sm font-normal aria-selected:opacity-100",
                 }
               : {}),
           }}
