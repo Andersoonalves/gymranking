@@ -17,6 +17,8 @@ import type { DayContentProps } from "react-day-picker";
 
 type WorkoutCalendarProps = {
   workouts: Workout[];
+  /** Ao escolher um dia sem treinos, abre o fluxo de registro para esse dia. */
+  onEmptyDaySelect?: (date: Date) => void;
   onDeleteWorkout?: (params: { id: string; group_id: string; label: string }) => void;
   isDeleting?: boolean;
 };
@@ -41,6 +43,7 @@ const MONTH_NAMES = [
 
 export function WorkoutCalendar({
   workouts,
+  onEmptyDaySelect,
   onDeleteWorkout,
   isDeleting = false,
 }: WorkoutCalendarProps) {
@@ -166,7 +169,16 @@ export function WorkoutCalendar({
         <Calendar
           mode="single"
           selected={selectedDate ?? undefined}
-          onSelect={(d) => setSelectedDate(d ?? null)}
+          onSelect={(d) => {
+            setSelectedDate(d ?? null);
+            if (d && onEmptyDaySelect) {
+              const key = format(startOfDay(d), "yyyy-MM-dd");
+              const list = workoutsByDate.get(key) ?? [];
+              if (list.length === 0) {
+                onEmptyDaySelect(d);
+              }
+            }
+          }}
           month={currentMonth}
           onMonthChange={setCurrentMonth}
           numberOfMonths={viewMode === "year" ? 12 : 1}

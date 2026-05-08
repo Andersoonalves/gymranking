@@ -53,7 +53,7 @@ export default function Index() {
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
   const { toast } = useToast();
-  const { openRegister } = useRegisterWorkout();
+  const { openRegister, openRegisterForDate } = useRegisterWorkout();
   const userId = user?.id;
   const { data: groups = [], isLoading: loadingGroups } = useMyGroups(userId);
   const createGroup = useCreateGroup(userId);
@@ -205,7 +205,7 @@ export default function Index() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
+    <div className="mx-auto max-w-[800px] px-4 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">FitRank</h1>
@@ -357,15 +357,19 @@ export default function Index() {
                   )}
                 </TabsContent>
                 <TabsContent value="my">
-                  {myWorkouts.length === 0 ? (
-                    <p className="text-sm text-muted-foreground py-4 text-center">Você ainda não registrou nenhum treino neste grupo.</p>
-                  ) : (
+                  <div className="space-y-4">
+                    {myWorkouts.length === 0 && (
+                      <p className="text-sm text-muted-foreground text-center">
+                        Você ainda não registrou treino neste grupo. Toque em um dia no calendário para registrar.
+                      </p>
+                    )}
                     <WorkoutCalendar
                       workouts={myWorkouts}
+                      onEmptyDaySelect={openRegisterForDate}
                       onDeleteWorkout={selectedGroup ? (w) => setWorkoutToDelete(w) : undefined}
                       isDeleting={deleteWorkout.isPending}
                     />
-                  )}
+                  </div>
                 </TabsContent>
                 <TabsContent value="members">
                   {Object.keys(profilesMap).length === 0 ? (

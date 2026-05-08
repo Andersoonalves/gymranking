@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyGroups } from "@/hooks/useGroups";
 import { useAddWorkouts } from "@/hooks/useWorkouts";
-import { RegisterWorkoutProvider, useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
+import { RegisterWorkoutProvider } from "@/contexts/RegisterWorkoutContext";
 import { RegisterWorkoutSheet } from "@/components/RegisterWorkoutSheet";
 import { supabase } from "@/integrations/supabase/client";
 // GROUPS_STORAGE_KEY no longer needed for registration
@@ -33,6 +33,7 @@ export function MainLayout({ children }: MainLayoutProps) {
   const { data: groups = [] } = useMyGroups(userId);
   const addWorkouts = useAddWorkouts(userId);
   const [registerOpen, setRegisterOpen] = useState(false);
+  const [registerTargetDate, setRegisterTargetDate] = useState<Date | null>(null);
 
   const allGroupIds = groups.map((g) => g.id);
 
@@ -70,7 +71,12 @@ export function MainLayout({ children }: MainLayoutProps) {
   };
 
   return (
-    <RegisterWorkoutProvider open={registerOpen} setOpen={setRegisterOpen}>
+    <RegisterWorkoutProvider
+      open={registerOpen}
+      setOpen={setRegisterOpen}
+      registerTargetDate={registerTargetDate}
+      setRegisterTargetDate={setRegisterTargetDate}
+    >
       <div className="flex min-h-screen flex-col bg-background pb-20">
         <main className="flex-1 overflow-auto">
           {children}
@@ -106,7 +112,11 @@ export function MainLayout({ children }: MainLayoutProps) {
         {allGroupIds.length > 0 && (
           <RegisterWorkoutSheet
             open={registerOpen}
-            onOpenChange={setRegisterOpen}
+            onOpenChange={(next) => {
+              setRegisterOpen(next);
+              if (!next) setRegisterTargetDate(null);
+            }}
+            initialTargetDate={registerTargetDate}
             groupIds={allGroupIds}
             onRegister={handleRegister}
             isPending={addWorkouts.isPending}

@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -29,9 +29,19 @@ function parseDateTimeLocalToISO(value: string): string {
   return new Date(value).toISOString();
 }
 
+/** Usa o dia do calendário com o horário atual do relógio (registro retroativo no mesmo “momento” do dia). */
+function mergeCalendarDayWithCurrentClock(day: Date): Date {
+  const out = new Date(day);
+  const now = new Date();
+  out.setHours(now.getHours(), now.getMinutes(), 0, 0);
+  return out;
+}
+
 type RegisterWorkoutSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Quando definido ao abrir, pré-preenche data/hora com este dia (e hora atual). */
+  initialTargetDate?: Date | null;
   groupIds: string[];
   onRegister: (params: {
     group_ids: string[];
@@ -45,25 +55,32 @@ type RegisterWorkoutSheetProps = {
 export function RegisterWorkoutSheet({
   open,
   onOpenChange,
+  initialTargetDate = null,
   groupIds,
   onRegister,
   isPending,
 }: RegisterWorkoutSheetProps) {
   const { toast } = useToast();
   const { user } = useAuth();
-  const defaultDateTime = useMemo(() => toDateTimeLocalString(new Date()), []);
   const firstGroupId = groupIds[0];
   const { data: programs = [] } = useTrainingPrograms(firstGroupId);
   const myPrograms = programs.filter((p) => p.user_id === user?.id);
 
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [workoutDateTime, setWorkoutDateTime] = useState(defaultDateTime);
+  const [workoutDateTime, setWorkoutDateTime] = useState(() =>
+    toDateTimeLocalString(new Date()),
+  );
   const [notes, setNotes] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) setWorkoutDateTime(toDateTimeLocalString(new Date()));
-  }, [open]);
+    if (!open) return;
+    const base =
+      initialTargetDate != null
+        ? mergeCalendarDayWithCurrentClock(initialTargetDate)
+        : new Date();
+    setWorkoutDateTime(toDateTimeLocalString(base));
+  }, [open, initialTargetDate]);
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
