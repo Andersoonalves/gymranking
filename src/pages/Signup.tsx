@@ -42,7 +42,7 @@ export default function Signup() {
       return;
     }
 
-    const { error } = await signUp(email, password, displayName, group.id);
+    const { error } = await signUp(email, password, displayName, code);
     setLoading(false);
     if (error) {
       toast.error(error.message);

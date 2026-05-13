@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, displayName: string, pendingGroupId?: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, displayName: string, pendingInviteCode?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
@@ -57,7 +57,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       email,
       password,
       options: {
-        data: { display_name: displayName, pending_group_id: pendingGroupId },
         data: { display_name: displayName, pending_invite_code: pendingInviteCode },
         emailRedirectTo: window.location.origin,
       },
