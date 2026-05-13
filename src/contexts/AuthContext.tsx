@@ -28,20 +28,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Auto-join pending group on first login
       if (session?.user) {
-        const pendingGroupId = session.user.user_metadata?.pending_group_id;
-        if (pendingGroupId) {
+        const pendingInviteCode = session.user.user_metadata?.pending_invite_code;
+        if (pendingInviteCode) {
           try {
-            await supabase.from("group_members").insert({
-              group_id: pendingGroupId,
-              user_id: session.user.id,
-              role: "member",
-            });
+            await (supabase as any).rpc("join_group_by_invite_code", { _code: pendingInviteCode });
           } catch {
             // Ignore duplicate or error
           }
-          // Clear the pending_group_id from metadata
+          // Clear the pending_invite_code from metadata
           await supabase.auth.updateUser({
-            data: { pending_group_id: null },
+            data: { pending_invite_code: null },
           });
         }
       }
@@ -56,12 +52,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signUp = async (email: string, password: string, displayName: string, pendingGroupId?: string) => {
+  const signUp = async (email: string, password: string, displayName: string, pendingInviteCode?: string) => {
     const { error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: { display_name: displayName, pending_group_id: pendingGroupId },
+        data: { display_name: displayName, pending_invite_code: pendingInviteCode },
         emailRedirectTo: window.location.origin,
       },
     });
