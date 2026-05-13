@@ -303,6 +303,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      join_group_by_invite_code: {
+        Args: { _code: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "user"
