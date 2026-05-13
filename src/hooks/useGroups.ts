@@ -89,12 +89,10 @@ export function useJoinGroupByCode(userId: string | undefined) {
   return useMutation({
     mutationFn: async (inviteCode: string) => {
       const code = inviteCode.trim().toUpperCase();
-      const { data: group, error: findError } = await supabase
-        .from("groups")
-        .select("id, name")
-        .ilike("invite_code", code)
-        .maybeSingle();
+      const { data: groups, error: findError } = await supabase
+        .rpc("find_group_by_invite_code", { _code: code });
       if (findError) throw findError;
+      const group = groups?.[0];
       if (!group) throw new Error("Código inválido. Verifique e tente novamente.");
       const { error: joinError } = await supabase.from("group_members").insert({
         group_id: group.id,

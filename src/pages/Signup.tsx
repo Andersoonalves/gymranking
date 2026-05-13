@@ -31,12 +31,10 @@ export default function Signup() {
     }
     setLoading(true);
 
-    // Validate invite code exists
-    const { data: group, error: groupError } = await supabase
-      .from("groups")
-      .select("id")
-      .ilike("invite_code", code)
-      .maybeSingle();
+    // Validate invite code exists (via security definer RPC)
+    const { data: groups, error: groupError } = await supabase
+      .rpc("find_group_by_invite_code", { _code: code });
+    const group = groups?.[0];
 
     if (groupError || !group) {
       setLoading(false);
