@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      body_progress: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          photo_url: string | null
+          recorded_at: string
+          user_id: string
+          weight_kg: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          photo_url?: string | null
+          recorded_at?: string
+          user_id: string
+          weight_kg: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          photo_url?: string | null
+          recorded_at?: string
+          user_id?: string
+          weight_kg?: number
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
           group_id: string
@@ -272,6 +302,13 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      join_group_by_invite_code: {
+        Args: { _code: string }
+        Returns: {
+          id: string
+          name: string
+        }[]
       }
     }
     Enums: {

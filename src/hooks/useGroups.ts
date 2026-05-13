@@ -89,20 +89,15 @@ export function useJoinGroupByCode(userId: string | undefined) {
   return useMutation({
     mutationFn: async (inviteCode: string) => {
       const code = inviteCode.trim().toUpperCase();
-      const { data: groups, error: findError } = await supabase
-        .rpc("find_group_by_invite_code", { _code: code });
-      if (findError) throw findError;
-      const group = groups?.[0];
-      if (!group) throw new Error("Código inválido. Verifique e tente novamente.");
-      const { error: joinError } = await supabase.from("group_members").insert({
-        group_id: group.id,
-        user_id: userId!,
-        role: "member",
-      });
+      if (!userId) throw new Error("Usuário não autenticado.");
+      const { data: groups, error: joinError } = await (supabase as any)
+        .rpc("join_group_by_invite_code", { _code: code });
       if (joinError) {
         if (joinError.code === "23505") throw new Error("Você já está neste grupo.");
         throw joinError;
       }
+      const group = groups?.[0];
+      if (!group) throw new Error("Código inválido. Verifique e tente novamente.");
       return group;
     },
     onSuccess: () => {

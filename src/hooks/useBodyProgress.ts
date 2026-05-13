@@ -1,8 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Tables } from "@/integrations/supabase/types";
 
-export type BodyProgress = Tables<"body_progress">;
+export type BodyProgress = {
+    id: string;
+    user_id: string;
+    weight_kg: number;
+    photo_url: string | null;
+    notes: string | null;
+    recorded_at: string;
+    created_at: string;
+};
+
+const bodyProgressTable = () => (supabase as any).from("body_progress");
 
 const QUERY_KEY = "body_progress";
 
@@ -12,8 +21,7 @@ export function useBodyProgress(userId: string | undefined) {
         enabled: !!userId,
         queryFn: async () => {
             if (!userId) return [];
-            const { data, error } = await supabase
-                .from("body_progress")
+            const { data, error } = await bodyProgressTable()
                 .select("*")
                 .eq("user_id", userId)
                 .order("recorded_at", { ascending: true });
@@ -33,8 +41,7 @@ export function useAddBodyProgress(userId: string | undefined) {
             recorded_at: string;
         }) => {
             if (!userId) throw new Error("Not authenticated");
-            const { data, error } = await supabase
-                .from("body_progress")
+            const { data, error } = await bodyProgressTable()
                 .insert({ ...payload, user_id: userId })
                 .select()
                 .single();
@@ -51,8 +58,7 @@ export function useDeleteBodyProgress(userId: string | undefined) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: async (id: string) => {
-            const { error } = await supabase
-                .from("body_progress")
+            const { error } = await bodyProgressTable()
                 .delete()
                 .eq("id", id)
                 .eq("user_id", userId!);
