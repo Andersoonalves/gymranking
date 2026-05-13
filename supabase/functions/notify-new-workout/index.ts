@@ -40,7 +40,8 @@ Deno.serve(async (req) => {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     } catch (e) {
-      return new Response(JSON.stringify({ error: String(e) }), {
+      console.error("VAPID public key error:", e);
+      return new Response(JSON.stringify({ error: "Internal server error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -62,6 +63,23 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Validate the JWT
+  const token = authHeader.replace("Bearer ", "");
+  const supabaseUser = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_ANON_KEY")!,
+    { global: { headers: { Authorization: authHeader } } }
+  );
+  const { data: claimsData, error: claimsError } =
+    await supabaseUser.auth.getClaims(token);
+  if (claimsError || !claimsData?.claims) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+  const callerId = claimsData.claims.sub as string;
+
   try {
     const body: NotifyBody = await req.json();
     const { group_id, exclude_user_id, display_name, workout_type, group_name } = body;
@@ -76,6 +94,20 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    // Verify caller is a member of the group they want to notify
+    const { data: callerMembership } = await supabase
+      .from("group_members")
+      .select("user_id")
+      .eq("group_id", group_id)
+      .eq("user_id", callerId)
+      .maybeSingle();
+    if (!callerMembership) {
+      return new Response(JSON.stringify({ error: "Forbidden" }), {
+        status: 403,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
 
     const { data: members } = await supabase
       .from("group_members")
@@ -116,8 +148,8 @@ Deno.serve(async (req) => {
     });
 
     const title = `Novo treino em ${group_name}`;
-    const body = `${display_name} registrou: ${workout_type}`;
-    const payload = JSON.stringify({ title, body, url: "/" });
+    const bodyText = `${display_name} registrou: ${workout_type}`;
+    const payload = JSON.stringify({ title, body: bodyText, url: "/" });
 
     let sent = 0;
     for (const row of subs) {
@@ -138,8 +170,8 @@ Deno.serve(async (req) => {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    console.error(err);
-    return new Response(JSON.stringify({ error: String(err) }), {
+    console.error("notify-new-workout error:", err);
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
