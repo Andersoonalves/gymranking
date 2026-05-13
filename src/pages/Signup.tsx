@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,17 +29,6 @@ export default function Signup() {
       return;
     }
     setLoading(true);
-
-    // Validate invite code exists (via security definer RPC)
-    const { data: groups, error: groupError } = await supabase
-      .rpc("find_group_by_invite_code", { _code: code });
-    const group = groups?.[0];
-
-    if (groupError || !group) {
-      setLoading(false);
-      toast.error("Código de grupo inválido. Verifique e tente novamente.");
-      return;
-    }
 
     const { error } = await signUp(email, password, displayName, code);
     setLoading(false);
