@@ -193,11 +193,11 @@ export function WorkoutCalendar({
           components={{
             DayContent: DayWithCheck,
           }}
-          className={viewMode === "year" ? "p-2 sm:p-4" : undefined}
-          classNames={{
-            row: "flex w-full mt-2 gap-1",
-            ...(viewMode === "year"
+          className={viewMode === "year" ? "p-2 sm:p-4 w-full" : "w-full p-2 sm:p-4"}
+          classNames={
+            viewMode === "year"
               ? {
+                  row: "flex w-full mt-2 gap-1",
                   months: "grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-10 gap-y-12",
                   month: "min-w-0 w-full flex flex-col shrink-0",
                   caption: "flex justify-center pt-1 pb-3 relative",
@@ -208,8 +208,19 @@ export function WorkoutCalendar({
                   cell: "flex-1 aspect-square text-center text-xs sm:text-sm p-0 relative",
                   day: "h-full w-full p-0 text-xs sm:text-sm font-normal aria-selected:opacity-100",
                 }
-              : {}),
-          }}
+              : {
+                  months: "flex flex-col w-full",
+                  month: "w-full space-y-4",
+                  table: "w-full border-collapse",
+                  head_row: "flex w-full",
+                  head_cell: "text-muted-foreground flex-1 font-normal text-xs sm:text-sm p-1 text-center",
+                  row: "flex w-full mt-2 gap-1 sm:gap-2",
+                  cell: "flex-1 aspect-square text-center text-sm p-0 relative",
+                  day: "h-full w-full p-0 text-sm sm:text-base font-normal aria-selected:opacity-100",
+                  caption: "flex justify-center pt-1 pb-3 relative items-center",
+                  caption_label: "text-sm sm:text-base font-semibold",
+                }
+          }
         />
       </div>
 
