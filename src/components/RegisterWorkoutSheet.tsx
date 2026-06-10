@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Sheet,
   SheetContent,
@@ -14,11 +14,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WORKOUT_TYPES } from "@/lib/workout-types";
+import { WORKOUT_TYPES, MUSCLE_GROUPS } from "@/lib/workout-types";
+import { EXERCISES_BY_MUSCLE_GROUP } from "@/lib/exercises";
 import { useTrainingPrograms, type TrainingProgram } from "@/hooks/useTrainingPrograms";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-import { Dumbbell, CheckCircle2 } from "lucide-react";
+import { Dumbbell, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
 
 function toDateTimeLocalString(date: Date): string {
   const pad = (n: number) => n.toString().padStart(2, "0");
@@ -29,7 +30,7 @@ function parseDateTimeLocalToISO(value: string): string {
   return new Date(value).toISOString();
 }
 
-/** Usa o dia do calendário com o horário atual do relógio (registro retroativo no mesmo “momento” do dia). */
+/** Usa o dia do calendário com o horário atual do relógio (registro retroativo no mesmo "momento" do dia). */
 function mergeCalendarDayWithCurrentClock(day: Date): Date {
   const out = new Date(day);
   const now = new Date();
@@ -73,6 +74,15 @@ export function RegisterWorkoutSheet({
   const [notes, setNotes] = useState("");
   const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
 
+  // Muscle group drill-down state
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
+  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
+
+  const exercisesForGroup = useMemo(() => {
+    if (!selectedMuscleGroup) return [];
+    return EXERCISES_BY_MUSCLE_GROUP[selectedMuscleGroup] ?? [];
+  }, [selectedMuscleGroup]);
+
   useEffect(() => {
     if (!open) return;
     const base =
@@ -88,6 +98,8 @@ export function RegisterWorkoutSheet({
       setWorkoutDateTime(toDateTimeLocalString(new Date()));
       setNotes("");
       setSelectedProgramId(null);
+      setSelectedMuscleGroup(null);
+      setSelectedExercises([]);
     }
     onOpenChange(next);
   };
@@ -97,6 +109,25 @@ export function RegisterWorkoutSheet({
     setSelectedTypes((prev) =>
       prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
     );
+  };
+
+  const toggleExercise = (exerciseName: string) => {
+    setSelectedExercises((prev) =>
+      prev.includes(exerciseName) ? prev.filter((e) => e !== exerciseName) : [...prev, exerciseName]
+    );
+  };
+
+  const confirmExercises = () => {
+    if (selectedExercises.length === 0) return;
+    // Build notes from selected exercises
+    const exerciseSummary = selectedExercises.join(", ");
+    setNotes((prev) => (prev ? `${prev}\n${exerciseSummary}` : exerciseSummary));
+    // Add muscle group as type if not already selected
+    if (selectedMuscleGroup && !selectedTypes.includes(selectedMuscleGroup)) {
+      setSelectedTypes((prev) => [...prev, selectedMuscleGroup]);
+    }
+    setSelectedMuscleGroup(null);
+    setSelectedExercises([]);
   };
 
   const selectProgram = (program: TrainingProgram) => {
@@ -134,6 +165,76 @@ export function RegisterWorkoutSheet({
     }
   };
 
+  // Muscle group drill-down view
+  if (selectedMuscleGroup) {
+    return (
+      <Sheet open={open} onOpenChange={handleOpenChange}>
+        <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => {
+                  setSelectedMuscleGroup(null);
+                  setSelectedExercises([]);
+                }}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {selectedMuscleGroup}
+            </SheetTitle>
+            <SheetDescription>
+              Selecione os exercícios realizados ({selectedExercises.length} selecionados)
+            </SheetDescription>
+          </SheetHeader>
+          <div className="py-4">
+            <ScrollArea className="h-[400px] rounded-md border p-3">
+              <div className="grid grid-cols-1 gap-2">
+                {exercisesForGroup.map((ex) => (
+                  <label
+                    key={ex.pt}
+                    className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 hover:bg-muted/50"
+                  >
+                    <Checkbox
+                      checked={selectedExercises.includes(ex.pt)}
+                      onCheckedChange={() => toggleExercise(ex.pt)}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium">{ex.pt}</span>
+                      <span className="block text-xs text-muted-foreground">{ex.en}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+          <SheetFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setSelectedMuscleGroup(null);
+                setSelectedExercises([]);
+              }}
+            >
+              Voltar
+            </Button>
+            <Button
+              type="button"
+              onClick={confirmExercises}
+              disabled={selectedExercises.length === 0}
+            >
+              Confirmar ({selectedExercises.length})
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto">
@@ -146,15 +247,38 @@ export function RegisterWorkoutSheet({
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label>Tipo(s) de treino</Label>
-            <Tabs defaultValue="types">
-              <TabsList className="grid w-full grid-cols-2 mb-2">
-                <TabsTrigger value="types">Categorias</TabsTrigger>
+            <Tabs defaultValue="muscle-groups">
+              <TabsList className="grid w-full grid-cols-3 mb-2">
+                <TabsTrigger value="muscle-groups">Grupos</TabsTrigger>
+                <TabsTrigger value="types">Geral</TabsTrigger>
                 <TabsTrigger value="my-programs">Meus Treinos</TabsTrigger>
               </TabsList>
+
+              <TabsContent value="muscle-groups">
+                <ScrollArea className="h-[250px] rounded-md border p-3">
+                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                    {MUSCLE_GROUPS.map((group) => {
+                      const count = EXERCISES_BY_MUSCLE_GROUP[group]?.length ?? 0;
+                      return (
+                        <button
+                          key={group}
+                          type="button"
+                          onClick={() => setSelectedMuscleGroup(group)}
+                          className="flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
+                        >
+                          <span className="text-sm font-medium">{group}</span>
+                          <span className="text-xs text-muted-foreground">{count} exercícios</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
               <TabsContent value="types">
                 <ScrollArea className="h-[200px] rounded-md border p-3">
                   <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {WORKOUT_TYPES.map((type) => (
+                    {WORKOUT_TYPES.filter((t) => !MUSCLE_GROUPS.includes(t)).map((type) => (
                       <label
                         key={type}
                         className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50"
@@ -170,6 +294,7 @@ export function RegisterWorkoutSheet({
                   </div>
                 </ScrollArea>
               </TabsContent>
+
               <TabsContent value="my-programs">
                 <ScrollArea className="h-[200px] rounded-md border p-3">
                   {myPrograms.length === 0 ? (
