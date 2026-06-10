@@ -23,7 +23,8 @@ type WorkoutCalendarProps = {
   isDeleting?: boolean;
 };
 
-function DayWithCheck({ date, activeModifiers, ...props }: DayContentProps) {
+function DayWithCheck({ date, activeModifiers, displayMonth, ...props }: DayContentProps & { displayMonth?: unknown }) {
+  void displayMonth;
   return (
     <span className="relative flex items-center justify-center w-full h-full" {...props}>
       {date.getDate()}
