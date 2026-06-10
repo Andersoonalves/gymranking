@@ -44,6 +44,10 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { GROUPS_STORAGE_KEY } from "@/lib/constants";
+import { exportWorkoutsToJSON } from "@/lib/export-workouts";
+import { useImportWorkouts } from "@/hooks/useImportWorkouts";
+import { Download, Upload } from "lucide-react";
+import { useRef } from "react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -71,6 +75,8 @@ export default function Index() {
   const { data: workouts = [] } = useGroupWorkouts(selectedGroup?.id);
   const { data: profilesMap = {} } = useProfilesInGroup(selectedGroup?.id);
   const deleteWorkout = useDeleteWorkout();
+  const importWorkouts = useImportWorkouts(userId, selectedGroup?.id);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [workoutToDelete, setWorkoutToDelete] = useState<{ id: string; group_id: string; label: string } | null>(null);
   const [feedPage, setFeedPage] = useState(1);
@@ -109,6 +115,21 @@ export default function Index() {
       setWorkoutToDelete(null);
     } catch {
       toast({ title: "Erro ao excluir treino", variant: "destructive" });
+    }
+  };
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const count = await importWorkouts.mutateAsync(file);
+      toast({ title: `${count} treinos importados com sucesso!` });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao importar treinos.";
+      toast({ title: message, variant: "destructive" });
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -369,6 +390,34 @@ export default function Index() {
                       onDeleteWorkout={selectedGroup ? (w) => setWorkoutToDelete(w) : undefined}
                       isDeleting={deleteWorkout.isPending}
                     />
+                    <div className="flex gap-2">
+                      {myWorkouts.length > 0 && (
+                        <Button
+                          variant="outline"
+                          className="flex-1 gap-2"
+                          onClick={() => exportWorkoutsToJSON(myWorkouts, user?.user_metadata?.display_name || user?.email)}
+                        >
+                          <Download className="h-4 w-4" />
+                          Exportar
+                        </Button>
+                      )}
+                      <input
+                        type="file"
+                        accept=".json"
+                        ref={fileInputRef}
+                        onChange={handleImport}
+                        className="hidden"
+                      />
+                      <Button
+                        variant="outline"
+                        className="flex-1 gap-2"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={importWorkouts.isPending}
+                      >
+                        <Upload className="h-4 w-4" />
+                        {importWorkouts.isPending ? "Importando…" : "Importar"}
+                      </Button>
+                    </div>
                   </div>
                 </TabsContent>
                 <TabsContent value="members">
