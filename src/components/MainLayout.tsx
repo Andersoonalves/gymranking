@@ -6,15 +6,14 @@ import { useAddWorkouts } from "@/hooks/useWorkouts";
 import { RegisterWorkoutProvider } from "@/contexts/RegisterWorkoutContext";
 import { RegisterWorkoutSheet } from "@/components/RegisterWorkoutSheet";
 import { supabase } from "@/integrations/supabase/client";
-// GROUPS_STORAGE_KEY no longer needed for registration
 import { notifyNewWorkout } from "@/lib/push";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Trophy, PlusCircle, Settings, ClipboardList, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Trophy, Plus, Settings, ClipboardList, TrendingUp } from "lucide-react";
 
 const navItems = [
   { path: "/", label: "Início", icon: LayoutDashboard },
   { path: "/rankings", label: "Rankings", icon: Trophy },
-  { path: "/register", label: "Registrar", icon: PlusCircle, isAction: true },
+  { path: "/register", label: "", icon: Plus, isAction: true },
   { path: "/treinos", label: "Treinos", icon: ClipboardList },
   { path: "/progresso", label: "Progresso", icon: TrendingUp },
   { path: "/settings", label: "Config", icon: Settings },
@@ -49,7 +48,6 @@ export function MainLayout({ children }: MainLayoutProps) {
         (await supabase.from("profiles").select("display_name").eq("user_id", userId).single()).data?.display_name ??
         user?.email ??
         "Alguém";
-      // Notify for each group
       for (const group of groups) {
         notifyNewWorkout(supabaseUrl, anonKey, session.access_token, {
           group_id: group.id,
@@ -77,32 +75,47 @@ export function MainLayout({ children }: MainLayoutProps) {
       registerTargetDate={registerTargetDate}
       setRegisterTargetDate={setRegisterTargetDate}
     >
-      <div className="flex min-h-screen flex-col bg-background pb-20">
-        <main className="flex-1 overflow-auto">
+      <div className="flex min-h-dvh flex-col bg-background">
+        <main className="flex-1 overflow-auto pb-24">
           {children}
         </main>
 
-        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="mx-auto flex max-w-2xl items-center justify-around px-2 py-2">
+        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 safe-area-bottom">
+          <div className="mx-auto flex max-w-lg items-end justify-around px-2 pt-2 pb-2">
             {navItems.map((item) => {
               const isActive = !item.isAction && location.pathname === item.path;
               const Icon = item.icon;
+
+              if (item.isAction) {
+                return (
+                  <button
+                    key={item.path}
+                    type="button"
+                    onClick={() => handleNav(item)}
+                    className="relative -mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:shadow-xl active:scale-95"
+                  >
+                    <Icon className="h-6 w-6" strokeWidth={2.5} />
+                  </button>
+                );
+              }
+
               return (
                 <button
                   key={item.path}
                   type="button"
                   onClick={() => handleNav(item)}
                   className={cn(
-                    "flex flex-col items-center gap-1 rounded-lg px-4 py-2 text-xs font-medium transition-colors",
-                    item.isAction
-                      ? "bg-primary text-primary-foreground hover:bg-primary/90"
-                      : isActive
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground"
+                    "flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 text-[10px] font-medium transition-colors min-w-[56px]",
+                    isActive
+                      ? "text-primary"
+                      : "text-muted-foreground hover:text-foreground"
                   )}
                 >
-                  <Icon className="h-5 w-5" />
-                  {item.label}
+                  <Icon className={cn("h-5 w-5", isActive && "text-primary")} strokeWidth={isActive ? 2.5 : 2} />
+                  <span>{item.label}</span>
+                  {isActive && (
+                    <span className="absolute -bottom-0.5 h-0.5 w-4 rounded-full bg-primary" />
+                  )}
                 </button>
               );
             })}

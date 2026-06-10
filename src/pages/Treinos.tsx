@@ -76,30 +76,32 @@ export default function Treinos() {
 
   if (!selectedGroup) {
     return (
-      <div className="flex min-h-[60vh] items-center justify-center">
-        <p className="text-muted-foreground">Selecione ou crie um grupo primeiro.</p>
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <p className="text-sm text-muted-foreground">Selecione ou crie um grupo primeiro.</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
+    <div className="mx-auto max-w-lg px-4 pt-4 pb-4 space-y-4">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Meus Treinos</h1>
-        <p className="text-sm text-muted-foreground">Monte seus treinos e organize suas atividades</p>
+        <h1 className="text-xl font-bold tracking-tight">Meus Treinos</h1>
+        <p className="text-xs text-muted-foreground">Monte seus treinos e organize suas atividades</p>
       </div>
 
       {/* Create new program */}
       <Card>
-        <CardContent className="pt-6">
+        <CardContent className="p-3">
           <div className="flex gap-2">
             <Input
               placeholder="Nome do treino (ex: Treino A)"
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleCreateProgram()}
+              className="h-9"
             />
-            <Button onClick={handleCreateProgram} disabled={createProgram.isPending || !newTitle.trim()} className="gap-1.5 shrink-0">
+            <Button onClick={handleCreateProgram} disabled={createProgram.isPending || !newTitle.trim()} className="gap-1.5 shrink-0 h-9">
               <PlusCircle className="h-4 w-4" />
               Criar
             </Button>
@@ -112,9 +114,9 @@ export default function Treinos() {
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
         </div>
       ) : myPrograms.length === 0 ? (
-        <div className="text-center py-12 space-y-2">
-          <Dumbbell className="h-10 w-10 mx-auto text-muted-foreground" />
-          <p className="text-muted-foreground">Nenhum treino cadastrado ainda.</p>
+        <div className="flex flex-col items-center gap-3 py-12">
+          <Dumbbell className="h-12 w-12 text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">Nenhum treino cadastrado ainda.</p>
         </div>
       ) : (
         myPrograms.map((program) => (
@@ -151,8 +153,6 @@ export default function Treinos() {
     </div>
   );
 }
-
-/* ---------- Program Card with exercises ---------- */
 
 function ProgramCard({
   program,
@@ -208,30 +208,30 @@ function ProgramCard({
   return (
     <Card>
       <Collapsible open={open} onOpenChange={setOpen}>
-        <CardHeader className="pb-3">
+        <CardHeader className="p-3">
           <div className="flex items-center justify-between">
             <CollapsibleTrigger asChild>
-              <button type="button" className="flex items-center gap-2 text-left flex-1">
-                <ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-0" : "-rotate-90"}`} />
-                <CardTitle className="text-base">{program.title}</CardTitle>
-                <span className="text-xs text-muted-foreground ml-1">({exercises.length} atividades)</span>
+              <button type="button" className="flex items-center gap-2 text-left flex-1 min-w-0">
+                <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${open ? "rotate-0" : "-rotate-90"}`} />
+                <CardTitle className="text-sm truncate">{program.title}</CardTitle>
+                <span className="shrink-0 text-xs text-muted-foreground">({exercises.length})</span>
               </button>
             </CollapsibleTrigger>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive" onClick={onDelete}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={onDelete}>
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
         <CollapsibleContent>
-          <CardContent className="space-y-3 pt-0">
+          <CardContent className="space-y-3 px-3 pb-3 pt-0">
             {exercises.length > 0 && (
-              <ul className="space-y-2">
+              <ul className="space-y-1.5">
                 {exercises.map((ex) => (
-                  <li key={ex.id} className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2 text-sm">
+                  <li key={ex.id} className="flex items-center justify-between rounded-lg bg-muted/50 px-3 py-2 text-sm">
                     <div className="min-w-0 flex-1">
-                      <p className="font-medium truncate">{ex.title}</p>
+                      <p className="font-medium truncate text-sm">{ex.title}</p>
                       <p className="text-xs text-muted-foreground">
-                        {ex.sets} séries × {ex.reps} reps · {ex.load_kg}kg
+                        {ex.sets}×{ex.reps} · {ex.load_kg}kg
                       </p>
                     </div>
                     <Button
@@ -247,26 +247,25 @@ function ProgramCard({
               </ul>
             )}
 
-            {/* Add exercise form */}
             <div className="space-y-2 rounded-lg border border-dashed p-3">
-              <Input placeholder="Nome da atividade" value={title} onChange={(e) => setTitle(e.target.value)} />
+              <Input placeholder="Nome da atividade" value={title} onChange={(e) => setTitle(e.target.value)} className="h-9 text-sm" />
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="text-xs text-muted-foreground">Séries</label>
-                  <Input type="number" min="1" value={sets} onChange={(e) => setSets(e.target.value)} />
+                  <Input type="number" min="1" value={sets} onChange={(e) => setSets(e.target.value)} className="h-9 text-sm" />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">Carga (kg)</label>
-                  <Input type="number" min="0" value={load} onChange={(e) => setLoad(e.target.value)} />
+                  <Input type="number" min="0" value={load} onChange={(e) => setLoad(e.target.value)} className="h-9 text-sm" />
                 </div>
                 <div>
-                  <label className="text-xs text-muted-foreground">Repetições</label>
-                  <Input type="number" min="1" value={reps} onChange={(e) => setReps(e.target.value)} />
+                  <label className="text-xs text-muted-foreground">Reps</label>
+                  <Input type="number" min="1" value={reps} onChange={(e) => setReps(e.target.value)} className="h-9 text-sm" />
                 </div>
               </div>
               <Button size="sm" className="w-full gap-1.5" onClick={handleAdd} disabled={onAddExercise.isPending || !title.trim()}>
                 <PlusCircle className="h-4 w-4" />
-                Adicionar atividade
+                Adicionar
               </Button>
             </div>
           </CardContent>

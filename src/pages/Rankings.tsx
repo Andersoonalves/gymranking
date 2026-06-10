@@ -12,7 +12,7 @@ import { GROUPS_STORAGE_KEY } from "@/lib/constants";
 import { useMyGroups } from "@/hooks/useGroups";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select,
   SelectContent,
@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/select";
 import { WORKOUT_TYPES } from "@/lib/workout-types";
 import { Progress } from "@/components/ui/progress";
+import { Trophy } from "lucide-react";
 
 const PERIODS: { value: RankingPeriod; label: string }[] = [
   { value: "week", label: "Semana" },
@@ -54,22 +55,26 @@ export default function Rankings() {
 
   if (!selectedGroup) {
     return (
-      <div className="mx-auto max-w-2xl px-4 py-8 text-center text-muted-foreground">
-        Selecione um grupo na página Início.
+      <div className="flex min-h-[60vh] items-center justify-center px-4">
+        <p className="text-sm text-muted-foreground">Selecione um grupo na página Início.</p>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold tracking-tight">Rankings</h1>
+    <div className="mx-auto max-w-lg px-4 pt-4 pb-4 space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight">Rankings</h1>
+          <p className="text-xs text-muted-foreground truncate">{selectedGroup.name}</p>
+        </div>
         {groups.length > 1 && (
           <Select value={selectedGroup.id} onValueChange={setSelectedGroupId}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-auto shrink-0">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent align="end">
               {groups.map((g) => (
                 <SelectItem key={g.id} value={g.id}>
                   {g.name}
@@ -80,19 +85,21 @@ export default function Rankings() {
         )}
       </div>
 
+      {/* Period tabs */}
       <Tabs value={period} onValueChange={(v) => setPeriod(v as RankingPeriod)}>
         <TabsList className="grid w-full grid-cols-3">
           {PERIODS.map((p) => (
-            <TabsTrigger key={p.value} value={p.value}>
+            <TabsTrigger key={p.value} value={p.value} className="text-xs">
               {p.label}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        <div className="mt-4 flex gap-2">
+        {/* Type filter */}
+        <div className="mt-3">
           <Select value={workoutTypeFilter} onValueChange={setWorkoutTypeFilter}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Tipo de treino" />
+            <SelectTrigger className="w-full text-sm">
+              <SelectValue placeholder="Filtrar por tipo" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os tipos</SelectItem>
@@ -105,15 +112,9 @@ export default function Rankings() {
           </Select>
         </div>
 
-        <TabsContent value="week" className="mt-4">
+        <div className="mt-3">
           <RankingCard ranking={ranking} maxCount={maxCount} />
-        </TabsContent>
-        <TabsContent value="month" className="mt-4">
-          <RankingCard ranking={ranking} maxCount={maxCount} />
-        </TabsContent>
-        <TabsContent value="year" className="mt-4">
-          <RankingCard ranking={ranking} maxCount={maxCount} />
-        </TabsContent>
+        </div>
       </Tabs>
     </div>
   );
@@ -128,34 +129,42 @@ function RankingCard({
 }) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle>Posição</CardTitle>
-        <CardDescription>Quantidade de treinos no período</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="p-4">
         {ranking.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4 text-center">Nenhum treino no período.</p>
+          <div className="flex flex-col items-center gap-2 py-10">
+            <Trophy className="h-10 w-10 text-muted-foreground/30" />
+            <p className="text-sm text-muted-foreground">Nenhum treino no período.</p>
+          </div>
         ) : (
-          ranking.map((entry) => {
-            const medal = getMedalEmoji(entry.position);
-            const pct = (entry.count / maxCount) * 100;
-            return (
-              <div key={entry.user_id} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <span className="text-lg w-7">{medal ?? `#${entry.position}`}</span>
-                    <Avatar className="h-7 w-7">
+          <div className="space-y-4">
+            {ranking.map((entry) => {
+              const medal = getMedalEmoji(entry.position);
+              const pct = (entry.count / maxCount) * 100;
+              const isTop3 = entry.position <= 3;
+              return (
+                <div key={entry.user_id} className="space-y-2">
+                  <div className="flex items-center gap-3">
+                    <span className={`w-7 text-center text-lg ${isTop3 ? "" : "text-muted-foreground"}`}>
+                      {medal ?? `#${entry.position}`}
+                    </span>
+                    <Avatar className={`h-9 w-9 ${isTop3 ? "ring-2 ring-primary/20" : ""}`}>
                       {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name} />}
-                      <AvatarFallback className="text-xs">{entry.display_name.charAt(0).toUpperCase()}</AvatarFallback>
+                      <AvatarFallback className="text-xs font-semibold">{entry.display_name.charAt(0).toUpperCase()}</AvatarFallback>
                     </Avatar>
-                    <span className="font-medium">{entry.display_name}</span>
-                  </span>
-                  <span className="text-sm font-semibold text-muted-foreground">{entry.count} treinos</span>
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm truncate ${isTop3 ? "font-semibold" : "font-medium"}`}>
+                        {entry.display_name}
+                      </p>
+                      <Progress value={pct} className="h-1.5 mt-1" />
+                    </div>
+                    <span className={`shrink-0 text-sm font-bold ${isTop3 ? "text-primary" : "text-muted-foreground"}`}>
+                      {entry.count}
+                    </span>
+                  </div>
                 </div>
-                <Progress value={pct} className="h-2" />
-              </div>
-            );
-          })
+              );
+            })}
+          </div>
         )}
       </CardContent>
     </Card>

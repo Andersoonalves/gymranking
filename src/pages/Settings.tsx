@@ -35,7 +35,6 @@ export default function Settings() {
   const [displayName, setDisplayName] = useState("");
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [savingProfile, setSavingProfile] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
   const [notifications, setNotifications] = useState(false);
@@ -100,7 +99,6 @@ export default function Settings() {
       toast({ title: "Erro", description: error.message, variant: "destructive" });
       return;
     }
-    setCurrentPassword("");
     setNewPassword("");
     toast({ title: "Senha alterada!" });
   };
@@ -174,25 +172,26 @@ export default function Settings() {
       }
       toast({ title: "Você saiu do grupo." });
       setLeaveGroupId(null);
-    } catch (e) {
+    } catch {
       toast({ title: "Erro ao sair do grupo", variant: "destructive" });
     }
   };
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-6 space-y-6">
+    <div className="mx-auto max-w-lg px-4 pt-4 pb-4 space-y-4">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Configurações</h1>
-        <p className="text-sm text-muted-foreground">{user?.email}</p>
+        <h1 className="text-xl font-bold tracking-tight">Configurações</h1>
+        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
       </div>
 
+      {/* Photo */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Camera className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Camera className="h-4 w-4 text-primary" />
             Foto de perfil
           </CardTitle>
-          <CardDescription>Adicione ou troque sua foto</CardDescription>
         </CardHeader>
         <CardContent>
           {userId && (
@@ -206,18 +205,19 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Profile */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <User className="h-4 w-4 text-primary" />
             Perfil
           </CardTitle>
-          <CardDescription>Altere seu nome exibido no app</CardDescription>
+          <CardDescription className="text-xs">Altere seu nome exibido no app</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSaveProfile} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="display-name">Nome</Label>
+          <form onSubmit={handleSaveProfile} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="display-name" className="text-sm">Nome</Label>
               <Input
                 id="display-name"
                 value={displayName}
@@ -226,25 +226,26 @@ export default function Settings() {
                 placeholder="Seu nome"
               />
             </div>
-            <Button type="submit" disabled={loadingProfile || savingProfile}>
+            <Button type="submit" size="sm" disabled={loadingProfile || savingProfile}>
               {savingProfile ? "Salvando…" : "Salvar"}
             </Button>
           </form>
         </CardContent>
       </Card>
 
+      {/* Password */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Key className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Key className="h-4 w-4 text-primary" />
             Alterar senha
           </CardTitle>
-          <CardDescription>Defina uma nova senha de acesso</CardDescription>
+          <CardDescription className="text-xs">Defina uma nova senha de acesso</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleChangePassword} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="new-password">Nova senha</Label>
+          <form onSubmit={handleChangePassword} className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="new-password" className="text-sm">Nova senha</Label>
               <Input
                 id="new-password"
                 type="password"
@@ -255,24 +256,25 @@ export default function Settings() {
                 minLength={6}
               />
             </div>
-            <Button type="submit" disabled={savingPassword || !newPassword.trim()}>
+            <Button type="submit" size="sm" disabled={savingPassword || !newPassword.trim()}>
               {savingPassword ? "Alterando…" : "Alterar senha"}
             </Button>
           </form>
         </CardContent>
       </Card>
 
+      {/* Notifications */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Bell className="h-4 w-4 text-primary" />
             Notificações
           </CardTitle>
-          <CardDescription>Receba avisos quando alguém do grupo registrar um treino</CardDescription>
+          <CardDescription className="text-xs">Avisos quando alguém registrar um treino</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center justify-between">
-            <Label htmlFor="notifications">Ativar notificações</Label>
+            <Label htmlFor="notifications" className="text-sm">Ativar notificações</Label>
             <Switch
               id="notifications"
               checked={notifications}
@@ -283,82 +285,72 @@ export default function Settings() {
         </CardContent>
       </Card>
 
+      {/* Theme */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Palette className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Palette className="h-4 w-4 text-primary" />
             Aparência
           </CardTitle>
-          <CardDescription>Tema claro ou escuro</CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex gap-2">
-            <Button
-              variant={theme === "light" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTheme("light")}
-            >
-              Claro
-            </Button>
-            <Button
-              variant={theme === "dark" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTheme("dark")}
-            >
-              Escuro
-            </Button>
-            <Button
-              variant={theme === "system" ? "default" : "outline"}
-              size="sm"
-              onClick={() => setTheme("system")}
-            >
-              Sistema
-            </Button>
+            {(["light", "dark", "system"] as const).map((t) => (
+              <Button
+                key={t}
+                variant={theme === t ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTheme(t)}
+                className="flex-1"
+              >
+                {t === "light" ? "Claro" : t === "dark" ? "Escuro" : "Sistema"}
+              </Button>
+            ))}
           </div>
         </CardContent>
       </Card>
 
+      {/* Groups */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Users className="h-4 w-4 text-primary" />
             Meus grupos
           </CardTitle>
-          <CardDescription>Código de convite e opção de sair do grupo</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3">
           {groups.length === 0 ? (
             <p className="text-sm text-muted-foreground">Você não está em nenhum grupo.</p>
           ) : (
             groups.map((g) => (
               <div
                 key={g.id}
-                className="flex items-center justify-between gap-2 rounded-lg border p-3"
+                className="flex items-center gap-3 rounded-xl border p-3"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="font-medium truncate">{g.name}</p>
+                  <p className="text-sm font-medium truncate">{g.name}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <code className="text-sm font-mono text-muted-foreground">{g.invite_code}</code>
+                    <code className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">{g.invite_code}</code>
                     <Button
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8 shrink-0"
+                      className="h-7 w-7 shrink-0"
                       onClick={() => copyCode(g.invite_code, g.id)}
                     >
                       {copiedGroupId === g.id ? (
-                        <Check className="h-4 w-4 text-green-500" />
+                        <Check className="h-3.5 w-3.5 text-green-500" />
                       ) : (
-                        <Copy className="h-4 w-4" />
+                        <Copy className="h-3.5 w-3.5" />
                       )}
                     </Button>
                   </div>
                 </div>
                 <Button
                   type="button"
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
-                  className="shrink-0"
+                  className="shrink-0 text-muted-foreground hover:text-destructive"
                   onClick={() => setLeaveGroupId(g.id)}
                 >
                   Sair
@@ -369,16 +361,13 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardContent className="pt-6">
-          <Button variant="ghost" className="w-full gap-2 text-muted-foreground" onClick={signOut}>
-            <LogOut className="h-4 w-4" />
-            Sair da conta
-          </Button>
-        </CardContent>
-      </Card>
+      {/* Logout */}
+      <Button variant="ghost" className="w-full gap-2 text-muted-foreground" onClick={signOut}>
+        <LogOut className="h-4 w-4" />
+        Sair da conta
+      </Button>
 
-      <p className="py-6 text-center text-xs text-muted-foreground">
+      <p className="pb-4 text-center text-xs text-muted-foreground">
         v{typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev"}
       </p>
 
