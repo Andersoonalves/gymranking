@@ -8,7 +8,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { ChevronLeft, ChevronRight, GitCompareArrows, ImageOff, Lock, Scale, Trash2, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, GitCompareArrows, ImageOff, Lock, Plus, Scale, Trash2, X } from "lucide-react";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -163,6 +164,7 @@ export default function Progresso() {
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [formOpen, setFormOpen] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
@@ -231,6 +233,7 @@ export default function Progresso() {
       setNotes("");
       setPhotoPath(null);
       setDateInput(format(new Date(), "yyyy-MM-dd"));
+      setFormOpen(false);
     } catch {
       toast.error("Erro ao salvar registro");
     } finally {
@@ -407,56 +410,15 @@ export default function Progresso() {
         </div>
       )}
 
-      {/* Novo registro */}
-      <form onSubmit={handleSubmit} className="flex flex-col gap-3 rounded-[18px] border border-border bg-card p-4">
-        <span className="text-[15px] font-extrabold text-foreground">Novo registro</span>
-        <div className="flex gap-2">
-          <label className="flex flex-1 flex-col gap-1.5">
-            <span className="mono-label">Peso (kg)</span>
-            <input
-              type="text"
-              inputMode="decimal"
-              placeholder="Ex: 82.5"
-              value={weightInput}
-              onChange={(e) => setWeightInput(e.target.value)}
-              required
-              className={cn(inputClass, "font-mono font-semibold")}
-            />
-          </label>
-          <label className="flex flex-1 flex-col gap-1.5">
-            <span className="mono-label">Data</span>
-            <input
-              type="date"
-              value={dateInput}
-              onChange={(e) => setDateInput(e.target.value)}
-              required
-              className={cn(inputClass, "font-mono")}
-            />
-          </label>
-        </div>
-        <textarea
-          placeholder="Como foi o treino? Como você está se sentindo?"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-          rows={2}
-          className={cn(inputClass, "resize-none text-xs leading-relaxed")}
-        />
-        {userId && (
-          <ProgressPhotoUpload
-            userId={userId}
-            uploadedPath={photoPath}
-            onUploaded={(path) => setPhotoPath(path)}
-            onClear={() => setPhotoPath(null)}
-          />
-        )}
-        <button
-          type="submit"
-          disabled={saving}
-          className="w-full rounded-xl bg-primary p-[15px] text-sm font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50"
-        >
-          {saving ? "Salvando…" : "Salvar registro"}
-        </button>
-      </form>
+      {/* Novo registro — abre em bottom sheet */}
+      <button
+        type="button"
+        onClick={() => setFormOpen(true)}
+        className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-primary p-[16px] text-sm font-extrabold text-primary-foreground shadow-hard active-hard"
+      >
+        <Plus className="h-5 w-5" />
+        Novo registro
+      </button>
 
       {/* Histórico */}
       {entries.length > 0 && (
@@ -528,6 +490,68 @@ export default function Progresso() {
           Seus registros e fotos são privados. Ninguém do grupo vê — nem aparecem no feed.
         </span>
       </div>
+
+      {/* Bottom sheet: novo registro */}
+      <Sheet open={formOpen} onOpenChange={setFormOpen}>
+        <SheetContent
+          side="bottom"
+          className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)]"
+        >
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
+            <div className="h-1 w-9 self-center rounded-full bg-border" />
+            <SheetTitle className="display-title text-[22px] text-foreground">Novo registro</SheetTitle>
+            <div className="flex gap-2">
+              <label className="flex flex-1 flex-col gap-1.5">
+                <span className="mono-label">Peso (kg)</span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="Ex: 82.5"
+                  value={weightInput}
+                  onChange={(e) => setWeightInput(e.target.value)}
+                  required
+                  className={cn(inputClass, "font-mono font-semibold")}
+                />
+              </label>
+              <label className="flex flex-1 flex-col gap-1.5">
+                <span className="mono-label">Data</span>
+                <input
+                  type="date"
+                  value={dateInput}
+                  onChange={(e) => setDateInput(e.target.value)}
+                  required
+                  className={cn(inputClass, "font-mono")}
+                />
+              </label>
+            </div>
+            <textarea
+              placeholder="Como foi o treino? Como você está se sentindo?"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              rows={2}
+              className={cn(inputClass, "resize-none text-xs leading-relaxed")}
+            />
+            <div className="flex flex-col gap-1.5">
+              <span className="mono-label">Foto de progresso · opcional</span>
+              {userId && (
+                <ProgressPhotoUpload
+                  userId={userId}
+                  uploadedPath={photoPath}
+                  onUploaded={(path) => setPhotoPath(path)}
+                  onClear={() => setPhotoPath(null)}
+                />
+              )}
+            </div>
+            <button
+              type="submit"
+              disabled={saving}
+              className="w-full rounded-[14px] bg-primary p-[16px] text-sm font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50"
+            >
+              {saving ? "Salvando…" : "Salvar registro"}
+            </button>
+          </form>
+        </SheetContent>
+      </Sheet>
 
       <PhotoCompare open={compareOpen} onOpenChange={setCompareOpen} photos={photos} />
 

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload, X } from "lucide-react";
@@ -15,6 +15,14 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
     const fileRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    // O pai zera uploadedPath depois de salvar; sem isso o preview da foto anterior fica preso.
+    useEffect(() => {
+        if (!uploadedPath) {
+            setPreviewUrl(null);
+            if (fileRef.current) fileRef.current.value = "";
+        }
+    }, [uploadedPath]);
 
     const handleFile = async (file: File) => {
         if (!file) return;
