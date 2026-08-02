@@ -247,14 +247,14 @@ export default function Progresso() {
             <span className="text-[15px] font-extrabold text-foreground">Fotos de progresso</span>
             <span className="font-mono text-[11px] text-muted-foreground/70">{photos.length}</span>
           </div>
-          <div className="flex gap-1.5">
+          <div className={cn("grid gap-1.5", photos.length > 3 ? "grid-cols-[1fr_1fr_1fr_46px]" : "grid-cols-3")}>
             {photos.slice(-3).map((p, i, arr) => {
               const isLast = i === arr.length - 1;
               return (
                 <div
                   key={p.id}
                   className={cn(
-                    "relative flex flex-1 flex-col justify-end overflow-hidden rounded-[11px] border p-1.5",
+                    "relative flex flex-col justify-end overflow-hidden rounded-[11px] border p-1.5",
                     isLast ? "border-primary/40" : "border-border",
                   )}
                 >
@@ -278,7 +278,7 @@ export default function Progresso() {
               );
             })}
             {photos.length > 3 && (
-              <div className="flex w-[46px] items-center justify-center rounded-[11px] border border-border bg-secondary">
+              <div className="flex items-center justify-center rounded-[11px] border border-border bg-secondary">
                 <span className="font-mono text-[13px] font-bold text-muted-foreground">+{photos.length - 3}</span>
               </div>
             )}
