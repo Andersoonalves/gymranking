@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { format, formatDistanceToNowStrict, isSameDay, startOfDay, startOfWeek, addDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -138,6 +138,24 @@ export default function Index() {
     [myWorkouts, exerciseHistory],
   );
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
+
+  // Toast na hora em que uma conquista destrava. Primeira visita semeia em
+  // silêncio para não disparar uma rajada de toasts do histórico antigo.
+  useEffect(() => {
+    if (myWorkouts.length === 0) return;
+    const KEY = "fitrank-seen-achievements";
+    const unlockedIds = achievements.filter((a) => a.unlocked).map((a) => a.id);
+    const stored = localStorage.getItem(KEY);
+    if (stored !== null) {
+      const seen: string[] = JSON.parse(stored);
+      for (const a of achievements) {
+        if (a.unlocked && !seen.includes(a.id)) {
+          toast.success(`🏅 Conquista destravada: ${a.name}`, { description: a.description });
+        }
+      }
+    }
+    localStorage.setItem(KEY, JSON.stringify(unlockedIds));
+  }, [achievements, myWorkouts.length]);
 
   const today = startOfDay(new Date());
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });

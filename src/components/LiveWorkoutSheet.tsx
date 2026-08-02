@@ -3,10 +3,12 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyGroups } from "@/hooks/useGroups";
 import { useAddWorkouts } from "@/hooks/useWorkouts";
+import { useExerciseHistory, useAddExerciseHistory } from "@/hooks/useExerciseHistory";
+import { useUpdateExercise, type TrainingProgram } from "@/hooks/useTrainingPrograms";
+import { isPersonalRecord } from "@/lib/personal-records";
 import { extractYouTubeId, youTubeThumbnail, youTubeEmbedUrl } from "@/lib/youtube";
-import type { TrainingProgram } from "@/hooks/useTrainingPrograms";
 import { cn } from "@/lib/utils";
-import { Check, Flag, Play, RotateCcw, SkipForward, X } from "lucide-react";
+import { Check, Flag, Minus, Play, Plus, RotateCcw, SkipForward, X } from "lucide-react";
 import { toast } from "sonner";
 
 const REST_SECONDS = 90;
@@ -28,8 +30,13 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
   const { user } = useAuth();
   const { data: groups = [] } = useMyGroups(user?.id);
   const addWorkouts = useAddWorkouts(user?.id);
+  const { data: history = [] } = useExerciseHistory(user?.id);
+  const addHistory = useAddExerciseHistory(user?.id);
+  const updateExercise = useUpdateExercise();
 
   const [done, setDone] = useState<Set<string>>(new Set());
+  // Ajustes de carga feitos durante o treino (persistem no programa ao concluir)
+  const [loads, setLoads] = useState<Record<string, number>>({});
   const [elapsed, setElapsed] = useState(0);
   const [rest, setRest] = useState<number | null>(null);
   const [playingId, setPlayingId] = useState<string | null>(null);
@@ -38,6 +45,7 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
   useEffect(() => {
     if (!open) return;
     setDone(new Set());
+    setLoads({});
     setElapsed(0);
     setRest(null);
     setPlayingId(null);
@@ -69,6 +77,17 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
     });
   };
 
+  const loadOf = (e: (typeof exercises)[number]) => loads[e.id] ?? e.load_kg ?? 0;
+
+  const adjustLoad = (id: string, delta: number) => {
+    const e = exercises.find((x) => x.id === id);
+    if (!e) return;
+    setLoads((prev) => {
+      const current = prev[id] ?? e.load_kg ?? 0;
+      return { ...prev, [id]: Math.max(0, Math.round((current + delta) * 10) / 10) };
+    });
+  };
+
   const finish = async () => {
     try {
       await addWorkouts.mutateAsync({
@@ -77,6 +96,29 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
         workout_date: new Date().toISOString(),
         notes: exercises.length > 0 ? exercises.map((e) => e.title).join(", ") : null,
       });
+
+      // Cargas dos exercícios concluídos entram no histórico (e viram PR quando batem o recorde)
+      let prs = 0;
+      for (const e of exercises) {
+        if (!done.has(e.id)) continue;
+        const load = loadOf(e);
+        if (load <= 0) continue;
+        const titleHistory = history.filter((h) => h.exercise_title === e.title && h.load_kg > 0);
+        const changed = titleHistory.length === 0 || load !== titleHistory[titleHistory.length - 1].load_kg;
+        if (changed) {
+          if (isPersonalRecord(history, e.title, load)) prs++;
+          addHistory.mutate({ exercise_title: e.title, load_kg: load, reps: e.reps, sets: e.sets });
+        }
+        if (load !== e.load_kg) {
+          updateExercise.mutate({ id: e.id, group_id: program.group_id, load_kg: load });
+        }
+      }
+      if (prs > 0) {
+        toast.success(`🏆 ${prs === 1 ? "Novo recorde pessoal!" : `${prs} novos recordes pessoais!`}`, {
+          description: "Carga máxima batida neste treino.",
+        });
+      }
+
       toast.success("Treino registrado!");
       onOpenChange(false);
     } catch (err) {
@@ -162,8 +204,30 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
                 <span className="mono-label text-primary">Agora</span>
                 <span className="truncate text-[15px] font-extrabold text-foreground">{current.title}</span>
                 <span className="font-mono text-[11px] text-muted-foreground">
-                  {current.sets}×{current.reps} REPS · {current.load_kg} KG
+                  {current.sets}×{current.reps} REPS
                 </span>
+              </div>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  aria-label="Diminuir carga"
+                  onClick={() => adjustLoad(current.id, -2.5)}
+                  className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-border bg-secondary text-secondary-foreground"
+                >
+                  <Minus className="h-4 w-4" />
+                </button>
+                <span className="min-w-[52px] text-center font-mono text-sm font-bold tabular-nums text-foreground">
+                  {loadOf(current).toLocaleString("pt-BR")}
+                  <span className="ml-0.5 text-[9px] text-muted-foreground">KG</span>
+                </span>
+                <button
+                  type="button"
+                  aria-label="Aumentar carga"
+                  onClick={() => adjustLoad(current.id, 2.5)}
+                  className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-primary text-primary-foreground shadow-hard-sm active-hard"
+                >
+                  <Plus className="h-4 w-4" />
+                </button>
               </div>
             </div>
           )}
@@ -220,7 +284,7 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
                       {e.title}
                     </span>
                     <span className="font-mono text-[10px] text-muted-foreground/70">
-                      {e.sets}×{e.reps} · {e.load_kg} KG
+                      {e.sets}×{e.reps} · {loadOf(e).toLocaleString("pt-BR")} KG
                     </span>
                   </span>
                 </button>

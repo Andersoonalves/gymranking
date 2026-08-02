@@ -95,7 +95,7 @@ export function useDeleteWorkout() {
       // Fetch the workout to get matching criteria
       const { data: workout, error: fetchError } = await supabase
         .from("workouts")
-        .select("user_id, workout_type, workout_date")
+        .select("user_id, workout_type, workout_date, photo_url")
         .eq("id", params.workout_id)
         .single();
       if (fetchError) throw fetchError;
@@ -108,6 +108,11 @@ export function useDeleteWorkout() {
         .eq("workout_type", workout.workout_type)
         .eq("workout_date", workout.workout_date);
       if (error) throw error;
+
+      // A foto-prova é compartilhada pelas cópias — sem elas, vira órfã no storage.
+      if (workout.photo_url) {
+        await supabase.storage.from("workout-photos").remove([workout.photo_url]);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["workouts"] });

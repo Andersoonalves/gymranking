@@ -58,11 +58,19 @@ export function useDeleteBodyProgress(userId: string | undefined) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: async (id: string) => {
+            const { data: entry } = await bodyProgressTable()
+                .select("photo_url")
+                .eq("id", id)
+                .single();
             const { error } = await bodyProgressTable()
                 .delete()
                 .eq("id", id)
                 .eq("user_id", userId!);
             if (error) throw error;
+            // Remove a foto do storage junto — sem o registro ela vira órfã.
+            if (entry?.photo_url) {
+                await supabase.storage.from("progress-photos").remove([entry.photo_url]);
+            }
         },
         onSuccess: () => {
             qc.invalidateQueries({ queryKey: [QUERY_KEY, userId] });
