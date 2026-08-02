@@ -7,6 +7,9 @@ import { RegisterWorkoutProvider } from "@/contexts/RegisterWorkoutContext";
 import { RegisterWorkoutSheet } from "@/components/RegisterWorkoutSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyNewWorkout } from "@/lib/push";
+import { enqueueWorkout, isNetworkError } from "@/lib/offline-queue";
+import { useOfflineWorkoutSync } from "@/hooks/useOfflineWorkoutSync";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Home, Trophy, Plus, ClipboardList, TrendingUp } from "lucide-react";
 
@@ -33,6 +36,8 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [registerTargetDate, setRegisterTargetDate] = useState<Date | null>(null);
 
+  useOfflineWorkoutSync(userId);
+
   const allGroupIds = groups.map((g) => g.id);
 
   const handleRegister = async (params: {
@@ -42,7 +47,25 @@ export function MainLayout({ children }: MainLayoutProps) {
     notes?: string | null;
     photo_url?: string | null;
   }) => {
-    await addWorkouts.mutateAsync(params);
+    try {
+      await addWorkouts.mutateAsync(params);
+    } catch (err) {
+      // Sem conexão: guarda na fila e segue — sincroniza sozinho quando a rede voltar.
+      if (isNetworkError(err)) {
+        enqueueWorkout({
+          group_ids: params.group_ids,
+          workout_types: params.workout_types,
+          workout_date: params.workout_date,
+          notes: params.notes ?? null,
+          photo_url: params.photo_url ?? null,
+        });
+        toast.info("Sem conexão — treino guardado.", {
+          description: "Ele entra no placar sozinho quando a internet voltar.",
+        });
+        return;
+      }
+      throw err;
+    }
     if (session?.access_token && allGroupIds.length > 0) {
       const displayName =
         (await supabase.from("profiles").select("display_name").eq("user_id", userId).single()).data?.display_name ??

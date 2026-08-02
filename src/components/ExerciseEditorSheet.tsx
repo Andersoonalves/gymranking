@@ -1,9 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { extractYouTubeId, youTubeThumbnail, youTubeEmbedUrl } from "@/lib/youtube";
 import type { TrainingExercise } from "@/hooks/useTrainingPrograms";
+import { useAuth } from "@/contexts/AuthContext";
+import { useExerciseHistory, useAddExerciseHistory } from "@/hooks/useExerciseHistory";
+import { isPersonalRecord, personalRecords } from "@/lib/personal-records";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
+import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, ClipboardPaste, Link2, Play, Trash2, X } from "lucide-react";
+import { CheckCircle2, ClipboardPaste, Link2, Play, Trash2, Trophy, X } from "lucide-react";
+import { toast } from "sonner";
 
 type ExerciseEditorSheetProps = {
   open: boolean;
@@ -32,6 +39,20 @@ export function ExerciseEditorSheet({
   const [notes, setNotes] = useState("");
   const [playing, setPlaying] = useState(false);
 
+  const { user } = useAuth();
+  const { data: history = [] } = useExerciseHistory(user?.id);
+  const addHistory = useAddExerciseHistory(user?.id);
+
+  const titleHistory = useMemo(
+    () => history.filter((h) => h.exercise_title === exercise?.title && h.load_kg > 0),
+    [history, exercise?.title],
+  );
+  const currentPR = exercise ? personalRecords(history)[exercise.title] : undefined;
+  const chartData = titleHistory.map((h) => ({
+    date: format(new Date(h.recorded_at), "dd/MM", { locale: ptBR }),
+    carga: h.load_kg,
+  }));
+
   useEffect(() => {
     if (!open || !exercise) return;
     setVideoUrl(exercise.video_url ?? "");
@@ -56,10 +77,31 @@ export function ExerciseEditorSheet({
   };
 
   const handleSave = () => {
+    const loadKg = Math.max(0, Number(load) || 0);
+    const repsN = Math.max(1, Number(reps) || 1);
+    const setsN = Math.max(1, Number(sets) || 1);
+
+    // Registra no histórico quando a carga muda (ou é a primeira) — alimenta PRs e o gráfico.
+    if (exercise && loadKg > 0 && (titleHistory.length === 0 || loadKg !== titleHistory[titleHistory.length - 1].load_kg)) {
+      const isPR = isPersonalRecord(history, exercise.title, loadKg);
+      addHistory.mutate(
+        { exercise_title: exercise.title, load_kg: loadKg, reps: repsN, sets: setsN },
+        {
+          onSuccess: () => {
+            if (isPR) {
+              toast.success(`🏆 Novo recorde: ${exercise.title}`, {
+                description: `${loadKg} kg — o anterior era ${currentPR ? `${currentPR.load_kg} kg` : "nenhum"}.`,
+              });
+            }
+          },
+        },
+      );
+    }
+
     onSave({
-      sets: Math.max(1, Number(sets) || 1),
-      reps: Math.max(1, Number(reps) || 1),
-      load_kg: Math.max(0, Number(load) || 0),
+      sets: setsN,
+      reps: repsN,
+      load_kg: loadKg,
       video_url: videoId ? videoUrl.trim() : null,
       notes: notes.trim() || null,
     });
@@ -191,6 +233,67 @@ export function ExerciseEditorSheet({
               </label>
             </div>
           </div>
+
+          {/* Evolução de carga */}
+          {(currentPR || chartData.length >= 2) && (
+            <div className="flex flex-col gap-2 rounded-2xl border border-border bg-background/60 p-3.5">
+              <div className="flex items-center justify-between">
+                <span className="mono-label">Evolução de carga</span>
+                {currentPR && (
+                  <span className="flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 font-mono text-[10px] font-bold text-primary">
+                    <Trophy className="h-3 w-3" />
+                    PR {currentPR.load_kg} KG
+                  </span>
+                )}
+              </div>
+              {chartData.length >= 2 ? (
+                <ResponsiveContainer width="100%" height={110}>
+                  <AreaChart data={chartData} margin={{ top: 6, right: 4, left: -26, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="loadGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.28} />
+                        <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <XAxis
+                      dataKey="date"
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))", fontFamily: "IBM Plex Mono" }}
+                    />
+                    <YAxis
+                      domain={["dataMin - 5", "dataMax + 5"]}
+                      tickLine={false}
+                      axisLine={false}
+                      tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))", fontFamily: "IBM Plex Mono" }}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        background: "hsl(var(--popover))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "10px",
+                        fontSize: "12px",
+                        fontFamily: "IBM Plex Mono",
+                        color: "hsl(var(--popover-foreground))",
+                      }}
+                      formatter={(value: number) => [`${value} kg`, "Carga"]}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="carga"
+                      stroke="hsl(var(--chart-1))"
+                      strokeWidth={2.5}
+                      fill="url(#loadGrad)"
+                      dot={{ r: 3, fill: "hsl(var(--chart-1))", strokeWidth: 0 }}
+                      activeDot={{ r: 5, fill: "hsl(var(--chart-1))", stroke: "hsl(var(--card))", strokeWidth: 2 }}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <span className="text-[11px] text-muted-foreground/70">Salve uma carga nova e a linha começa a subir.</span>
+              )}
+            </div>
+          )}
 
           {/* Anotações */}
           <div className="flex flex-col gap-2">

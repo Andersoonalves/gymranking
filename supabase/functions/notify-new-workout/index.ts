@@ -12,6 +12,22 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+/** VAPID do env ou, em fallback, de app_secrets (via service role). */
+async function getVapidJwk(): Promise<string | null> {
+  const env = Deno.env.get("VAPID_KEYS_JWK");
+  if (env) return env;
+  const admin = createClient(
+    Deno.env.get("SUPABASE_URL")!,
+    Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+  );
+  const { data } = await admin
+    .from("app_secrets")
+    .select("value")
+    .eq("name", "vapid_keys_jwk")
+    .single();
+  return data?.value ?? null;
+}
+
 interface NotifyBody {
   group_id: string;
   exclude_user_id: string;
@@ -27,7 +43,7 @@ Deno.serve(async (req) => {
 
   if (req.method === "GET") {
     try {
-      const vapidKeysJwk = Deno.env.get("VAPID_KEYS_JWK");
+      const vapidKeysJwk = await getVapidJwk();
       if (!vapidKeysJwk) {
         return new Response(JSON.stringify({ error: "Not configured" }), {
           status: 503,
@@ -132,9 +148,9 @@ Deno.serve(async (req) => {
       });
     }
 
-    const vapidKeysJwk = Deno.env.get("VAPID_KEYS_JWK");
+    const vapidKeysJwk = await getVapidJwk();
     if (!vapidKeysJwk) {
-      console.error("VAPID_KEYS_JWK not set");
+      console.error("VAPID keys not configured");
       return new Response(JSON.stringify({ error: "Server config error" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -147,18 +163,58 @@ Deno.serve(async (req) => {
       vapidKeys,
     });
 
-    const title = `Novo treino em ${group_name}`;
-    const bodyText = `${display_name} registrou: ${workout_type}`;
-    const payload = JSON.stringify({ title, body: bodyText, url: "/" });
+    // Provocação de ultrapassagem: conta os treinos da semana (seg 00:00 em
+    // São Paulo) por membro. Quem ficou exatamente 1 atrás do registrante
+    // acabou de ser ultrapassado/desempatado e recebe a mensagem afiada.
+    const overtaken = new Set<string>();
+    let registrantCount = 0;
+    try {
+      const nowSp = new Date(Date.now() - 3 * 3600_000);
+      const dow = (nowSp.getUTCDay() + 6) % 7; // 0 = segunda
+      const weekStartUtc = new Date(
+        Date.UTC(nowSp.getUTCFullYear(), nowSp.getUTCMonth(), nowSp.getUTCDate() - dow, 3, 0, 0),
+      );
+      const { data: weekWorkouts } = await supabase
+        .from("workouts")
+        .select("user_id")
+        .eq("group_id", group_id)
+        .gte("workout_date", weekStartUtc.toISOString());
+      const counts: Record<string, number> = {};
+      for (const w of weekWorkouts ?? []) counts[w.user_id] = (counts[w.user_id] ?? 0) + 1;
+      registrantCount = counts[exclude_user_id] ?? 0;
+      for (const uid of userIds) {
+        if ((counts[uid] ?? 0) === registrantCount - 1) overtaken.add(uid);
+      }
+    } catch (e) {
+      console.error("Overtake check failed:", e);
+    }
+
+    // Precisa do dono de cada subscription pra personalizar a mensagem
+    const { data: subsWithUser } = await supabase
+      .from("push_subscriptions")
+      .select("endpoint, p256dh, auth, user_id")
+      .in("user_id", userIds);
+
+    const defaultPayload = JSON.stringify({
+      title: `Novo treino em ${group_name}`,
+      body: `${display_name} registrou: ${workout_type}`,
+      url: "/",
+    });
+    const overtakenPayload = JSON.stringify({
+      title: `⚔️ ${display_name} te ultrapassou!`,
+      body: `${registrantCount} treinos na semana em ${group_name}. Responde à altura.`,
+      url: "/rankings",
+    });
 
     let sent = 0;
-    for (const row of subs) {
+    for (const row of subsWithUser ?? subs) {
       try {
         const sub: PushSubscription = {
           endpoint: row.endpoint,
           keys: { p256dh: row.p256dh, auth: row.auth },
         };
         const subscriber = as.subscribe(sub);
+        const payload = "user_id" in row && overtaken.has(row.user_id as string) ? overtakenPayload : defaultPayload;
         await subscriber.pushTextMessage(payload, { urgency: "high" });
         sent++;
       } catch (e) {

@@ -8,6 +8,7 @@ import { getVapidPublicKey, subscribePush, subscriptionToPayload } from "@/lib/p
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
 import { AvatarUpload } from "@/components/AvatarUpload";
+import { ShareInviteButton } from "@/components/ShareInviteButton";
 import { cn } from "@/lib/utils";
 import { Check, Copy, LogOut } from "lucide-react";
 import { toast } from "sonner";
@@ -50,6 +51,7 @@ export default function Settings() {
   const [savingPassword, setSavingPassword] = useState(false);
   const [notifications, setNotifications] = useState(false);
   const [notificationsLoading, setNotificationsLoading] = useState(false);
+  const [weeklySummary, setWeeklySummary] = useState(true);
   const [copiedGroupId, setCopiedGroupId] = useState<string | null>(null);
   const [leaveGroupId, setLeaveGroupId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -73,16 +75,27 @@ export default function Settings() {
     if (!userId) return;
     supabase
       .from("push_subscriptions")
-      .select("id")
+      .select("id, weekly_summary")
       .eq("user_id", userId)
       .maybeSingle()
       .then(({ data }) => {
         if (data) {
           setNotifications(true);
+          setWeeklySummary(data.weekly_summary);
           localStorage.setItem(NOTIFICATIONS_PREFERENCE_KEY, "true");
         }
       });
   }, [userId]);
+
+  const handleWeeklySummaryChange = async (checked: boolean) => {
+    if (!userId) return;
+    setWeeklySummary(checked);
+    const { error } = await supabase.from("push_subscriptions").update({ weekly_summary: checked }).eq("user_id", userId);
+    if (error) {
+      setWeeklySummary(!checked);
+      toast.error("Erro ao salvar preferência");
+    }
+  };
 
   const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -284,6 +297,20 @@ export default function Settings() {
             aria-label="Ativar notificações"
           />
         </div>
+        <div className={cn("flex items-center gap-3", (!pushSupported || !notifications) && "opacity-50")}>
+          <div className="flex flex-1 flex-col gap-0.5">
+            <span className="text-sm font-bold text-foreground">Resumo semanal</span>
+            <span className="text-[11px] leading-snug text-muted-foreground">
+              {pushSupported ? "Domingo à noite: como fechou a semana no grupo." : "Indisponível neste dispositivo."}
+            </span>
+          </div>
+          <Switch
+            checked={weeklySummary && notifications}
+            disabled={!pushSupported || !notifications}
+            onCheckedChange={handleWeeklySummaryChange}
+            aria-label="Resumo semanal"
+          />
+        </div>
       </Section>
 
       {/* Tema */}
@@ -334,6 +361,11 @@ export default function Settings() {
                   >
                     {copiedGroupId === g.id ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
                   </button>
+                  <ShareInviteButton
+                    groupName={g.name}
+                    inviteCode={g.invite_code}
+                    className="text-muted-foreground hover:text-primary"
+                  />
                 </div>
               </div>
               <button

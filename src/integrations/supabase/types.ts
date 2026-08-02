@@ -117,6 +117,36 @@ export type Database = {
           },
         ]
       }
+      exercise_history: {
+        Row: {
+          exercise_title: string
+          id: string
+          load_kg: number
+          recorded_at: string
+          reps: number
+          sets: number
+          user_id: string
+        }
+        Insert: {
+          exercise_title: string
+          id?: string
+          load_kg: number
+          recorded_at?: string
+          reps?: number
+          sets?: number
+          user_id: string
+        }
+        Update: {
+          exercise_title?: string
+          id?: string
+          load_kg?: number
+          recorded_at?: string
+          reps?: number
+          sets?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       group_members: {
         Row: {
           group_id: string
@@ -211,6 +241,7 @@ export type Database = {
           id: string
           p256dh: string
           user_id: string
+          weekly_summary: boolean
         }
         Insert: {
           auth: string
@@ -219,6 +250,7 @@ export type Database = {
           id?: string
           p256dh: string
           user_id: string
+          weekly_summary?: boolean
         }
         Update: {
           auth?: string
@@ -227,6 +259,7 @@ export type Database = {
           id?: string
           p256dh?: string
           user_id?: string
+          weekly_summary?: boolean
         }
         Relationships: []
       }

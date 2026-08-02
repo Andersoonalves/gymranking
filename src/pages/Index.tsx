@@ -11,8 +11,13 @@ import { useWorkoutLikes, useToggleWorkoutLike } from "@/hooks/useWorkoutLikes";
 import { useMyProfile } from "@/hooks/useMyProfile";
 import { useChallenges } from "@/hooks/useChallenges";
 import { useWorkoutPhotoUrls } from "@/hooks/useWorkoutPhotos";
+import { useExerciseHistory } from "@/hooks/useExerciseHistory";
 import { challengeStatus, daysLeft, computeChallengeScores } from "@/lib/challenges";
+import { computeAchievements } from "@/lib/achievements";
+import { prCount } from "@/lib/personal-records";
 import { PhotoLightbox } from "@/components/PhotoLightbox";
+import { AchievementsSheet } from "@/components/AchievementsSheet";
+import { ShareInviteButton } from "@/components/ShareInviteButton";
 import { useImportWorkouts } from "@/hooks/useImportWorkouts";
 import { useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
 import { filterWorkoutsByPeriod, computeRanking, computeStreak, buildCallout } from "@/lib/ranking";
@@ -125,6 +130,14 @@ export default function Index() {
   );
   const callout = buildCallout(weeklyRanking, userId);
   const streak = useMemo(() => computeStreak(myWorkouts.map((w) => w.workout_date)), [myWorkouts]);
+
+  const { data: exerciseHistory = [] } = useExerciseHistory(userId);
+  const [achievementsOpen, setAchievementsOpen] = useState(false);
+  const achievements = useMemo(
+    () => computeAchievements(myWorkouts, prCount(exerciseHistory)),
+    [myWorkouts, exerciseHistory],
+  );
+  const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   const today = startOfDay(new Date());
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
@@ -387,23 +400,30 @@ export default function Index() {
         </div>
       </div>
 
-      {/* Streak + meta semanal */}
-      <div className="relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-[18px] animate-rise-in">
+      {/* Streak + meta semanal (toque abre as conquistas) */}
+      <button
+        type="button"
+        onClick={() => setAchievementsOpen(true)}
+        className="relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-[18px] text-left animate-rise-in"
+      >
         <div className="pointer-events-none absolute inset-0 animate-glow-pulse bg-[radial-gradient(120px_80px_at_12%_50%,hsl(var(--accent)/0.22),transparent_70%)]" />
         <div className="relative flex items-baseline gap-1.5">
           <Flame className="h-[30px] w-[30px] animate-flame self-center fill-accent/20 text-accent" />
           <span className="font-mono text-[46px] font-bold leading-[0.85] tabular-nums text-foreground">{streak}</span>
         </div>
-        <div className="relative flex flex-1 flex-col gap-0.5">
+        <div className="relative flex flex-1 flex-col gap-1">
           <span className="text-sm font-extrabold text-foreground">{streak === 1 ? "dia seguido" : "dias seguidos"}</span>
           <span className="text-xs leading-snug text-muted-foreground">
             {trainedToday ? "Treino de hoje já está no placar." : "Treine hoje para manter a sequência."}
+          </span>
+          <span className="self-start rounded-md bg-background/60 px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.08em] text-muted-foreground">
+            🏅 {unlockedCount}/{achievements.length} CONQUISTAS
           </span>
         </div>
         <div className="relative">
           <GoalRing done={weekDoneDays} goal={weeklyGoal} />
         </div>
-      </div>
+      </button>
 
       {/* Desafio ativo */}
       {activeChallenge && (
@@ -745,7 +765,7 @@ export default function Index() {
 
       {/* Código de convite */}
       {selectedGroup && (
-        <div className="flex items-center gap-3 rounded-[14px] border border-border bg-card px-4 py-3">
+        <div className="flex items-center gap-2.5 rounded-[14px] border border-border bg-card px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className="mb-0.5 text-xs text-muted-foreground">Convide para {selectedGroup.name}</p>
             <code className="font-mono text-base font-bold tracking-[0.15em] text-primary">{selectedGroup.invite_code}</code>
@@ -758,6 +778,11 @@ export default function Index() {
           >
             {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
           </button>
+          <ShareInviteButton
+            groupName={selectedGroup.name}
+            inviteCode={selectedGroup.invite_code}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary text-primary-foreground shadow-hard-sm active-hard"
+          />
         </div>
       )}
 
@@ -769,6 +794,8 @@ export default function Index() {
           onClose={() => setLightboxIdx(null)}
         />
       )}
+
+      <AchievementsSheet open={achievementsOpen} onOpenChange={setAchievementsOpen} achievements={achievements} />
 
       <CreateGroupDialog
         open={createOpen}

@@ -13,6 +13,7 @@ import Login from "./pages/Login";
 
 // Fora do caminho crítico: carregam sob demanda.
 const Signup = lazy(() => import("./pages/Signup"));
+const Join = lazy(() => import("./pages/Join"));
 const Admin = lazy(() => import("./pages/Admin"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -45,6 +46,7 @@ const App = () => (
               <Routes>
                 <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
                 <Route path="/signup" element={<PublicRoute><Signup /></PublicRoute>} />
+                <Route path="/join" element={<Join />} />
                 <Route path="/admin" element={<ProtectedRoute><Admin /></ProtectedRoute>} />
                 <Route path="/*" element={<ProtectedRoute><ProtectedShell /></ProtectedRoute>} />
                 <Route path="*" element={<NotFound />} />
