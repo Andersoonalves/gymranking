@@ -44,6 +44,79 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_participants: {
+        Row: {
+          challenge_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_participants_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      challenges: {
+        Row: {
+          created_at: string
+          created_by: string
+          emoji: string
+          ends_at: string
+          group_id: string
+          id: string
+          starts_at: string
+          target: number | null
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          emoji?: string
+          ends_at: string
+          group_id: string
+          id?: string
+          starts_at: string
+          target?: number | null
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          emoji?: string
+          ends_at?: string
+          group_id?: string
+          id?: string
+          starts_at?: string
+          target?: number | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       group_members: {
         Row: {
           group_id: string

@@ -9,6 +9,8 @@ import { useGroupWorkouts, useDeleteWorkout } from "@/hooks/useWorkouts";
 import { useProfilesInGroup } from "@/hooks/useProfilesInGroup";
 import { useWorkoutLikes, useToggleWorkoutLike } from "@/hooks/useWorkoutLikes";
 import { useMyProfile } from "@/hooks/useMyProfile";
+import { useChallenges } from "@/hooks/useChallenges";
+import { challengeStatus, daysLeft, computeChallengeScores } from "@/lib/challenges";
 import { useImportWorkouts } from "@/hooks/useImportWorkouts";
 import { useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
 import { filterWorkoutsByPeriod, computeRanking, computeStreak, buildCallout } from "@/lib/ranking";
@@ -102,6 +104,7 @@ export default function Index() {
 
   const { data: workouts = [] } = useGroupWorkouts(selectedGroup?.id);
   const { data: profilesMap = {} } = useProfilesInGroup(selectedGroup?.id);
+  const { data: challenges = [] } = useChallenges(selectedGroup?.id);
   const { data: likesMap = {} } = useWorkoutLikes(selectedGroup?.id, userId);
   const toggleLike = useToggleWorkoutLike(selectedGroup?.id, userId);
   const deleteWorkout = useDeleteWorkout();
@@ -131,6 +134,20 @@ export default function Index() {
 
   const feedTotalPages = Math.max(1, Math.ceil(workouts.length / FEED_PAGE_SIZE));
   const feedPaginated = workouts.slice((feedPage - 1) * FEED_PAGE_SIZE, feedPage * FEED_PAGE_SIZE);
+
+  // Desafio ativo mais urgente (menos dias restantes) para o banner
+  const activeChallenge = challenges
+    .filter((c) => challengeStatus(c) === "active")
+    .sort((a, b) => daysLeft(a) - daysLeft(b))[0];
+  const activeChallengeScores = activeChallenge
+    ? computeChallengeScores(
+        activeChallenge,
+        activeChallenge.challenge_participants.map((p) => p.user_id),
+        workouts,
+        profilesMap,
+      )
+    : [];
+  const myChallengeScore = activeChallengeScores.find((s) => s.user_id === userId);
 
   const setSelectedGroup = (id: string) => {
     localStorage.setItem(GROUPS_STORAGE_KEY, id);
@@ -368,6 +385,37 @@ export default function Index() {
           <GoalRing done={weekDoneDays} goal={weeklyGoal} />
         </div>
       </div>
+
+      {/* Desafio ativo */}
+      {activeChallenge && (
+        <Link
+          to="/rankings"
+          className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-accent/40 bg-gradient-to-r from-secondary to-card p-3.5 animate-rise-in"
+        >
+          <span className="pointer-events-none absolute inset-0 animate-glow-pulse bg-[radial-gradient(160px_80px_at_90%_50%,hsl(var(--accent)/0.16),transparent_70%)] [animation-duration:4s]" />
+          <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background/60 text-xl">
+            {activeChallenge.emoji}
+          </span>
+          <span className="relative flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="truncate text-[13px] font-extrabold text-foreground">{activeChallenge.title}</span>
+            <span className="font-mono text-[10px] uppercase text-muted-foreground">
+              {myChallengeScore
+                ? `${myChallengeScore.position}º · ${myChallengeScore.count} ${myChallengeScore.count === 1 ? "treino" : "treinos"}`
+                : "Você está fora — entre e dispute"}
+            </span>
+          </span>
+          <span
+            className={cn(
+              "relative shrink-0 rounded-lg px-2 py-1.5 font-mono text-[9px] font-bold tracking-[0.1em]",
+              daysLeft(activeChallenge) === 1
+                ? "animate-glow-pulse bg-accent text-accent-foreground [animation-duration:1.6s]"
+                : "bg-accent/15 text-accent",
+            )}
+          >
+            {daysLeft(activeChallenge) === 1 ? "ÚLTIMO DIA" : `${daysLeft(activeChallenge)} DIAS`}
+          </span>
+        </Link>
+      )}
 
       {/* Faixa dos 7 dias */}
       <div className="grid grid-cols-7 gap-1.5">

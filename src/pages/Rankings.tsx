@@ -7,6 +7,7 @@ import { useMyGroups } from "@/hooks/useGroups";
 import { useAuth } from "@/contexts/AuthContext";
 import { InitialAvatar } from "@/components/InitialAvatar";
 import { EmptyState } from "@/components/EmptyState";
+import { ChallengesSection } from "@/components/ChallengesSection";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WORKOUT_TYPES } from "@/lib/workout-types";
 import { cn } from "@/lib/utils";
@@ -133,6 +134,9 @@ export default function Rankings() {
           )}
         </div>
       )}
+
+      {/* Desafios */}
+      <ChallengesSection groupId={selectedGroup.id} userId={userId} workouts={workouts} profilesMap={profilesMap} />
 
       {/* Período */}
       <div className="flex gap-[3px] rounded-xl border border-border bg-card p-[3px]">
