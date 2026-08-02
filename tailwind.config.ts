@@ -79,15 +79,68 @@ export default {
   				to: {
   					height: '0'
   				}
+  			},
+  			'rise-in': {
+  				from: {
+  					opacity: '0',
+  					transform: 'translateY(14px)'
+  				}
+  			},
+  			'bar-in': {
+  				from: {
+  					transform: 'scaleX(0)'
+  				}
+  			},
+  			flame: {
+  				'0%, 100%': {
+  					transform: 'scale(1)'
+  				},
+  				'50%': {
+  					transform: 'scale(1.12)'
+  				}
+  			},
+  			'glow-pulse': {
+  				'0%, 100%': {
+  					opacity: '0.35'
+  				},
+  				'50%': {
+  					opacity: '0.8'
+  				}
+  			},
+  			sheen: {
+  				'0%': {
+  					transform: 'translateX(-120%)'
+  				},
+  				'60%, 100%': {
+  					transform: 'translateX(220%)'
+  				}
+  			},
+  			'pop-in': {
+  				from: {
+  					opacity: '0',
+  					transform: 'scale(0.9)'
+  				}
+  			},
+  			'ring-draw': {
+  				from: {
+  					'stroke-dashoffset': '283'
+  				}
   			}
   		},
   		animation: {
   			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out'
+  			'accordion-up': 'accordion-up 0.2s ease-out',
+  			'rise-in': 'rise-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both',
+  			'bar-in': 'bar-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both',
+  			flame: 'flame 2.2s ease-in-out infinite',
+  			'glow-pulse': 'glow-pulse 3.4s ease-in-out infinite',
+  			sheen: 'sheen 3s ease-in-out infinite',
+  			'pop-in': 'pop-in 0.4s both',
+  			'ring-draw': 'ring-draw 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both'
   		},
   		fontFamily: {
   			sans: [
-  				'Inter',
+  				'Archivo',
   				'ui-sans-serif',
   				'system-ui',
   				'-apple-system',
@@ -100,16 +153,13 @@ export default {
   				'sans-serif'
   			],
   			serif: [
-  				'Lora',
+  				'Archivo',
   				'ui-serif',
   				'Georgia',
-  				'Cambria',
-  				'Times New Roman',
-  				'Times',
   				'serif'
   			],
   			mono: [
-  				'Space Mono',
+  				'IBM Plex Mono',
   				'ui-monospace',
   				'SFMono-Regular',
   				'Menlo',

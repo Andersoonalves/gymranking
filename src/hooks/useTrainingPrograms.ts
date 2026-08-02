@@ -9,6 +9,8 @@ export interface TrainingExercise {
   load_kg: number;
   reps: number;
   position: number;
+  video_url: string | null;
+  notes: string | null;
 }
 
 export interface TrainingProgram {
@@ -78,6 +80,28 @@ export function useAddExercise() {
       return { ...data, group_id: params.group_id };
     },
     onSuccess: (d) => qc.invalidateQueries({ queryKey: ["training_programs", d.group_id] }),
+  });
+}
+
+export function useUpdateExercise() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (params: {
+      id: string;
+      group_id: string;
+      sets?: number;
+      reps?: number;
+      load_kg?: number;
+      video_url?: string | null;
+      notes?: string | null;
+      title?: string;
+    }) => {
+      const { id, group_id, ...fields } = params;
+      const { error } = await supabase.from("training_exercises").update(fields).eq("id", id);
+      if (error) throw error;
+      return group_id;
+    },
+    onSuccess: (gid) => qc.invalidateQueries({ queryKey: ["training_programs", gid] }),
   });
 }
 

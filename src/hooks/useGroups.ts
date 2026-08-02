@@ -90,7 +90,7 @@ export function useJoinGroupByCode(userId: string | undefined) {
     mutationFn: async (inviteCode: string) => {
       const code = inviteCode.trim().toUpperCase();
       if (!userId) throw new Error("Usuário não autenticado.");
-      const { data: groups, error: joinError } = await (supabase as any)
+      const { data: groups, error: joinError } = await supabase
         .rpc("join_group_by_invite_code", { _code: code });
       if (joinError) {
         if (joinError.code === "23505") throw new Error("Você já está neste grupo.");

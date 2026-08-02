@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
+import { RefreshCw } from "lucide-react";
 
 const CHECK_UPDATE_INTERVAL_MS = 5 * 60 * 1000; // 5 minutos
 
@@ -50,17 +51,15 @@ export function PWAUpdatePrompt() {
   if (!needRefresh) return null;
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto max-w-md rounded-lg border bg-background p-4 shadow-lg">
-      <p className="text-sm font-medium">Nova versão disponível!</p>
-      <p className="text-xs text-muted-foreground mt-1">Atualize para carregar as últimas mudanças.</p>
-      <div className="mt-3 flex gap-2">
-        <Button size="sm" className="flex-1" onClick={handleUpdate}>
-          Atualizar
-        </Button>
-        <Button size="sm" variant="outline" onClick={() => setNeedRefresh(false)}>
-          Depois
-        </Button>
-      </div>
+    <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-border bg-card p-3.5 shadow-2xl animate-rise-in">
+      <RefreshCw className="h-5 w-5 shrink-0 text-accent" />
+      <span className="min-w-0 flex-1 text-xs font-semibold leading-snug text-foreground">Nova versão disponível.</span>
+      <Button size="sm" onClick={handleUpdate}>
+        Recarregar
+      </Button>
+      <Button size="sm" variant="ghost" onClick={() => setNeedRefresh(false)}>
+        Depois
+      </Button>
     </div>
   );
 }

@@ -1,1 +1,20 @@
 project_id = "vzdyugtqywcinpafbtqw"
+
+# Portas deslocadas (+10 do padrão) para não colidir com outros projetos
+# Supabase locais rodando na mesma máquina.
+
+[api]
+port = 54331
+
+[db]
+port = 54332
+shadow_port = 54330
+
+[studio]
+port = 54333
+
+[inbucket]
+port = 54334
+
+[analytics]
+enabled = false

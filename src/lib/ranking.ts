@@ -64,11 +64,54 @@ export function computeRanking(
       count,
       position: 0,
     }))
-    .sort((a, b) => b.count - a.count);
+    // desempate por nome: sem isso a ordem vem da iteração do objeto e muda sozinha
+    .sort((a, b) => b.count - a.count || a.display_name.localeCompare(b.display_name));
+  // ranking de competição: empate divide a posição e a seguinte pula (1, 1, 3)
   entries.forEach((e, i) => {
-    e.position = i + 1;
+    e.position = i > 0 && entries[i - 1].count === e.count ? entries[i - 1].position : i + 1;
   });
   return entries;
+}
+
+/**
+ * Dias seguidos com pelo menos um treino, terminando hoje — ou ontem, se o
+ * treino de hoje ainda não aconteceu (a sequência ainda não quebrou).
+ */
+export function computeStreak(workoutDates: string[], refDate: Date = new Date()): number {
+  const days = new Set(
+    workoutDates.map((d) => {
+      const dt = new Date(d);
+      return `${dt.getFullYear()}-${dt.getMonth()}-${dt.getDate()}`;
+    })
+  );
+  const key = (d: Date) => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const cursor = new Date(refDate);
+  if (!days.has(key(cursor))) cursor.setDate(cursor.getDate() - 1);
+  let streak = 0;
+  while (days.has(key(cursor))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
+/** Chamada provocativa do ranking: distância até o líder, em uma frase. */
+export function buildCallout(ranking: RankingEntry[], myUserId: string | undefined): string | null {
+  if (ranking.length === 0) return null;
+  const leader = ranking[0];
+  const me = ranking.find((e) => e.user_id === myUserId);
+  if (me && me.position === 1) {
+    return ranking.length > 1 && ranking[1].count === me.count
+      ? "Empate na liderança. O próximo treino desempata."
+      : "Você lidera a semana. Não deixe escapar.";
+  }
+  if (me) {
+    const diff = leader.count - me.count;
+    return diff === 1
+      ? `Você está a 1 treino de ${leader.display_name}.`
+      : `Você está a ${diff} treinos de ${leader.display_name}.`;
+  }
+  return `${leader.display_name} lidera com ${leader.count}. Registre o seu primeiro.`;
 }
 
 export function getMedalEmoji(position: number): string | null {

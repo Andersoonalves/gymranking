@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Copy, Check } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 type CreateGroupDialogProps = {
   open: boolean;
@@ -29,7 +29,6 @@ export function CreateGroupDialog({
   const [name, setName] = useState("");
   const [inviteCode, setInviteCode] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
-  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,11 +37,11 @@ export function CreateGroupDialog({
       const group = await onCreate(name.trim());
       if (group) {
         setInviteCode(group.invite_code);
-        toast({ title: "Grupo criado!", description: "Compartilhe o código para convidar amigos." });
+        toast.success("Grupo criado!", { description: "Compartilhe o código para convidar amigos." });
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Não foi possível criar o grupo.";
-      toast({ title: "Erro", description: message, variant: "destructive" });
+      toast.error(message);
     }
   };
 
@@ -59,7 +58,7 @@ export function CreateGroupDialog({
     if (!inviteCode) return;
     navigator.clipboard.writeText(inviteCode);
     setCopied(true);
-    toast({ title: "Código copiado!" });
+    toast.success("Código copiado!");
     setTimeout(() => setCopied(false), 2000);
   };
 

@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Loader2, Plus, KeyRound, Trash2, Shield, Users } from "lucide-react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
+import { errorMessage } from "@/lib/utils";
 
 export default function Admin() {
   const { users, loading, error, createUser, resetPassword, deleteUser } = useAdminUsers();
@@ -51,8 +52,8 @@ export default function Admin() {
       setNewEmail("");
       setNewPassword("");
       setNewName("");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
     setCreating(false);
   };
@@ -69,8 +70,8 @@ export default function Admin() {
       toast.success("Senha alterada com sucesso!");
       setResetUserId(null);
       setResetNewPw("");
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
     setResetting(false);
   };
@@ -82,8 +83,8 @@ export default function Admin() {
       await deleteUser(deleteUserId);
       toast.success("Usuário removido!");
       setDeleteUserId(null);
-    } catch (err: any) {
-      toast.error(err.message);
+    } catch (err) {
+      toast.error(errorMessage(err));
     }
     setDeleting(false);
   };
@@ -116,9 +117,9 @@ export default function Admin() {
           </Button>
           <div className="flex items-center gap-2">
             <Shield className="h-5 w-5 text-primary" />
-            <h1 className="text-xl font-bold tracking-tight">Admin</h1>
+            <h1 className="display-title text-[22px]">Admin</h1>
           </div>
-          <div className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="ml-auto flex items-center gap-2 font-mono text-xs uppercase text-muted-foreground">
             <Users className="h-4 w-4" />
             {users.length} usuários
           </div>

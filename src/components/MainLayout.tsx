@@ -8,15 +8,14 @@ import { RegisterWorkoutSheet } from "@/components/RegisterWorkoutSheet";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyNewWorkout } from "@/lib/push";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Trophy, Plus, Settings, ClipboardList, TrendingUp } from "lucide-react";
+import { Home, Trophy, Plus, ClipboardList, TrendingUp } from "lucide-react";
 
 const navItems = [
-  { path: "/", label: "Início", icon: LayoutDashboard },
+  { path: "/", label: "Início", icon: Home },
   { path: "/rankings", label: "Rankings", icon: Trophy },
   { path: "/register", label: "", icon: Plus, isAction: true },
   { path: "/treinos", label: "Treinos", icon: ClipboardList },
   { path: "/progresso", label: "Progresso", icon: TrendingUp },
-  { path: "/settings", label: "Config", icon: Settings },
 ];
 
 type MainLayoutProps = { children: React.ReactNode };
@@ -80,22 +79,24 @@ export function MainLayout({ children }: MainLayoutProps) {
           {children}
         </main>
 
-        <nav className="fixed bottom-0 left-0 right-0 z-40 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 safe-area-bottom">
-          <div className="mx-auto flex max-w-lg items-end justify-around px-2 pt-2 pb-2">
+        <nav className="pointer-events-none fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-background from-[60%] to-transparent safe-area-bottom">
+          <div className="pointer-events-auto mx-auto grid max-w-lg grid-cols-5 items-end gap-0.5 px-3 pb-3 pt-2">
             {navItems.map((item) => {
               const isActive = !item.isAction && location.pathname === item.path;
               const Icon = item.icon;
 
               if (item.isAction) {
                 return (
-                  <button
-                    key={item.path}
-                    type="button"
-                    onClick={() => handleNav(item)}
-                    className="relative -mt-6 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/25 transition-all hover:scale-105 hover:shadow-xl active:scale-95"
-                  >
-                    <Icon className="h-6 w-6" strokeWidth={2.5} />
-                  </button>
+                  <div key={item.path} className="flex justify-center">
+                    <button
+                      type="button"
+                      aria-label="Registrar treino"
+                      onClick={() => handleNav(item)}
+                      className="mb-1.5 flex h-[60px] w-[60px] items-center justify-center rounded-[19px] bg-primary text-primary-foreground shadow-[0_5px_0_hsl(var(--primary-edge)),0_16px_32px_-8px_hsl(var(--primary)/0.4)] transition-[transform,box-shadow] active:translate-y-[2px] active:shadow-[0_3px_0_hsl(var(--primary-edge)),0_12px_24px_-8px_hsl(var(--primary)/0.4)]"
+                    >
+                      <Icon className="h-7 w-7" strokeWidth={2.75} />
+                    </button>
+                  </div>
                 );
               }
 
@@ -105,17 +106,12 @@ export function MainLayout({ children }: MainLayoutProps) {
                   type="button"
                   onClick={() => handleNav(item)}
                   className={cn(
-                    "flex flex-col items-center gap-0.5 rounded-xl px-3 py-1.5 text-[10px] font-medium transition-colors min-w-[56px]",
-                    isActive
-                      ? "text-primary"
-                      : "text-muted-foreground hover:text-foreground"
+                    "flex min-h-[48px] flex-col items-center justify-end gap-1 py-1.5 text-[9px] transition-colors",
+                    isActive ? "font-bold text-primary" : "font-semibold text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  <Icon className={cn("h-5 w-5", isActive && "text-primary")} strokeWidth={isActive ? 2.5 : 2} />
+                  <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.5 : 2} />
                   <span>{item.label}</span>
-                  {isActive && (
-                    <span className="absolute -bottom-0.5 h-0.5 w-4 rounded-full bg-primary" />
-                  )}
                 </button>
               );
             })}

@@ -1,18 +1,16 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyGroups, useLeaveGroup } from "@/hooks/useGroups";
+import { useMyProfile, useUpdateWeeklyGoal } from "@/hooks/useMyProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { GROUPS_STORAGE_KEY, NOTIFICATIONS_PREFERENCE_KEY } from "@/lib/constants";
 import { getVapidPublicKey, subscribePush, subscriptionToPayload } from "@/lib/push";
 import { useTheme } from "next-themes";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
-import { Copy, Check, LogOut, User, Key, Bell, Palette, Users, Camera } from "lucide-react";
 import { AvatarUpload } from "@/components/AvatarUpload";
+import { cn } from "@/lib/utils";
+import { Check, Copy, LogOut } from "lucide-react";
+import { toast } from "sonner";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,12 +22,25 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-3 rounded-[18px] border border-border bg-card p-4">
+      <span className="mono-label">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+const pushSupported =
+  typeof window !== "undefined" && "Notification" in window && "PushManager" in window && "serviceWorker" in navigator;
+
 export default function Settings() {
   const { user, signOut } = useAuth();
-  const { toast } = useToast();
   const { theme, setTheme } = useTheme();
   const userId = user?.id;
   const { data: groups = [] } = useMyGroups(userId);
+  const { data: myProfile } = useMyProfile(userId);
+  const updateWeeklyGoal = useUpdateWeeklyGoal(userId);
   const leaveGroup = useLeaveGroup(userId);
 
   const [displayName, setDisplayName] = useState("");
@@ -80,27 +91,27 @@ export default function Settings() {
     const { error } = await supabase.from("profiles").update({ display_name: displayName.trim() }).eq("user_id", userId);
     setSavingProfile(false);
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast.error(error.message);
       return;
     }
-    toast({ title: "Nome atualizado!" });
+    toast.success("Nome atualizado!");
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPassword.trim() || newPassword.length < 6) {
-      toast({ title: "Senha deve ter pelo menos 6 caracteres", variant: "destructive" });
+      toast.error("Senha deve ter pelo menos 6 caracteres");
       return;
     }
     setSavingPassword(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setSavingPassword(false);
     if (error) {
-      toast({ title: "Erro", description: error.message, variant: "destructive" });
+      toast.error(error.message);
       return;
     }
     setNewPassword("");
-    toast({ title: "Senha alterada!" });
+    toast.success("Senha alterada!");
   };
 
   const handleNotificationsChange = async (checked: boolean) => {
@@ -110,7 +121,7 @@ export default function Settings() {
       if (checked) {
         const permission = await Notification.requestPermission();
         if (permission !== "granted") {
-          toast({ title: "Permissão de notificação negada", variant: "destructive" });
+          toast.error("Permissão de notificação negada");
           setNotificationsLoading(false);
           return;
         }
@@ -119,19 +130,18 @@ export default function Settings() {
         const publicKey = await getVapidPublicKey(supabaseUrl, anonKey);
         const sub = await subscribePush(publicKey);
         if (!sub) {
-          toast({ title: "Push não disponível neste dispositivo", variant: "destructive" });
+          toast.error("Push não disponível neste dispositivo");
           setNotificationsLoading(false);
           return;
         }
         const { endpoint, p256dh, auth } = subscriptionToPayload(sub);
-        const { error } = await supabase.from("push_subscriptions").upsert(
-          { user_id: userId, endpoint, p256dh, auth },
-          { onConflict: "user_id" }
-        );
+        const { error } = await supabase
+          .from("push_subscriptions")
+          .upsert({ user_id: userId, endpoint, p256dh, auth }, { onConflict: "user_id" });
         if (error) throw error;
         setNotifications(true);
         localStorage.setItem(NOTIFICATIONS_PREFERENCE_KEY, "true");
-        toast({ title: "Notificações ativadas" });
+        toast.success("Notificações ativadas");
       } else {
         await supabase.from("push_subscriptions").delete().eq("user_id", userId);
         if ("serviceWorker" in navigator && "PushManager" in window) {
@@ -142,14 +152,10 @@ export default function Settings() {
         }
         setNotifications(false);
         localStorage.setItem(NOTIFICATIONS_PREFERENCE_KEY, "false");
-        toast({ title: "Notificações desativadas" });
+        toast.success("Notificações desativadas");
       }
     } catch (e) {
-      toast({
-        title: checked ? "Erro ao ativar notificações" : "Erro ao desativar notificações",
-        description: e instanceof Error ? e.message : undefined,
-        variant: "destructive",
-      });
+      toast.error(e instanceof Error ? e.message : checked ? "Erro ao ativar notificações" : "Erro ao desativar notificações");
     } finally {
       setNotificationsLoading(false);
     }
@@ -158,7 +164,7 @@ export default function Settings() {
   const copyCode = (code: string, groupId: string) => {
     navigator.clipboard.writeText(code);
     setCopiedGroupId(groupId);
-    toast({ title: "Código copiado!" });
+    toast.success("Código copiado!");
     setTimeout(() => setCopiedGroupId(null), 2000);
   };
 
@@ -170,218 +176,206 @@ export default function Settings() {
         const rest = groups.filter((g) => g.id !== leaveGroupId);
         localStorage.setItem(GROUPS_STORAGE_KEY, rest[0]?.id ?? "");
       }
-      toast({ title: "Você saiu do grupo." });
+      toast.success("Você saiu do grupo.");
       setLeaveGroupId(null);
     } catch {
-      toast({ title: "Erro ao sair do grupo", variant: "destructive" });
+      toast.error("Erro ao sair do grupo");
     }
   };
 
+  const inputClass =
+    "w-full rounded-[11px] border border-border bg-background p-3 text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary";
+  const weeklyGoal = myProfile?.weekly_goal ?? 4;
+
   return (
-    <div className="mx-auto max-w-lg px-4 pt-4 pb-4 space-y-4">
-      {/* Header */}
-      <div>
-        <h1 className="text-xl font-bold tracking-tight">Configurações</h1>
-        <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+    <div className="mx-auto flex max-w-lg flex-col gap-3 px-5 pb-4 pt-4 safe-area-top">
+      <div className="flex flex-col gap-1">
+        <h1 className="display-title text-[28px] text-foreground">Configurações</h1>
+        <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
       </div>
 
-      {/* Photo */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Camera className="h-4 w-4 text-primary" />
-            Foto de perfil
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {userId && (
-            <AvatarUpload
-              userId={userId}
-              currentUrl={avatarUrl}
-              displayName={displayName}
-              onUploaded={(url) => setAvatarUrl(url)}
+      {/* Perfil */}
+      <Section label="Perfil">
+        {userId && (
+          <AvatarUpload userId={userId} currentUrl={avatarUrl} displayName={displayName} onUploaded={(url) => setAvatarUrl(url)} />
+        )}
+        <form onSubmit={handleSaveProfile} className="flex flex-col gap-2.5">
+          <label className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Nome exibido</span>
+            <input
+              type="text"
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              disabled={loadingProfile || savingProfile}
+              placeholder="Seu nome"
+              className={inputClass}
             />
-          )}
-        </CardContent>
-      </Card>
+          </label>
+          <button
+            type="submit"
+            disabled={loadingProfile || savingProfile}
+            className="self-start rounded-[10px] border border-border bg-secondary px-3.5 py-2.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+          >
+            {savingProfile ? "Salvando…" : "Salvar perfil"}
+          </button>
+        </form>
+      </Section>
 
-      {/* Profile */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <User className="h-4 w-4 text-primary" />
-            Perfil
-          </CardTitle>
-          <CardDescription className="text-xs">Altere seu nome exibido no app</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSaveProfile} className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="display-name" className="text-sm">Nome</Label>
-              <Input
-                id="display-name"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                disabled={loadingProfile || savingProfile}
-                placeholder="Seu nome"
-              />
-            </div>
-            <Button type="submit" size="sm" disabled={loadingProfile || savingProfile}>
-              {savingProfile ? "Salvando…" : "Salvar"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {/* Meta semanal */}
+      <Section label="Meta semanal">
+        <p className="text-xs leading-snug text-muted-foreground">Quantos treinos por semana enchem o anel do Início.</p>
+        <div className="flex gap-1.5">
+          {[3, 4, 5, 6, 7].map((n) => (
+            <button
+              key={n}
+              type="button"
+              disabled={updateWeeklyGoal.isPending}
+              onClick={() => updateWeeklyGoal.mutate(n)}
+              className={cn(
+                "flex-1 rounded-[11px] py-2.5 font-mono text-sm",
+                weeklyGoal === n
+                  ? "bg-primary font-bold text-primary-foreground"
+                  : "border border-border bg-secondary/60 font-semibold text-muted-foreground",
+              )}
+            >
+              {n}
+            </button>
+          ))}
+        </div>
+      </Section>
 
-      {/* Password */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Key className="h-4 w-4 text-primary" />
-            Alterar senha
-          </CardTitle>
-          <CardDescription className="text-xs">Defina uma nova senha de acesso</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleChangePassword} className="space-y-3">
-            <div className="space-y-1.5">
-              <Label htmlFor="new-password" className="text-sm">Nova senha</Label>
-              <Input
-                id="new-password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                placeholder="Mínimo 6 caracteres"
-                disabled={savingPassword}
-                minLength={6}
-              />
-            </div>
-            <Button type="submit" size="sm" disabled={savingPassword || !newPassword.trim()}>
-              {savingPassword ? "Alterando…" : "Alterar senha"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+      {/* Senha */}
+      <Section label="Senha">
+        <form onSubmit={handleChangePassword} className="flex flex-col gap-2.5">
+          <input
+            type="password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Nova senha"
+            disabled={savingPassword}
+            minLength={6}
+            autoComplete="new-password"
+            className={cn(inputClass, "font-mono")}
+          />
+          <span className="text-[11px] text-muted-foreground/70">Mínimo 6 caracteres.</span>
+          <button
+            type="submit"
+            disabled={savingPassword || !newPassword.trim()}
+            className="self-start rounded-[10px] border border-border bg-secondary px-3.5 py-2.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+          >
+            {savingPassword ? "Alterando…" : "Alterar senha"}
+          </button>
+        </form>
+      </Section>
 
-      {/* Notifications */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Bell className="h-4 w-4 text-primary" />
-            Notificações
-          </CardTitle>
-          <CardDescription className="text-xs">Avisos quando alguém registrar um treino</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <Label htmlFor="notifications" className="text-sm">Ativar notificações</Label>
-            <Switch
-              id="notifications"
-              checked={notifications}
-              disabled={notificationsLoading}
-              onCheckedChange={handleNotificationsChange}
-            />
+      {/* Notificações */}
+      <Section label="Notificações">
+        <div className={cn("flex items-center gap-3", !pushSupported && "opacity-50")}>
+          <div className="flex flex-1 flex-col gap-0.5">
+            <span className="text-sm font-bold text-foreground">Ativar notificações</span>
+            <span className="text-[11px] leading-snug text-muted-foreground">
+              {pushSupported ? "Avisos quando alguém registrar um treino." : "Indisponível neste dispositivo."}
+            </span>
           </div>
-        </CardContent>
-      </Card>
+          <Switch
+            checked={notifications}
+            disabled={notificationsLoading || !pushSupported}
+            onCheckedChange={handleNotificationsChange}
+            aria-label="Ativar notificações"
+          />
+        </div>
+      </Section>
 
-      {/* Theme */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Palette className="h-4 w-4 text-primary" />
-            Aparência
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-2">
-            {(["light", "dark", "system"] as const).map((t) => (
-              <Button
-                key={t}
-                variant={theme === t ? "default" : "outline"}
-                size="sm"
-                onClick={() => setTheme(t)}
-                className="flex-1"
-              >
-                {t === "light" ? "Claro" : t === "dark" ? "Escuro" : "Sistema"}
-              </Button>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Tema */}
+      <Section label="Tema">
+        <div className="flex gap-1.5">
+          {(
+            [
+              ["light", "Claro"],
+              ["dark", "Escuro"],
+              ["system", "Sistema"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setTheme(value)}
+              className={cn(
+                "flex-1 rounded-[11px] py-[11px] text-xs",
+                theme === value
+                  ? "bg-primary font-extrabold text-primary-foreground"
+                  : "border border-border bg-secondary/60 font-semibold text-muted-foreground",
+              )}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </Section>
 
-      {/* Groups */}
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Users className="h-4 w-4 text-primary" />
-            Meus grupos
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {groups.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Você não está em nenhum grupo.</p>
-          ) : (
-            groups.map((g) => (
-              <div
-                key={g.id}
-                className="flex items-center gap-3 rounded-xl border p-3"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium truncate">{g.name}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <code className="text-xs font-mono text-muted-foreground bg-muted px-2 py-0.5 rounded">{g.invite_code}</code>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 shrink-0"
-                      onClick={() => copyCode(g.invite_code, g.id)}
-                    >
-                      {copiedGroupId === g.id ? (
-                        <Check className="h-3.5 w-3.5 text-green-500" />
-                      ) : (
-                        <Copy className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
-                  </div>
+      {/* Grupos */}
+      <Section label="Grupos">
+        {groups.length === 0 ? (
+          <p className="text-sm text-muted-foreground">Você não está em nenhum grupo.</p>
+        ) : (
+          groups.map((g) => (
+            <div key={g.id} className="flex items-center gap-3 rounded-[13px] border border-border/60 bg-secondary/40 p-3">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <span className="truncate text-sm font-extrabold text-foreground">{g.name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="rounded-[7px] border border-border bg-background px-2 py-1 font-mono text-[11px] font-bold tracking-[0.1em] text-primary">
+                    {g.invite_code}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Copiar código"
+                    onClick={() => copyCode(g.invite_code, g.id)}
+                    className="text-muted-foreground hover:text-primary"
+                  >
+                    {copiedGroupId === g.id ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+                  </button>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="shrink-0 text-muted-foreground hover:text-destructive"
-                  onClick={() => setLeaveGroupId(g.id)}
-                >
-                  Sair
-                </Button>
               </div>
-            ))
-          )}
-        </CardContent>
-      </Card>
+              <button
+                type="button"
+                onClick={() => setLeaveGroupId(g.id)}
+                className="shrink-0 text-xs font-bold text-muted-foreground hover:text-destructive"
+              >
+                Sair
+              </button>
+            </div>
+          ))
+        )}
+      </Section>
 
-      {/* Logout */}
-      <Button variant="ghost" className="w-full gap-2 text-muted-foreground" onClick={signOut}>
-        <LogOut className="h-4 w-4" />
+      {/* Sair */}
+      <button
+        type="button"
+        onClick={signOut}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-transparent p-[15px] text-sm font-bold text-destructive hover:border-destructive hover:bg-destructive/10"
+      >
+        <LogOut className="h-[18px] w-[18px]" />
         Sair da conta
-      </Button>
+      </button>
 
-      <p className="pb-4 text-center text-xs text-muted-foreground">
+      <p className="pb-4 text-center font-mono text-[10px] text-muted-foreground/60">
         v{typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev"}
       </p>
 
       <AlertDialog open={!!leaveGroupId} onOpenChange={(open) => !open && setLeaveGroupId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Sair do grupo?</AlertDialogTitle>
+            <AlertDialogTitle className="display-title">Sair do grupo?</AlertDialogTitle>
             <AlertDialogDescription>
               Você deixará de ver o ranking e a atividade deste grupo. Pode entrar de novo depois com o código.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleLeaveGroup} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleLeaveGroup}
+              className="bg-destructive text-destructive-foreground shadow-hard-destructive hover:bg-destructive/90"
+            >
               Sair
             </AlertDialogAction>
           </AlertDialogFooter>

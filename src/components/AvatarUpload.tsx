@@ -2,7 +2,7 @@ import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Camera, Loader2 } from "lucide-react";
 
 const MAX_SIZE = 1 * 1024 * 1024; // 1 MB
@@ -15,7 +15,6 @@ interface AvatarUploadProps {
 }
 
 export function AvatarUpload({ userId, currentUrl, displayName, onUploaded }: AvatarUploadProps) {
-  const { toast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -25,12 +24,12 @@ export function AvatarUpload({ userId, currentUrl, displayName, onUploaded }: Av
     if (!file) return;
 
     if (file.size > MAX_SIZE) {
-      toast({ title: "Imagem muito grande", description: "O tamanho máximo é 1 MB.", variant: "destructive" });
+      toast.error("Imagem muito grande", { description: "O tamanho máximo é 1 MB." });
       return;
     }
 
     if (!file.type.startsWith("image/")) {
-      toast({ title: "Arquivo inválido", description: "Selecione uma imagem.", variant: "destructive" });
+      toast.error("Arquivo inválido", { description: "Selecione uma imagem." });
       return;
     }
 
@@ -43,7 +42,7 @@ export function AvatarUpload({ userId, currentUrl, displayName, onUploaded }: Av
       .upload(path, file, { upsert: true });
 
     if (uploadError) {
-      toast({ title: "Erro no upload", description: uploadError.message, variant: "destructive" });
+      toast.error("Erro no upload", { description: uploadError.message });
       setUploading(false);
       return;
     }
@@ -57,14 +56,14 @@ export function AvatarUpload({ userId, currentUrl, displayName, onUploaded }: Av
       .eq("user_id", userId);
 
     if (updateError) {
-      toast({ title: "Erro ao salvar", description: updateError.message, variant: "destructive" });
+      toast.error("Erro ao salvar", { description: updateError.message });
       setUploading(false);
       return;
     }
 
     setPreview(urlWithCacheBust);
     onUploaded(urlWithCacheBust);
-    toast({ title: "Foto atualizada!" });
+    toast.success("Foto atualizada!");
     setUploading(false);
   };
 

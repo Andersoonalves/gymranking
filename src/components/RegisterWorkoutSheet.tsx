@@ -1,25 +1,11 @@
 import { useState, useEffect, useMemo } from "react";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { WORKOUT_TYPES, MUSCLE_GROUPS } from "@/lib/workout-types";
-import { EXERCISES_BY_MUSCLE_GROUP } from "@/lib/exercises";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { WORKOUT_TYPES } from "@/lib/workout-types";
 import { useTrainingPrograms, type TrainingProgram } from "@/hooks/useTrainingPrograms";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import { Dumbbell, CheckCircle2, ChevronLeft, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { CalendarClock, Check, ListChecks, Search, Zap } from "lucide-react";
+import { toast } from "sonner";
 
 function toDateTimeLocalString(date: Date): string {
   const pad = (n: number) => n.toString().padStart(2, "0");
@@ -53,6 +39,8 @@ type RegisterWorkoutSheetProps = {
   isPending: boolean;
 };
 
+type WhenChoice = "now" | "yesterday" | "custom";
+
 export function RegisterWorkoutSheet({
   open,
   onOpenChange,
@@ -61,325 +49,318 @@ export function RegisterWorkoutSheet({
   onRegister,
   isPending,
 }: RegisterWorkoutSheetProps) {
-  const { toast } = useToast();
   const { user } = useAuth();
   const firstGroupId = groupIds[0];
   const { data: programs = [] } = useTrainingPrograms(firstGroupId);
   const myPrograms = programs.filter((p) => p.user_id === user?.id);
 
+  const [source, setSource] = useState<"general" | "programs">("general");
+  const [search, setSearch] = useState("");
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
-  const [workoutDateTime, setWorkoutDateTime] = useState(() =>
-    toDateTimeLocalString(new Date()),
-  );
+  const [when, setWhen] = useState<WhenChoice>("now");
+  const [customDateTime, setCustomDateTime] = useState(() => toDateTimeLocalString(new Date()));
   const [notes, setNotes] = useState("");
-  const [selectedProgramId, setSelectedProgramId] = useState<string | null>(null);
-
-  // Muscle group drill-down state
-  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState<string | null>(null);
-  const [selectedExercises, setSelectedExercises] = useState<string[]>([]);
-
-  const exercisesForGroup = useMemo(() => {
-    if (!selectedMuscleGroup) return [];
-    return EXERCISES_BY_MUSCLE_GROUP[selectedMuscleGroup] ?? [];
-  }, [selectedMuscleGroup]);
 
   useEffect(() => {
     if (!open) return;
-    const base =
-      initialTargetDate != null
-        ? mergeCalendarDayWithCurrentClock(initialTargetDate)
-        : new Date();
-    setWorkoutDateTime(toDateTimeLocalString(base));
+    if (initialTargetDate != null) {
+      setWhen("custom");
+      setCustomDateTime(toDateTimeLocalString(mergeCalendarDayWithCurrentClock(initialTargetDate)));
+    } else {
+      setWhen("now");
+      setCustomDateTime(toDateTimeLocalString(new Date()));
+    }
   }, [open, initialTargetDate]);
+
+  const resolveDate = (): string => {
+    if (when === "now") return new Date().toISOString();
+    if (when === "yesterday") {
+      const d = new Date();
+      d.setDate(d.getDate() - 1);
+      return d.toISOString();
+    }
+    return parseDateTimeLocalToISO(customDateTime);
+  };
 
   const handleOpenChange = (next: boolean) => {
     if (!next) {
       setSelectedTypes([]);
-      setWorkoutDateTime(toDateTimeLocalString(new Date()));
       setNotes("");
-      setSelectedProgramId(null);
-      setSelectedMuscleGroup(null);
-      setSelectedExercises([]);
+      setSearch("");
+      setSource("general");
+      setWhen("now");
     }
     onOpenChange(next);
   };
 
   const toggleType = (type: string) => {
-    setSelectedProgramId(null);
-    setSelectedTypes((prev) =>
-      prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]
-    );
+    setSelectedTypes((prev) => (prev.includes(type) ? prev.filter((t) => t !== type) : [...prev, type]));
   };
 
-  const toggleExercise = (exerciseName: string) => {
-    setSelectedExercises((prev) =>
-      prev.includes(exerciseName) ? prev.filter((e) => e !== exerciseName) : [...prev, exerciseName]
-    );
-  };
+  const filteredTypes = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return WORKOUT_TYPES as readonly string[];
+    return WORKOUT_TYPES.filter((t) => t.toLowerCase().includes(q));
+  }, [search]);
 
-  const confirmExercises = () => {
-    if (selectedExercises.length === 0) return;
-    // Build notes from selected exercises
-    const exerciseSummary = selectedExercises.join(", ");
-    setNotes((prev) => (prev ? `${prev}\n${exerciseSummary}` : exerciseSummary));
-    // Add muscle group as type if not already selected
-    if (selectedMuscleGroup && !selectedTypes.includes(selectedMuscleGroup)) {
-      setSelectedTypes((prev) => [...prev, selectedMuscleGroup]);
+  const filteredPrograms = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return myPrograms;
+    return myPrograms.filter((p) => p.title.toLowerCase().includes(q));
+  }, [myPrograms, search]);
+
+  const register = async (params: { workout_types: string[]; workout_date: string; notes: string | null }) => {
+    try {
+      await onRegister({ group_ids: groupIds, ...params });
+      toast.success("Treino registrado!");
+      handleOpenChange(false);
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Não foi possível registrar o treino.");
     }
-    setSelectedMuscleGroup(null);
-    setSelectedExercises([]);
   };
 
-  const selectProgram = (program: TrainingProgram) => {
-    setSelectedProgramId(program.id);
-    const exerciseTitles = (program.training_exercises ?? [])
+  /** Atalho de 1 toque: registra o treino salvo agora, sem mais perguntas. */
+  const quickRegister = (program: TrainingProgram) => {
+    if (isPending) return;
+    const exercises = (program.training_exercises ?? [])
       .sort((a, b) => a.position - b.position)
       .map((ex) => ex.title);
-    // Use program title as workout type, and exercises as notes
-    setSelectedTypes([program.title]);
-    const exercisesSummary = exerciseTitles.length > 0
-      ? exerciseTitles.join(", ")
-      : "";
-    setNotes(exercisesSummary);
+    register({
+      workout_types: [program.title],
+      workout_date: new Date().toISOString(),
+      notes: exercises.length > 0 ? exercises.join(", ") : null,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const types = selectedTypes.filter((t) => t.trim());
     if (types.length === 0) {
-      toast({ title: "Selecione pelo menos um tipo de treino", variant: "destructive" });
+      toast.error("Selecione pelo menos um tipo de treino");
       return;
     }
-    try {
-      await onRegister({
-        group_ids: groupIds,
-        workout_types: types,
-        workout_date: parseDateTimeLocalToISO(workoutDateTime),
-        notes: notes.trim() || null,
-      });
-      toast({ title: "Treino registrado!" });
-      handleOpenChange(false);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Não foi possível registrar o treino.";
-      toast({ title: "Erro", description: message, variant: "destructive" });
-    }
+    register({ workout_types: types, workout_date: resolveDate(), notes: notes.trim() || null });
   };
-
-  // Muscle group drill-down view
-  if (selectedMuscleGroup) {
-    return (
-      <Sheet open={open} onOpenChange={handleOpenChange}>
-        <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => {
-                  setSelectedMuscleGroup(null);
-                  setSelectedExercises([]);
-                }}
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              {selectedMuscleGroup}
-            </SheetTitle>
-            <SheetDescription>
-              Selecione os exercícios realizados ({selectedExercises.length} selecionados)
-            </SheetDescription>
-          </SheetHeader>
-          <div className="py-4">
-            <ScrollArea className="h-[400px] rounded-md border p-3">
-              <div className="grid grid-cols-1 gap-2">
-                {exercisesForGroup.map((ex) => (
-                  <label
-                    key={ex.pt}
-                    className="flex cursor-pointer items-center gap-3 rounded-md px-3 py-2 hover:bg-muted/50"
-                  >
-                    <Checkbox
-                      checked={selectedExercises.includes(ex.pt)}
-                      onCheckedChange={() => toggleExercise(ex.pt)}
-                    />
-                    <div className="flex-1 min-w-0">
-                      <span className="text-sm font-medium">{ex.pt}</span>
-                      <span className="block text-xs text-muted-foreground">{ex.en}</span>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </ScrollArea>
-          </div>
-          <SheetFooter className="gap-2 sm:gap-0">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setSelectedMuscleGroup(null);
-                setSelectedExercises([]);
-              }}
-            >
-              Voltar
-            </Button>
-            <Button
-              type="button"
-              onClick={confirmExercises}
-              disabled={selectedExercises.length === 0}
-            >
-              Confirmar ({selectedExercises.length})
-            </Button>
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-    );
-  }
 
   return (
     <Sheet open={open} onOpenChange={handleOpenChange}>
-      <SheetContent side="bottom" className="rounded-t-2xl max-h-[90vh] overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>Registrar treino</SheetTitle>
-          <SheetDescription>
-            Selecione um tipo ou escolha um treino salvo. O registro vale para todos os seus grupos.
-          </SheetDescription>
-        </SheetHeader>
-        <form onSubmit={handleSubmit} className="grid gap-4 py-4">
-          <div className="grid gap-2">
-            <Label>Tipo(s) de treino</Label>
-            <Tabs defaultValue="muscle-groups">
-              <TabsList className="grid w-full grid-cols-3 mb-2">
-                <TabsTrigger value="muscle-groups">Grupos</TabsTrigger>
-                <TabsTrigger value="types">Geral</TabsTrigger>
-                <TabsTrigger value="my-programs">Meus Treinos</TabsTrigger>
-              </TabsList>
+      <SheetContent
+        side="bottom"
+        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)]"
+      >
+        <div className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
+          <div className="h-1 w-9 self-center rounded-full bg-border" />
 
-              <TabsContent value="muscle-groups">
-                <ScrollArea className="h-[250px] rounded-md border p-3">
-                  <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                    {MUSCLE_GROUPS.map((group) => {
-                      const count = EXERCISES_BY_MUSCLE_GROUP[group]?.length ?? 0;
-                      return (
-                        <button
-                          key={group}
-                          type="button"
-                          onClick={() => setSelectedMuscleGroup(group)}
-                          className="flex flex-col items-start gap-1 rounded-lg border p-3 text-left transition-colors hover:bg-muted/50"
-                        >
-                          <span className="text-sm font-medium">{group}</span>
-                          <span className="text-xs text-muted-foreground">{count} exercícios</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
+          <SheetTitle className="display-title text-[22px] text-foreground">Registrar treino</SheetTitle>
 
-              <TabsContent value="types">
-                <ScrollArea className="h-[200px] rounded-md border p-3">
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                    {WORKOUT_TYPES.filter((t) => !MUSCLE_GROUPS.includes(t)).map((type) => (
-                      <label
-                        key={type}
-                        className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1.5 hover:bg-muted/50"
+          {/* Atalhos de 1 toque */}
+          {myPrograms.length > 0 && (
+            <>
+              <div className="flex flex-col gap-2">
+                <span className="mono-label">Repetir um treino salvo · 1 toque</span>
+                <div className="flex gap-2 overflow-x-auto scrollbar-hide">
+                  {myPrograms.slice(0, 4).map((p) => {
+                    const count = p.training_exercises?.length ?? 0;
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => quickRegister(p)}
+                        className="flex min-w-[110px] flex-1 flex-col items-start gap-1 rounded-[13px] border border-border bg-secondary/60 p-[11px] text-left transition-colors hover:border-primary disabled:opacity-50"
                       >
-                        <Checkbox
-                          checked={selectedTypes.includes(type)}
-                          onCheckedChange={() => toggleType(type)}
-                          disabled={isPending}
-                        />
-                        <span className="text-sm">{type}</span>
-                      </label>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </TabsContent>
+                        <Zap className="h-[18px] w-[18px] fill-primary/20 text-primary" />
+                        <span className="w-full truncate text-xs font-extrabold text-foreground">{p.title}</span>
+                        <span className="font-mono text-[9px] uppercase text-muted-foreground">
+                          {count} {count === 1 ? "exercício" : "exercícios"}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="h-px bg-border" />
+            </>
+          )}
 
-              <TabsContent value="my-programs">
-                <ScrollArea className="h-[200px] rounded-md border p-3">
-                  {myPrograms.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center h-full gap-2 py-8">
-                      <Dumbbell className="h-8 w-8 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground text-center">
-                        Nenhum treino cadastrado. Crie um na aba Treinos.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 gap-2">
-                      {myPrograms.map((program) => {
-                        const exercises = (program.training_exercises ?? []).sort((a, b) => a.position - b.position);
-                        const isSelected = selectedProgramId === program.id;
-                        return (
-                          <button
-                            key={program.id}
-                            type="button"
-                            onClick={() => selectProgram(program)}
-                            className={`flex items-start gap-3 rounded-lg border p-3 text-left transition-colors ${
-                              isSelected
-                                ? "border-primary bg-primary/10"
-                                : "hover:bg-muted/50"
-                            }`}
-                            disabled={isPending}
-                          >
-                            <div className="flex-1 min-w-0">
-                              <p className="font-medium text-sm flex items-center gap-1.5">
-                                {program.title}
-                                {isSelected && <CheckCircle2 className="h-4 w-4 text-primary" />}
-                              </p>
-                              {exercises.length > 0 && (
-                                <p className="text-xs text-muted-foreground truncate mt-0.5">
-                                  {exercises.map((ex) => ex.title).join(", ")}
-                                </p>
-                              )}
-                            </div>
-                            <span className="text-xs text-muted-foreground shrink-0">
-                              {exercises.length} ativ.
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+            {/* Tipos */}
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between">
+                <span className="mono-label">
+                  Tipos{selectedTypes.length > 0 && ` · ${selectedTypes.length} ${selectedTypes.length === 1 ? "selecionado" : "selecionados"}`}
+                </span>
+                <div className="flex gap-0.5 rounded-lg border border-border bg-secondary p-0.5">
+                  <button
+                    type="button"
+                    onClick={() => setSource("general")}
+                    className={cn(
+                      "rounded-md px-2.5 py-1 text-[10px]",
+                      source === "general" ? "bg-primary font-bold text-primary-foreground" : "font-semibold text-muted-foreground",
+                    )}
+                  >
+                    Geral
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSource("programs")}
+                    className={cn(
+                      "rounded-md px-2.5 py-1 text-[10px]",
+                      source === "programs" ? "bg-primary font-bold text-primary-foreground" : "font-semibold text-muted-foreground",
+                    )}
+                  >
+                    Meus treinos
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2 rounded-[11px] border border-border bg-background px-3 py-[9px]">
+                <Search className="h-[18px] w-[18px] text-muted-foreground/60" />
+                <input
+                  type="text"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Buscar tipo de treino…"
+                  className="w-full bg-transparent text-[13px] text-foreground outline-none placeholder:text-muted-foreground/60"
+                />
+              </div>
+
+              {source === "general" ? (
+                <div className="flex max-h-[210px] flex-wrap gap-1.5 overflow-y-auto">
+                  {filteredTypes.map((type) => {
+                    const on = selectedTypes.includes(type);
+                    return (
+                      <button
+                        key={type}
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => toggleType(type)}
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-[10px] border px-3 py-[9px] text-xs font-bold transition-colors",
+                          on
+                            ? "border-transparent bg-primary text-primary-foreground"
+                            : "border-border bg-secondary/60 text-secondary-foreground hover:border-primary",
+                        )}
+                      >
+                        {on && <Check className="h-[15px] w-[15px]" strokeWidth={3} />}
+                        {type}
+                      </button>
+                    );
+                  })}
+                  {filteredTypes.length === 0 && (
+                    <span className="py-2 text-xs text-muted-foreground">Nenhum tipo com esse nome.</span>
                   )}
-                </ScrollArea>
-              </TabsContent>
-            </Tabs>
-            {selectedTypes.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                {selectedTypes.length} selecionado(s): {selectedTypes.join(", ")}
-              </p>
-            )}
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="workout-datetime">Data e hora</Label>
-            <Input
-              id="workout-datetime"
-              type="datetime-local"
-              value={workoutDateTime}
-              onChange={(e) => setWorkoutDateTime(e.target.value)}
-              disabled={isPending}
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="workout-notes">Observações (opcional)</Label>
-            <Textarea
-              id="workout-notes"
-              placeholder="Ex: 3 séries, treino leve..."
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              disabled={isPending}
-              rows={2}
-              className="resize-none"
-            />
-          </div>
-          <SheetFooter className="gap-2 sm:gap-0">
-            <Button type="button" variant="outline" onClick={() => handleOpenChange(false)}>
-              Cancelar
-            </Button>
-            <Button type="submit" disabled={selectedTypes.length === 0 || isPending}>
+                </div>
+              ) : filteredPrograms.length === 0 ? (
+                <div className="flex flex-col items-center gap-2 rounded-xl border border-dashed border-border py-6 text-center">
+                  <ListChecks className="h-6 w-6 text-muted-foreground/50" />
+                  <span className="px-4 text-xs text-muted-foreground">
+                    Nenhum treino cadastrado ainda. Monte um na aba Treinos.
+                  </span>
+                </div>
+              ) : (
+                <div className="flex max-h-[210px] flex-wrap gap-1.5 overflow-y-auto">
+                  {filteredPrograms.map((p) => {
+                    const on = selectedTypes.includes(p.title);
+                    return (
+                      <button
+                        key={p.id}
+                        type="button"
+                        disabled={isPending}
+                        onClick={() => toggleType(p.title)}
+                        className={cn(
+                          "flex items-center gap-1.5 rounded-[10px] border px-3 py-[9px] text-xs font-bold transition-colors",
+                          on
+                            ? "border-transparent bg-primary text-primary-foreground"
+                            : "border-border bg-secondary/60 text-secondary-foreground hover:border-primary",
+                        )}
+                      >
+                        {on && <Check className="h-[15px] w-[15px]" strokeWidth={3} />}
+                        {p.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Quando */}
+            <div className="flex flex-col gap-1.5">
+              <span className="mono-label">Quando</span>
+              <div className="flex gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setWhen("now")}
+                  className={cn(
+                    "flex-1 rounded-[10px] py-2.5 text-xs",
+                    when === "now"
+                      ? "bg-primary font-extrabold text-primary-foreground"
+                      : "border border-border bg-secondary/60 font-semibold text-muted-foreground",
+                  )}
+                >
+                  Agora
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setWhen("yesterday")}
+                  className={cn(
+                    "flex-1 rounded-[10px] py-2.5 text-xs",
+                    when === "yesterday"
+                      ? "bg-primary font-extrabold text-primary-foreground"
+                      : "border border-border bg-secondary/60 font-semibold text-muted-foreground",
+                  )}
+                >
+                  Ontem
+                </button>
+                <button
+                  type="button"
+                  aria-label="Escolher data e hora"
+                  onClick={() => setWhen("custom")}
+                  className={cn(
+                    "flex w-[42px] items-center justify-center rounded-[10px]",
+                    when === "custom" ? "bg-primary text-primary-foreground" : "border border-border bg-secondary/60 text-muted-foreground",
+                  )}
+                >
+                  <CalendarClock className="h-[17px] w-[17px]" />
+                </button>
+              </div>
+              {when === "custom" && (
+                <input
+                  type="datetime-local"
+                  value={customDateTime}
+                  onChange={(e) => setCustomDateTime(e.target.value)}
+                  disabled={isPending}
+                  className="rounded-[11px] border border-border bg-background p-3 font-mono text-sm text-foreground outline-none focus:border-primary"
+                />
+              )}
+            </div>
+
+            {/* Observações */}
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="workout-notes" className="mono-label">
+                Observações · opcional
+              </label>
+              <textarea
+                id="workout-notes"
+                placeholder="Ex: 3 séries, treino leve…"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                disabled={isPending}
+                rows={2}
+                className="resize-none rounded-[11px] border border-border bg-background p-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={selectedTypes.length === 0 || isPending}
+              className="relative flex w-full items-center justify-center overflow-hidden rounded-[14px] bg-primary p-[17px] text-[15px] font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50"
+            >
+              <span className="absolute left-0 top-0 h-full w-2/5 animate-sheen bg-gradient-to-r from-transparent via-white/55 to-transparent [animation-duration:3.2s]" />
               {isPending ? "Registrando…" : "Registrar treino"}
-            </Button>
-          </SheetFooter>
-        </form>
+            </button>
+          </form>
+        </div>
       </SheetContent>
     </Sheet>
   );

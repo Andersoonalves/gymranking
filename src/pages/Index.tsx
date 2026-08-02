@@ -1,39 +1,27 @@
-import { useState, useRef } from "react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useMemo, useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import { format, formatDistanceToNowStrict, isSameDay, startOfDay, startOfWeek, addDays } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
-import {
-  useMyGroups,
-  useCreateGroup,
-  useJoinGroupByCode,
-} from "@/hooks/useGroups";
+import { useMyGroups, useCreateGroup, useJoinGroupByCode } from "@/hooks/useGroups";
 import { useGroupWorkouts, useDeleteWorkout } from "@/hooks/useWorkouts";
 import { useProfilesInGroup } from "@/hooks/useProfilesInGroup";
+import { useWorkoutLikes, useToggleWorkoutLike } from "@/hooks/useWorkoutLikes";
+import { useMyProfile } from "@/hooks/useMyProfile";
+import { useImportWorkouts } from "@/hooks/useImportWorkouts";
 import { useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
-import {
-  filterWorkoutsByPeriod,
-  computeRanking,
-  getMedalEmoji,
-} from "@/lib/ranking";
+import { filterWorkoutsByPeriod, computeRanking, computeStreak, buildCallout } from "@/lib/ranking";
+import { exportWorkoutsToJSON } from "@/lib/export-workouts";
+import { GROUPS_STORAGE_KEY } from "@/lib/constants";
+import { errorMessage } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { WorkoutCalendar } from "@/components/WorkoutCalendar";
-import { Button } from "@/components/ui/button";
+import { InitialAvatar } from "@/components/InitialAvatar";
+import { EmptyState } from "@/components/EmptyState";
+import { PageLoader } from "@/components/PageLoader";
 import { CreateGroupDialog } from "@/components/CreateGroupDialog";
 import { JoinGroupDialog } from "@/components/JoinGroupDialog";
-import {
-  Dumbbell,
-  Shield,
-  Users,
-  PlusCircle,
-  LogIn,
-  Copy,
-  Check,
-  Trash2,
-  Download,
-  Upload,
-  ChevronRight,
-} from "lucide-react";
-import { Link } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   AlertDialog,
@@ -45,36 +33,77 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useToast } from "@/hooks/use-toast";
-import { GROUPS_STORAGE_KEY } from "@/lib/constants";
-import { exportWorkoutsToJSON } from "@/lib/export-workouts";
-import { useImportWorkouts } from "@/hooks/useImportWorkouts";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import {
+  ArrowRight,
+  Check,
+  ChevronDown,
+  Copy,
+  Download,
+  Flame,
+  Plus,
+  Shield,
+  Trash2,
+  Trophy,
+  Upload,
+  Users,
+  Zap,
+} from "lucide-react";
+import { toast } from "sonner";
 
 const FEED_PAGE_SIZE = 10;
+
+/** Anel da meta semanal (SVG do protótipo, circunferência 283). */
+function GoalRing({ done, goal }: { done: number; goal: number }) {
+  const offset = 283 * (1 - Math.min(1, done / Math.max(1, goal)));
+  return (
+    <div className="relative flex flex-col items-center gap-1">
+      <svg width="52" height="52" viewBox="0 0 100 100" className="block">
+        <circle cx="50" cy="50" r="45" fill="none" className="stroke-border" strokeWidth="10" />
+        <circle
+          cx="50"
+          cy="50"
+          r="45"
+          fill="none"
+          className="animate-ring-draw stroke-primary"
+          strokeWidth="10"
+          strokeLinecap="round"
+          strokeDasharray="283"
+          strokeDashoffset={offset}
+          transform="rotate(-90 50 50)"
+        />
+      </svg>
+      <span className="font-mono text-[9px] font-semibold tracking-[0.1em] text-muted-foreground">
+        {done}/{goal} SEM
+      </span>
+    </div>
+  );
+}
 
 export default function Index() {
   const { user, signOut } = useAuth();
   const { isAdmin } = useIsAdmin();
-  const { toast } = useToast();
   const { openRegister, openRegisterForDate } = useRegisterWorkout();
   const userId = user?.id;
   const { data: groups = [], isLoading: loadingGroups } = useMyGroups(userId);
+  const { data: myProfile } = useMyProfile(userId);
   const createGroup = useCreateGroup(userId);
   const joinGroup = useJoinGroupByCode(userId);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
-  const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [activeGroupId, setActiveGroupId] = useState<string | null>(
-    () => (typeof window !== "undefined" ? localStorage.getItem(GROUPS_STORAGE_KEY) : null)
+  const [groupMenuOpen, setGroupMenuOpen] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [inviteCode, setInviteCode] = useState("");
+  const [activeGroupId, setActiveGroupId] = useState<string | null>(() =>
+    typeof window !== "undefined" ? localStorage.getItem(GROUPS_STORAGE_KEY) : null,
   );
 
   const selectedGroup = groups.find((g) => g.id === activeGroupId) ?? groups[0];
 
   const { data: workouts = [] } = useGroupWorkouts(selectedGroup?.id);
   const { data: profilesMap = {} } = useProfilesInGroup(selectedGroup?.id);
+  const { data: likesMap = {} } = useWorkoutLikes(selectedGroup?.id, userId);
+  const toggleLike = useToggleWorkoutLike(selectedGroup?.id, userId);
   const deleteWorkout = useDeleteWorkout();
   const importWorkouts = useImportWorkouts(userId, selectedGroup?.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,439 +111,590 @@ export default function Index() {
   const [workoutToDelete, setWorkoutToDelete] = useState<{ id: string; group_id: string; label: string } | null>(null);
   const [feedPage, setFeedPage] = useState(1);
 
+  const displayName = myProfile?.display_name || user?.user_metadata?.display_name || user?.email || "?";
+  const myWorkouts = useMemo(() => workouts.filter((w) => w.user_id === userId), [workouts, userId]);
+
+  const weeklyRanking = useMemo(
+    () => computeRanking(filterWorkoutsByPeriod(workouts, "week"), profilesMap),
+    [workouts, profilesMap],
+  );
+  const callout = buildCallout(weeklyRanking, userId);
+  const streak = useMemo(() => computeStreak(myWorkouts.map((w) => w.workout_date)), [myWorkouts]);
+
+  const today = startOfDay(new Date());
+  const weekStart = startOfWeek(today, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const trainedOn = (d: Date) => myWorkouts.some((w) => isSameDay(new Date(w.workout_date), d));
+  const weekDoneDays = weekDays.filter((d) => trainedOn(d)).length;
+  const weeklyGoal = myProfile?.weekly_goal ?? 4;
+  const trainedToday = trainedOn(today);
+
+  const feedTotalPages = Math.max(1, Math.ceil(workouts.length / FEED_PAGE_SIZE));
+  const feedPaginated = workouts.slice((feedPage - 1) * FEED_PAGE_SIZE, feedPage * FEED_PAGE_SIZE);
+
   const setSelectedGroup = (id: string) => {
     localStorage.setItem(GROUPS_STORAGE_KEY, id);
     setActiveGroupId(id);
-    setCopiedId(null);
+    setGroupMenuOpen(false);
   };
 
-  const copyInviteCode = (code: string, groupId: string) => {
+  const copyInviteCode = (code: string) => {
     navigator.clipboard.writeText(code);
-    setCopiedId(groupId);
-    toast({ title: "Código copiado!" });
-    setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleCreate = async (name: string) => {
-    const result = await createGroup.mutateAsync(name);
-    return result ?? null;
-  };
-
-  const handleJoin = async (code: string) => {
-    const result = await joinGroup.mutateAsync(code);
-    return result ?? null;
+    setCopied(true);
+    toast.success("Código copiado!");
+    setTimeout(() => setCopied(false), 2000);
   };
 
   const handleDeleteWorkout = async () => {
     if (!workoutToDelete) return;
     try {
-      await deleteWorkout.mutateAsync({
-        workout_id: workoutToDelete.id,
-        group_id: workoutToDelete.group_id,
-      });
-      toast({ title: "Treino excluído." });
+      await deleteWorkout.mutateAsync({ workout_id: workoutToDelete.id, group_id: workoutToDelete.group_id });
+      toast.success("Treino excluído.");
       setWorkoutToDelete(null);
     } catch {
-      toast({ title: "Erro ao excluir treino", variant: "destructive" });
+      toast.error("Erro ao excluir treino");
     }
   };
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     try {
       const count = await importWorkouts.mutateAsync(file);
-      toast({ title: `${count} treinos importados com sucesso!` });
+      toast.success(`${count} treinos importados com sucesso!`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao importar treinos.";
-      toast({ title: message, variant: "destructive" });
+      toast.error(errorMessage(err, "Erro ao importar treinos."));
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
-  const weeklyWorkouts = filterWorkoutsByPeriod(workouts, "week");
-  const weeklyRanking = computeRanking(weeklyWorkouts, profilesMap);
-  const feedTotalPages = Math.max(1, Math.ceil(workouts.length / FEED_PAGE_SIZE));
-  const feedPaginated = workouts.slice(
-    (feedPage - 1) * FEED_PAGE_SIZE,
-    feedPage * FEED_PAGE_SIZE
-  );
-  const myWorkouts = workouts.filter((w) => w.user_id === userId);
+  if (loadingGroups) return <PageLoader />;
 
-  if (loadingGroups) {
+  // ── Onboarding: sem nenhum grupo ─────────────────────────────────────────
+  if (groups.length === 0) {
+    const handleJoin = async () => {
+      const code = inviteCode.trim().toUpperCase();
+      if (!code) return;
+      try {
+        await joinGroup.mutateAsync(code);
+        toast.success("Você entrou no grupo!");
+      } catch (err) {
+        toast.error(errorMessage(err, "Código inválido."));
+      }
+    };
+
     return (
-      <div className="flex min-h-dvh items-center justify-center">
-        <div className="h-10 w-10 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-      </div>
-    );
-  }
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center overflow-hidden bg-background px-7 safe-area-top safe-area-bottom">
+        <div className="pointer-events-none absolute -bottom-24 -right-20 h-[360px] w-[360px] animate-glow-pulse rounded-full bg-[radial-gradient(circle,hsl(var(--accent)/0.16),transparent_65%)] [animation-duration:5s]" />
 
-  const hasGroups = groups.length > 0;
-
-  if (!hasGroups) {
-    return (
-      <div className="flex min-h-dvh flex-col items-center justify-center px-4">
-        <div className="w-full max-w-sm space-y-8 text-center">
-          <div className="space-y-3">
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-primary/10">
-              <Dumbbell className="h-10 w-10 text-primary" />
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight">FitRank</h1>
-            <p className="text-muted-foreground">
-              Bem-vindo, {user?.user_metadata?.display_name || user?.email}!
+        <div className="relative flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
+            <span className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-primary/15 text-primary">
+              <Users className="h-7 w-7" />
+            </span>
+            <h1 className="display-title text-[32px] leading-[1.05]">
+              Treinar sozinho
+              <br />é mais fácil de largar
+            </h1>
+            <p className="max-w-sm text-sm leading-relaxed text-muted-foreground">
+              Entre num grupo pra disputar a semana com seus amigos — ou crie o seu e chame a galera.
             </p>
           </div>
-          <Card className="text-left">
-            <CardHeader className="pb-4">
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Users className="h-5 w-5 text-primary" />
-                Comece com um grupo
-              </CardTitle>
-              <CardDescription>
-                Crie um grupo e compartilhe o código com amigos, ou entre em um existente.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex flex-col gap-3">
-              <Button
-                className="w-full gap-2"
-                size="lg"
-                onClick={() => setCreateOpen(true)}
-                disabled={createGroup.isPending}
-              >
-                <PlusCircle className="h-5 w-5" />
-                Criar grupo
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full gap-2"
-                size="lg"
-                onClick={() => setJoinOpen(true)}
-                disabled={joinGroup.isPending}
-              >
-                <LogIn className="h-5 w-5" />
-                Entrar com código
-              </Button>
-            </CardContent>
-          </Card>
-          <div className="flex flex-col gap-2">
+
+          <div className="flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-primary p-[18px] text-[15px] font-extrabold text-primary-foreground shadow-hard active-hard"
+            >
+              <Plus className="h-5 w-5" />
+              Criar um grupo
+            </button>
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-border" />
+              <span className="font-mono text-[10px] font-semibold tracking-[0.14em] text-muted-foreground/60">OU</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+            <div className="flex flex-col gap-2">
+              <label htmlFor="invite" className="mono-label">
+                Código de convite
+              </label>
+              <input
+                id="invite"
+                type="text"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+                placeholder="A1B2C3D4"
+                className="w-full rounded-xl border border-border bg-card p-4 text-center font-mono text-xl font-bold uppercase tracking-[0.35em] text-foreground outline-none placeholder:text-muted-foreground/30 focus:border-primary"
+              />
+            </div>
+            <button
+              type="button"
+              onClick={handleJoin}
+              disabled={joinGroup.isPending || !inviteCode.trim()}
+              className="w-full rounded-[14px] border border-border bg-secondary p-4 text-sm font-bold text-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+            >
+              {joinGroup.isPending ? "Entrando…" : "Entrar no grupo"}
+            </button>
+          </div>
+
+          <p className="text-center text-xs leading-relaxed text-muted-foreground/50">
+            Você pode estar em vários grupos ao mesmo tempo. Cada treino conta para todos.
+          </p>
+
+          <div className="flex items-center justify-center gap-4">
             {isAdmin && (
-              <Button variant="ghost" asChild className="gap-2 text-muted-foreground">
-                <Link to="/admin">
-                  <Shield className="h-4 w-4" />
-                  Painel Admin
-                </Link>
-              </Button>
+              <Link to="/admin" className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary">
+                <Shield className="h-3.5 w-3.5" />
+                Admin
+              </Link>
             )}
-            <Button variant="ghost" onClick={signOut} className="gap-2 text-muted-foreground">
-              Sair
-            </Button>
+            <button type="button" onClick={signOut} className="text-xs font-semibold text-muted-foreground hover:text-destructive">
+              Sair da conta
+            </button>
           </div>
         </div>
+
         <CreateGroupDialog
           open={createOpen}
           onOpenChange={setCreateOpen}
-          onCreate={handleCreate}
+          onCreate={async (name) => (await createGroup.mutateAsync(name)) ?? null}
           isCreating={createGroup.isPending}
-        />
-        <JoinGroupDialog
-          open={joinOpen}
-          onOpenChange={setJoinOpen}
-          onJoin={handleJoin}
-          isJoining={joinGroup.isPending}
         />
       </div>
     );
   }
 
+  // ── Início ────────────────────────────────────────────────────────────────
   return (
-    <div className="mx-auto max-w-lg px-4 pt-4 pb-4 space-y-4">
+    <div className="mx-auto flex max-w-lg flex-col gap-4 px-5 pb-4 pt-4 safe-area-top">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold tracking-tight">FitRank</h1>
-          <p className="text-xs text-muted-foreground truncate">
-            {user?.user_metadata?.display_name || user?.email}
-          </p>
+        <div className="flex flex-col gap-0.5">
+          <span className="display-title text-[26px] leading-none text-foreground">
+            Fit<span className="text-primary">rank</span>
+          </span>
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+            {format(new Date(), "EEEE · dd MMM", { locale: ptBR })}
+          </span>
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {isAdmin && (
-            <Button variant="ghost" size="icon" asChild className="h-9 w-9">
-              <Link to="/admin">
-                <Shield className="h-4 w-4" />
-              </Link>
-            </Button>
+            <Link
+              to="/admin"
+              aria-label="Painel admin"
+              className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-border bg-card text-muted-foreground hover:text-primary"
+            >
+              <Shield className="h-4 w-4" />
+            </Link>
           )}
-          <Button variant="ghost" size="icon" onClick={() => setCreateOpen(true)} className="h-9 w-9">
-            <PlusCircle className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" onClick={() => setJoinOpen(true)} className="h-9 w-9">
-            <LogIn className="h-4 w-4" />
-          </Button>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setGroupMenuOpen((v) => !v)}
+              className="flex h-[38px] max-w-[150px] items-center gap-1.5 rounded-[10px] border border-border bg-card px-3 text-xs font-bold text-foreground hover:border-primary"
+            >
+              <span className="truncate">{selectedGroup?.name}</span>
+              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </button>
+            {groupMenuOpen && (
+              <>
+                <div className="fixed inset-0 z-30" onClick={() => setGroupMenuOpen(false)} />
+                <div className="absolute right-0 top-full z-40 mt-1.5 flex w-56 flex-col gap-0.5 rounded-2xl border border-border bg-popover p-1.5 shadow-2xl animate-pop-in">
+                  {groups.map((g) => (
+                    <button
+                      key={g.id}
+                      type="button"
+                      onClick={() => setSelectedGroup(g.id)}
+                      className={cn(
+                        "flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm",
+                        g.id === selectedGroup?.id
+                          ? "bg-primary/10 font-bold text-primary"
+                          : "font-semibold text-foreground hover:bg-secondary",
+                      )}
+                    >
+                      <span className="truncate">{g.name}</span>
+                      {g.id === selectedGroup?.id && <Check className="h-4 w-4 shrink-0" />}
+                    </button>
+                  ))}
+                  <div className="mx-1.5 my-0.5 h-px bg-border" />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGroupMenuOpen(false);
+                      setCreateOpen(true);
+                    }}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Criar grupo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGroupMenuOpen(false);
+                      setJoinOpen(true);
+                    }}
+                    className="flex items-center gap-2 rounded-xl px-3 py-2.5 text-sm font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground"
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                    Entrar com código
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+          <Link to="/settings" aria-label="Configurações">
+            <InitialAvatar name={displayName} avatarUrl={myProfile?.avatar_url} isSelf className="h-[38px] w-[38px] text-sm" />
+          </Link>
         </div>
       </div>
 
-      {/* Group selector */}
-      {groups.length > 1 && (
-        <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
-          {groups.map((g) => (
-            <button
-              key={g.id}
-              type="button"
-              onClick={() => setSelectedGroup(g.id)}
-              className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                selectedGroup?.id === g.id
-                  ? "bg-primary text-primary-foreground"
-                  : "bg-muted text-muted-foreground hover:bg-muted/80"
-              }`}
-            >
-              {g.name}
-            </button>
-          ))}
+      {/* Streak + meta semanal */}
+      <div className="relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-[18px] animate-rise-in">
+        <div className="pointer-events-none absolute inset-0 animate-glow-pulse bg-[radial-gradient(120px_80px_at_12%_50%,hsl(var(--accent)/0.22),transparent_70%)]" />
+        <div className="relative flex items-baseline gap-1.5">
+          <Flame className="h-[30px] w-[30px] animate-flame self-center fill-accent/20 text-accent" />
+          <span className="font-mono text-[46px] font-bold leading-[0.85] tabular-nums text-foreground">{streak}</span>
         </div>
-      )}
+        <div className="relative flex flex-1 flex-col gap-0.5">
+          <span className="text-sm font-extrabold text-foreground">{streak === 1 ? "dia seguido" : "dias seguidos"}</span>
+          <span className="text-xs leading-snug text-muted-foreground">
+            {trainedToday ? "Treino de hoje já está no placar." : "Treine hoje para manter a sequência."}
+          </span>
+        </div>
+        <div className="relative">
+          <GoalRing done={weekDoneDays} goal={weeklyGoal} />
+        </div>
+      </div>
 
-      {selectedGroup && (
-        <>
-          {/* Weekly ranking */}
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Ranking da semana</CardTitle>
-                <Link to="/rankings" className="flex items-center gap-1 text-xs text-primary hover:underline">
-                  Ver tudo <ChevronRight className="h-3 w-3" />
-                </Link>
+      {/* Faixa dos 7 dias */}
+      <div className="grid grid-cols-7 gap-1.5">
+        {weekDays.map((d, i) => {
+          const done = trainedOn(d);
+          const isToday = isSameDay(d, today);
+          const future = d > today;
+          return (
+            <div key={i} className="flex flex-col items-center gap-1.5">
+              <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+                {format(d, "EEEEEE", { locale: ptBR })}
+              </span>
+              <div
+                className={cn(
+                  "flex aspect-square w-full items-center justify-center rounded-[10px] border font-mono text-[13px] font-bold animate-pop-in",
+                  done
+                    ? "border-transparent bg-primary text-primary-foreground"
+                    : isToday
+                      ? "border-primary bg-secondary text-foreground"
+                      : "border-border bg-card text-muted-foreground",
+                  future && !isToday && "opacity-45",
+                )}
+                style={{ animationDelay: `${i * 40}ms` }}
+              >
+                {done ? <Check className="h-4 w-4" strokeWidth={3} /> : d.getDate()}
               </div>
-              <CardDescription className="text-xs">Quem mais treinou esta semana</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              {weeklyRanking.length === 0 ? (
-                <p className="py-6 text-center text-sm text-muted-foreground">Nenhum treino esta semana.</p>
-              ) : (
-                <div className="space-y-3">
-                  {weeklyRanking.slice(0, 5).map((entry) => {
-                    const medal = getMedalEmoji(entry.position);
-                    const maxCount = Math.max(1, weeklyRanking[0]?.count ?? 1);
-                    return (
-                      <div key={entry.user_id} className="flex items-center gap-3">
-                        <span className="w-6 text-center text-lg">{medal ?? `#${entry.position}`}</span>
-                        <Avatar className="h-8 w-8 border-2 border-background shadow-sm">
-                          {entry.avatar_url && <AvatarImage src={entry.avatar_url} alt={entry.display_name} />}
-                          <AvatarFallback className="text-xs font-semibold">{entry.display_name.charAt(0).toUpperCase()}</AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{entry.display_name}</p>
-                          <div className="mt-1 h-1.5 rounded-full bg-muted overflow-hidden">
-                            <div
-                              className="h-full rounded-full bg-primary transition-all duration-500"
-                              style={{ width: `${(entry.count / maxCount) * 100}%` }}
-                            />
-                          </div>
-                        </div>
-                        <span className="shrink-0 text-sm font-bold text-primary">{entry.count}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            </div>
+          );
+        })}
+      </div>
 
-          {/* Activity tabs */}
-          <Card>
-            <CardContent className="p-0">
-              <Tabs defaultValue="feed" onValueChange={() => setFeedPage(1)}>
-                <div className="border-b px-4 pt-4">
-                  <TabsList className="grid w-full grid-cols-3 h-9">
-                    <TabsTrigger value="feed" className="text-xs">Atividade</TabsTrigger>
-                    <TabsTrigger value="my" className="text-xs">Histórico</TabsTrigger>
-                    <TabsTrigger value="members" className="text-xs">Membros</TabsTrigger>
-                  </TabsList>
-                </div>
-
-                <TabsContent value="feed" className="p-4 pt-3">
-                  {workouts.length === 0 ? (
-                    <p className="py-6 text-center text-sm text-muted-foreground">Nenhum treino ainda.</p>
-                  ) : (
-                    <>
-                      <ul className="space-y-1">
-                        {feedPaginated.map((w) => (
-                          <li key={w.id} className="flex items-center gap-3 rounded-lg py-2.5 px-1 transition-colors hover:bg-muted/50">
-                            <Avatar className="h-8 w-8 shrink-0">
-                              {profilesMap[w.user_id]?.avatar_url && <AvatarImage src={profilesMap[w.user_id].avatar_url!} alt={profilesMap[w.user_id]?.display_name} />}
-                              <AvatarFallback className="text-xs">{(profilesMap[w.user_id]?.display_name ?? "?").charAt(0).toUpperCase()}</AvatarFallback>
-                            </Avatar>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm">
-                                <span className="font-medium">{profilesMap[w.user_id]?.display_name ?? "Alguém"}</span>
-                                <span className="text-muted-foreground"> — {w.workout_type}</span>
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {format(new Date(w.workout_date), "dd/MM 'às' HH:mm", { locale: ptBR })}
-                              </p>
-                            </div>
-                            {w.user_id === userId && selectedGroup && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                                onClick={() => setWorkoutToDelete({ id: w.id, group_id: w.group_id, label: w.workout_type })}
-                                disabled={deleteWorkout.isPending}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                      {feedTotalPages > 1 && (
-                        <div className="flex items-center justify-between gap-2 pt-3 mt-2 border-t">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setFeedPage((p) => Math.max(1, p - 1))}
-                            disabled={feedPage <= 1}
-                          >
-                            Anterior
-                          </Button>
-                          <span className="text-xs text-muted-foreground">
-                            {feedPage}/{feedTotalPages}
-                          </span>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setFeedPage((p) => Math.min(feedTotalPages, p + 1))}
-                            disabled={feedPage >= feedTotalPages}
-                          >
-                            Próxima
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </TabsContent>
-
-                <TabsContent value="my" className="p-4 pt-3">
-                  <div className="space-y-4">
-                    {myWorkouts.length === 0 && (
-                      <p className="py-4 text-center text-sm text-muted-foreground">
-                        Toque em um dia no calendário para registrar.
-                      </p>
+      {/* Ranking da semana */}
+      <div className="overflow-hidden rounded-[18px] border border-border bg-card">
+        <div className="flex flex-col gap-1.5 bg-gradient-to-b from-secondary/60 to-transparent px-4 pb-3 pt-4">
+          <div className="flex items-center justify-between">
+            <span className="display-title text-[17px] text-foreground">Ranking da semana</span>
+            <span className="rounded-md bg-primary/15 px-2 py-1 font-mono text-[9px] font-bold tracking-[0.12em] text-primary">
+              SEG–DOM
+            </span>
+          </div>
+          {callout && <span className="text-[13px] font-semibold leading-snug text-accent">{callout}</span>}
+        </div>
+        {weeklyRanking.length === 0 ? (
+          <div className="px-4 pb-4">
+            <EmptyState
+              icon={Trophy}
+              title="Nenhum treino esta semana"
+              description="O ranking zera toda segunda. Seja o primeiro a marcar."
+              className="border-none bg-transparent py-4"
+            />
+          </div>
+        ) : (
+          <div className="flex flex-col">
+            {weeklyRanking.slice(0, 6).map((entry) => {
+              const isMe = entry.user_id === userId;
+              const maxCount = Math.max(1, weeklyRanking[0]?.count ?? 1);
+              const isFirst = entry.position === 1;
+              return (
+                <div
+                  key={entry.user_id}
+                  className={cn("flex items-center gap-3 border-t border-border/60 px-4 py-[11px]", isMe && "bg-primary/5")}
+                >
+                  <span
+                    className={cn(
+                      "flex h-[26px] min-w-[26px] items-center justify-center rounded-[7px] font-mono text-[13px] font-bold",
+                      isFirst ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground",
                     )}
-                    <WorkoutCalendar
-                      workouts={myWorkouts}
-                      onEmptyDaySelect={openRegisterForDate}
-                      onDeleteWorkout={selectedGroup ? (w) => setWorkoutToDelete(w) : undefined}
-                      isDeleting={deleteWorkout.isPending}
-                    />
-                    <div className="flex gap-2">
-                      {myWorkouts.length > 0 && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="flex-1 gap-1.5"
-                          onClick={() => exportWorkoutsToJSON(myWorkouts, user?.user_metadata?.display_name || user?.email)}
-                        >
-                          <Download className="h-3.5 w-3.5" />
-                          Exportar
-                        </Button>
-                      )}
-                      <input
-                        type="file"
-                        accept=".json"
-                        ref={fileInputRef}
-                        onChange={handleImport}
-                        className="hidden"
+                  >
+                    {entry.position}
+                  </span>
+                  <InitialAvatar
+                    name={entry.display_name}
+                    avatarUrl={entry.avatar_url}
+                    isSelf={isMe}
+                    className="h-[30px] w-[30px] rounded-[9px] text-xs"
+                  />
+                  <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className={cn("truncate text-sm font-bold", isMe ? "text-primary" : "text-foreground")}>
+                        {isMe ? "Você" : entry.display_name}
+                      </span>
+                      <span className={cn("font-mono text-[13px] font-bold tabular-nums", isFirst ? "text-primary" : "text-muted-foreground")}>
+                        {entry.count}
+                      </span>
+                    </div>
+                    <div className="h-[5px] overflow-hidden rounded-[3px] bg-secondary">
+                      <div
+                        className={cn("h-full origin-left animate-bar-in rounded-[3px]", isFirst ? "bg-primary" : "bg-muted-foreground/40")}
+                        style={{ width: `${(entry.count / maxCount) * 100}%` }}
                       />
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1 gap-1.5"
-                        onClick={() => fileInputRef.current?.click()}
-                        disabled={importWorkouts.isPending}
-                      >
-                        <Upload className="h-3.5 w-3.5" />
-                        {importWorkouts.isPending ? "Importando…" : "Importar"}
-                      </Button>
                     </div>
                   </div>
-                </TabsContent>
-
-                <TabsContent value="members" className="p-4 pt-3">
-                  {Object.keys(profilesMap).length === 0 ? (
-                    <p className="py-6 text-center text-sm text-muted-foreground">Nenhum membro encontrado.</p>
-                  ) : (
-                    <ul className="space-y-1">
-                      {Object.entries(profilesMap).map(([uid, profile]) => (
-                        <li key={uid} className="flex items-center gap-3 rounded-lg py-2 px-1">
-                          <Avatar className="h-9 w-9">
-                            {profile.avatar_url && <AvatarImage src={profile.avatar_url} alt={profile.display_name} />}
-                            <AvatarFallback className="text-xs font-semibold">{profile.display_name.charAt(0).toUpperCase()}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm font-medium">{profile.display_name}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </TabsContent>
-              </Tabs>
-            </CardContent>
-          </Card>
-
-          {/* Group info + register */}
-          <Card>
-            <CardContent className="p-4 space-y-4">
-              <Button className="w-full gap-2" size="lg" onClick={openRegister}>
-                <Dumbbell className="h-5 w-5" />
-                Registrar treino
-              </Button>
-              <div className="flex items-center gap-2 rounded-xl bg-muted/50 px-4 py-3">
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground mb-0.5">{selectedGroup.name}</p>
-                  <code className="font-mono text-base font-bold tracking-widest text-foreground">
-                    {selectedGroup.invite_code}
-                  </code>
                 </div>
-                <Button
+              );
+            })}
+          </div>
+        )}
+        <Link
+          to="/rankings"
+          className="flex w-full items-center justify-center gap-1.5 border-t border-border bg-secondary/50 py-[13px] font-mono text-xs font-bold uppercase tracking-[0.12em] text-primary hover:bg-secondary"
+        >
+          Ranking completo <ArrowRight className="h-4 w-4" />
+        </Link>
+      </div>
+
+      {/* Calendário heatmap */}
+      <WorkoutCalendar
+        workouts={myWorkouts}
+        onEmptyDaySelect={openRegisterForDate}
+        onDeleteWorkout={(w) => setWorkoutToDelete(w)}
+        isDeleting={deleteWorkout.isPending}
+      />
+
+      {/* Abas */}
+      <Tabs defaultValue="feed" onValueChange={() => setFeedPage(1)}>
+        <TabsList className="grid h-auto w-full grid-cols-3 gap-[3px] rounded-xl border border-border bg-card p-[3px]">
+          {[
+            ["feed", "Atividade"],
+            ["my", "Histórico"],
+            ["members", "Membros"],
+          ].map(([value, label]) => (
+            <TabsTrigger
+              key={value}
+              value={value}
+              className="rounded-[9px] py-[9px] text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:font-extrabold data-[state=active]:text-primary-foreground"
+            >
+              {label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <TabsContent value="feed" className="mt-3">
+          {workouts.length === 0 ? (
+            <EmptyState icon={Zap} title="Nenhum treino ainda" description="O primeiro registro do grupo inaugura o feed." />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {feedPaginated.map((w) => {
+                const profile = profilesMap[w.user_id];
+                const like = likesMap[w.id];
+                const isMine = w.user_id === userId;
+                return (
+                  <div key={w.id} className="flex gap-3 rounded-[14px] border border-border/60 bg-card p-[13px] hover:border-border">
+                    <InitialAvatar
+                      name={profile?.display_name ?? "?"}
+                      avatarUrl={profile?.avatar_url}
+                      isSelf={isMine}
+                      className="h-[34px] w-[34px] text-[13px]"
+                    />
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="truncate text-[13px] font-extrabold text-foreground">
+                          {isMine ? "Você" : (profile?.display_name ?? "Alguém")}
+                        </span>
+                        <span className="shrink-0 font-mono text-[10px] uppercase text-muted-foreground/70">
+                          {formatDistanceToNowStrict(new Date(w.workout_date), { locale: ptBR, addSuffix: true })}
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5">
+                        {w.workout_type.split(", ").map((t) => (
+                          <span
+                            key={t}
+                            className="rounded-md border border-border bg-secondary px-2 py-1 text-[10px] font-semibold text-secondary-foreground"
+                          >
+                            {t}
+                          </span>
+                        ))}
+                      </div>
+                      {w.notes && <span className="text-xs leading-snug text-muted-foreground">{w.notes}</span>}
+                      <div className="mt-0.5 flex items-center gap-2">
+                        <button
+                          type="button"
+                          disabled={toggleLike.isPending}
+                          onClick={() => toggleLike.mutate({ workout_id: w.id, liked: !!like?.likedByMe })}
+                          className={cn(
+                            "flex items-center gap-1 rounded-lg border px-2 py-[5px] font-mono text-[11px] font-bold transition-colors",
+                            like?.likedByMe
+                              ? "border-accent/40 bg-accent/15 text-accent"
+                              : "border-border text-muted-foreground hover:border-accent hover:text-accent",
+                          )}
+                        >
+                          <Zap className={cn("h-3.5 w-3.5", like?.likedByMe && "fill-current")} />
+                          {like?.count ?? 0}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {feedTotalPages > 1 && (
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setFeedPage((p) => Math.max(1, p - 1))}
+                    disabled={feedPage <= 1}
+                    className="rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground hover:text-primary disabled:opacity-40"
+                  >
+                    Anterior
+                  </button>
+                  <span className="font-mono text-[11px] text-muted-foreground">
+                    {feedPage}/{feedTotalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setFeedPage((p) => Math.min(feedTotalPages, p + 1))}
+                    disabled={feedPage >= feedTotalPages}
+                    className="rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground hover:text-primary disabled:opacity-40"
+                  >
+                    Próxima
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="my" className="mt-3">
+          {myWorkouts.length === 0 ? (
+            <EmptyState
+              icon={Flame}
+              title="Nenhum treino seu ainda"
+              description="Toque no + para registrar — ou num dia do calendário para registro retroativo."
+            />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {myWorkouts.slice(0, 20).map((w) => (
+                <div key={w.id} className="flex items-center gap-3 rounded-[14px] border border-border/60 bg-card p-3">
+                  <div className="flex min-w-0 flex-1 flex-col gap-1">
+                    <span className="truncate text-sm font-bold text-foreground">{w.workout_type}</span>
+                    <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                      {format(new Date(w.workout_date), "dd/MM 'às' HH:mm", { locale: ptBR })}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Excluir treino"
+                    disabled={deleteWorkout.isPending}
+                    onClick={() => setWorkoutToDelete({ id: w.id, group_id: w.group_id, label: w.workout_type })}
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ))}
+              <div className="flex gap-2 pt-1">
+                <button
                   type="button"
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 shrink-0"
-                  onClick={() => copyInviteCode(selectedGroup.invite_code, selectedGroup.id)}
+                  onClick={() => exportWorkoutsToJSON(myWorkouts, displayName)}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary py-3 text-xs font-bold text-foreground hover:border-primary hover:text-primary"
                 >
-                  {copiedId === selectedGroup.id ? (
-                    <Check className="h-4 w-4 text-green-500" />
-                  ) : (
-                    <Copy className="h-4 w-4" />
-                  )}
-                </Button>
+                  <Download className="h-3.5 w-3.5" />
+                  Exportar
+                </button>
+                <input type="file" accept=".json" ref={fileInputRef} onChange={handleImport} className="hidden" />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={importWorkouts.isPending}
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary py-3 text-xs font-bold text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  {importWorkouts.isPending ? "Importando…" : "Importar"}
+                </button>
               </div>
-            </CardContent>
-          </Card>
-        </>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="members" className="mt-3">
+          {Object.keys(profilesMap).length === 0 ? (
+            <EmptyState icon={Users} title="Nenhum membro encontrado" />
+          ) : (
+            <div className="flex flex-col gap-2">
+              {Object.entries(profilesMap).map(([uid, profile]) => (
+                <div key={uid} className="flex items-center gap-3 rounded-[14px] border border-border/60 bg-card p-3">
+                  <InitialAvatar
+                    name={profile.display_name}
+                    avatarUrl={profile.avatar_url}
+                    isSelf={uid === userId}
+                    className="h-9 w-9 text-sm"
+                  />
+                  <span className="text-sm font-bold text-foreground">
+                    {uid === userId ? `${profile.display_name} (você)` : profile.display_name}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+
+      {/* Código de convite */}
+      {selectedGroup && (
+        <div className="flex items-center gap-3 rounded-[14px] border border-border bg-card px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <p className="mb-0.5 text-xs text-muted-foreground">Convide para {selectedGroup.name}</p>
+            <code className="font-mono text-base font-bold tracking-[0.15em] text-primary">{selectedGroup.invite_code}</code>
+          </div>
+          <button
+            type="button"
+            aria-label="Copiar código de convite"
+            onClick={() => copyInviteCode(selectedGroup.invite_code)}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border bg-secondary text-muted-foreground hover:border-primary hover:text-primary"
+          >
+            {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+          </button>
+        </div>
       )}
 
       <CreateGroupDialog
         open={createOpen}
         onOpenChange={setCreateOpen}
-        onCreate={handleCreate}
+        onCreate={async (name) => (await createGroup.mutateAsync(name)) ?? null}
         isCreating={createGroup.isPending}
       />
       <JoinGroupDialog
         open={joinOpen}
         onOpenChange={setJoinOpen}
-        onJoin={handleJoin}
+        onJoin={async (code) => (await joinGroup.mutateAsync(code)) ?? null}
         isJoining={joinGroup.isPending}
       />
       <AlertDialog open={!!workoutToDelete} onOpenChange={(open) => !open && setWorkoutToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Excluir treino?</AlertDialogTitle>
+            <AlertDialogTitle className="display-title">Excluir treino?</AlertDialogTitle>
             <AlertDialogDescription>
               {workoutToDelete && (
-                <>O treino &quot;{workoutToDelete.label}&quot; será excluído. Esta ação não pode ser desfeita.</>
+                <>O treino &quot;{workoutToDelete.label}&quot; será excluído de todos os grupos. Isso não pode ser desfeito.</>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -525,7 +705,7 @@ export default function Index() {
                 e.preventDefault();
                 handleDeleteWorkout();
               }}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground shadow-hard-destructive hover:bg-destructive/90"
             >
               {deleteWorkout.isPending ? "Excluindo…" : "Excluir"}
             </AlertDialogAction>

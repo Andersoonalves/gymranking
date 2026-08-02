@@ -108,6 +108,7 @@ export type Database = {
           id: string
           updated_at: string
           user_id: string
+          weekly_goal: number
         }
         Insert: {
           avatar_url?: string | null
@@ -116,6 +117,7 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id: string
+          weekly_goal?: number
         }
         Update: {
           avatar_url?: string | null
@@ -124,6 +126,7 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+          weekly_goal?: number
         }
         Relationships: []
       }
@@ -159,31 +162,37 @@ export type Database = {
           created_at: string
           id: string
           load_kg: number | null
+          notes: string | null
           position: number
           program_id: string
           reps: number
           sets: number
           title: string
+          video_url: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           load_kg?: number | null
+          notes?: string | null
           position?: number
           program_id: string
           reps?: number
           sets?: number
           title: string
+          video_url?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           load_kg?: number | null
+          notes?: string | null
           position?: number
           program_id?: string
           reps?: number
           sets?: number
           title?: string
+          video_url?: string | null
         }
         Relationships: [
           {
@@ -245,6 +254,35 @@ export type Database = {
         }
         Relationships: []
       }
+      workout_likes: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          workout_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          workout_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          workout_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workout_likes_workout_id_fkey"
+            columns: ["workout_id"]
+            isOneToOne: false
+            referencedRelation: "workouts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workouts: {
         Row: {
           created_at: string
@@ -295,7 +333,10 @@ export type Database = {
           name: string
         }[]
       }
-      get_my_group_ids: { Args: never; Returns: string[] }
+      get_my_group_ids: {
+        Args: Record<PropertyKey, never>
+        Returns: string[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -444,3 +485,4 @@ export const Constants = {
     },
   },
 } as const
+

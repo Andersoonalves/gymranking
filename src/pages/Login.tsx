@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dumbbell, Eye, EyeOff, Loader2 } from "lucide-react";
+import { EcgBackground } from "@/components/EcgBackground";
+import { ArrowRight, Eye, EyeOff, Loader2, Zap } from "lucide-react";
 import { toast } from "sonner";
 
+// A entrada é sempre escura (classe `dark` no wrapper): o ECG é a cena, não o tema.
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -29,66 +27,93 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-md border-border/50 bg-card/80 backdrop-blur">
-        <CardHeader className="text-center space-y-4">
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
-            <Dumbbell className="h-8 w-8 text-primary" />
+    <div className="dark relative min-h-dvh cursor-crosshair overflow-hidden bg-[#0A0907] text-foreground">
+      <EcgBackground />
+
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-end gap-6 px-7 pb-9 pt-16 safe-area-bottom">
+        <div className="flex flex-col gap-3.5 animate-rise-in">
+          <span className="flex h-[52px] w-[52px] items-center justify-center rounded-[17px] bg-primary text-primary-foreground shadow-[0_0_44px_-6px_hsl(var(--primary)/0.6)]">
+            <Zap className="h-7 w-7 fill-current" />
+          </span>
+          <div className="flex flex-col gap-2">
+            <h1 className="display-title text-5xl leading-[0.9] tracking-[-0.055em]">
+              Fit<span className="text-primary">rank</span>
+            </h1>
+            <p className="max-w-[290px] text-[15px] leading-normal text-muted-foreground">
+              Entre para acompanhar seus treinos. Alguém do seu grupo já treinou hoje.
+            </p>
           </div>
-          <div>
-            <CardTitle className="text-3xl font-bold tracking-tight">FitRank</CardTitle>
-            <CardDescription className="mt-2">Entre para acompanhar seus treinos</CardDescription>
-          </div>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
+        </div>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3 animate-rise-in [animation-delay:0.12s]">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="email" className="mono-label">
+                Email
+              </label>
+              <input
                 id="email"
                 type="email"
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                autoComplete="email"
+                className="rounded-[13px] border border-border bg-card/80 p-4 text-sm font-medium text-foreground outline-none backdrop-blur-md placeholder:text-muted-foreground/60 focus:border-primary focus:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.45)]"
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="password" className="mono-label">
+                Senha
+              </label>
               <div className="relative">
-                <Input
+                <input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="pr-10"
+                  autoComplete="current-password"
+                  className="w-full rounded-[13px] border border-border bg-card/80 p-4 pr-12 font-mono text-sm font-semibold tracking-[0.24em] text-foreground outline-none backdrop-blur-md placeholder:text-muted-foreground/60 focus:border-primary focus:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.45)]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 >
-                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full font-semibold" size="lg" disabled={loading}>
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : "Entrar"}
-            </Button>
-            <p className="text-sm text-muted-foreground">
+          </div>
+
+          <div className="flex flex-col gap-4 animate-rise-in [animation-delay:0.22s]">
+            <button
+              type="submit"
+              disabled={loading}
+              className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[15px] bg-primary p-[19px] text-base font-black text-primary-foreground shadow-[0_4px_0_hsl(var(--primary-edge)),0_18px_40px_-12px_hsl(var(--primary)/0.5)] transition-[transform,box-shadow] active:translate-y-[2px] active:shadow-[0_2px_0_hsl(var(--primary-edge)),0_14px_30px_-12px_hsl(var(--primary)/0.5)] disabled:opacity-60"
+            >
+              <span className="absolute left-0 top-0 h-full w-[38%] animate-sheen bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+              {loading ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <>
+                  Entrar
+                  <ArrowRight className="h-5 w-5" />
+                </>
+              )}
+            </button>
+            <p className="text-center text-[13px] font-medium text-muted-foreground">
               Não tem conta?{" "}
-              <Link to="/signup" className="text-primary font-medium hover:underline">
+              <Link to="/signup" className="font-bold text-primary hover:underline">
                 Criar conta
               </Link>
             </p>
-          </CardFooter>
+          </div>
         </form>
-      </Card>
+      </div>
     </div>
   );
 }

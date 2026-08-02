@@ -1,5 +1,10 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+// O client aqui é criado sem o generic Database (os tipos gerados vivem em src/),
+// então as linhas retornadas são tipadas localmente.
+type ProfileRow = { user_id: string; display_name: string | null };
+type UserRoleRow = { user_id: string; role: string };
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -67,18 +72,20 @@ Deno.serve(async (req) => {
 
       // Get profiles
       const { data: profiles } = await supabaseAdmin.from("profiles").select("*");
-      const profileMap = new Map((profiles || []).map((p: any) => [p.user_id, p]));
+      const profileMap = new Map<string, ProfileRow>(
+        (profiles || []).map((p: ProfileRow) => [p.user_id, p])
+      );
 
       // Get roles
       const { data: roles } = await supabaseAdmin.from("user_roles").select("*");
       const roleMap = new Map<string, string[]>();
-      (roles || []).forEach((r: any) => {
+      (roles || []).forEach((r: UserRoleRow) => {
         const existing = roleMap.get(r.user_id) || [];
         existing.push(r.role);
         roleMap.set(r.user_id, existing);
       });
 
-      const result = users.map((u: any) => ({
+      const result = users.map((u) => ({
         id: u.id,
         email: u.email,
         display_name: profileMap.get(u.id)?.display_name || u.email,
@@ -158,7 +165,7 @@ Deno.serve(async (req) => {
       status: 400,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("admin-users error:", error);
     return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,

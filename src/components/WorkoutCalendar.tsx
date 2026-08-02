@@ -1,19 +1,9 @@
-import { useState, useMemo, useEffect } from "react";
-import { format, startOfDay, setMonth, setYear } from "date-fns";
+import { useMemo, useState } from "react";
+import { addMonths, format, isAfter, isSameDay, isSameMonth, startOfDay, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Calendar } from "@/components/ui/calendar";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Trash2, CalendarDays, LayoutGrid, Check } from "lucide-react";
+import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import type { Workout } from "@/hooks/useWorkouts";
-import type { DayContentProps } from "react-day-picker";
 
 type WorkoutCalendarProps = {
   workouts: Workout[];
@@ -23,252 +13,205 @@ type WorkoutCalendarProps = {
   isDeleting?: boolean;
 };
 
-function DayWithCheck({ date, activeModifiers, displayMonth, ...props }: DayContentProps & { displayMonth?: unknown }) {
-  void displayMonth;
-  return (
-    <span className="relative flex items-center justify-center w-full h-full" {...props}>
-      {date.getDate()}
-      {activeModifiers?.hasWorkout && (
-        <span className="absolute -top-0.5 -right-0.5 flex h-3 w-3 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-sm">
-          <Check className="h-1.5 w-1.5" strokeWidth={3} aria-hidden />
-        </span>
-      )}
-    </span>
-  );
+const DOW = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
+const MONTHS_SHORT = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
+
+/** Intensidade do heatmap por quantidade de treinos no dia. */
+function heatClass(count: number, isToday: boolean) {
+  if (count >= 3) return "bg-primary text-primary-foreground border-transparent font-bold";
+  if (count === 2) return "bg-primary/55 text-foreground border-transparent font-bold";
+  if (count === 1) return "bg-primary/25 text-foreground border-transparent font-semibold";
+  if (isToday) return "bg-secondary text-foreground border-primary font-bold";
+  return "bg-transparent text-muted-foreground border-border/60";
 }
 
-const MONTH_NAMES = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
-];
+/** Células do mês: null antes do dia 1 (semana começa na segunda). */
+function monthCells(month: Date) {
+  const first = startOfMonth(month);
+  const lead = (first.getDay() + 6) % 7;
+  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
+  const cells: (Date | null)[] = Array.from({ length: lead }, () => null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(new Date(month.getFullYear(), month.getMonth(), d));
+  return cells;
+}
 
-export function WorkoutCalendar({
-  workouts,
-  onEmptyDaySelect,
-  onDeleteWorkout,
-  isDeleting = false,
-}: WorkoutCalendarProps) {
+export function WorkoutCalendar({ workouts, onEmptyDaySelect, onDeleteWorkout, isDeleting }: WorkoutCalendarProps) {
   const today = startOfDay(new Date());
   const [viewMode, setViewMode] = useState<"month" | "year">("month");
-  const [currentMonth, setCurrentMonth] = useState(() => new Date(today.getFullYear(), today.getMonth(), 1));
+  const [cursor, setCursor] = useState(() => startOfMonth(today));
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
-  const workoutDates = useMemo(() => {
-    const set = new Set<string>();
-    workouts.forEach((w) => {
-      const d = startOfDay(new Date(w.workout_date));
-      set.add(d.toISOString());
-    });
-    return Array.from(set).map((s) => new Date(s));
-  }, [workouts]);
-
-  const workoutsByDate = useMemo(() => {
+  const countByDay = useMemo(() => {
     const map = new Map<string, Workout[]>();
-    workouts.forEach((w) => {
+    for (const w of workouts) {
       const key = format(startOfDay(new Date(w.workout_date)), "yyyy-MM-dd");
       const list = map.get(key) ?? [];
       list.push(w);
       map.set(key, list);
-    });
+    }
     return map;
   }, [workouts]);
 
-  const selectedWorkouts = selectedDate
-    ? workoutsByDate.get(format(selectedDate, "yyyy-MM-dd")) ?? []
-    : [];
+  const workoutsOn = (d: Date) => countByDay.get(format(d, "yyyy-MM-dd")) ?? [];
+  const monthTotal = workouts.filter((w) => isSameMonth(new Date(w.workout_date), cursor)).length;
+  const yearTotal = workouts.filter((w) => new Date(w.workout_date).getFullYear() === cursor.getFullYear()).length;
+  const selectedWorkouts = selectedDate ? workoutsOn(selectedDate) : [];
 
-  const years = useMemo(() => {
-    const y = today.getFullYear();
-    return Array.from({ length: 5 }, (_, i) => y - 2 + i);
-  }, [today.getFullYear()]);
-
-  useEffect(() => {
-    if (viewMode === "year") {
-      setCurrentMonth(new Date(today.getFullYear(), 0, 1));
-    } else {
-      setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
-    }
-  }, [viewMode, today.getFullYear(), today.getMonth()]);
+  const pickDay = (d: Date) => {
+    setSelectedDate(d);
+    if (workoutsOn(d).length === 0 && !isAfter(d, today)) onEmptyDaySelect?.(d);
+  };
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "month" | "year")}>
-          <TabsList className="grid w-full grid-cols-2 sm:w-auto">
-            <TabsTrigger value="month" className="gap-1.5">
-              <CalendarDays className="h-4 w-4" />
-              Mês
-            </TabsTrigger>
-            <TabsTrigger value="year" className="gap-1.5">
-              <LayoutGrid className="h-4 w-4" />
-              Ano
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <div className="flex items-center gap-2">
-          {viewMode === "month" && (
-            <>
-              <Select
-                value={currentMonth.getMonth().toString()}
-                onValueChange={(v) =>
-                  setCurrentMonth((prev) => setMonth(prev, Number(v)))
-                }
-              >
-                <SelectTrigger className="w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {MONTH_NAMES.map((name, i) => (
-                    <SelectItem key={i} value={i.toString()}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={currentMonth.getFullYear().toString()}
-                onValueChange={(v) =>
-                  setCurrentMonth((prev) => setYear(prev, Number(v)))
-                }
-              >
-                <SelectTrigger className="w-[90px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map((y) => (
-                    <SelectItem key={y} value={y.toString()}>
-                      {y}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </>
-          )}
-          {viewMode === "year" && (
-            <Select
-              value={currentMonth.getFullYear().toString()}
-              onValueChange={(v) =>
-                setCurrentMonth(new Date(Number(v), 0, 1))
-              }
+    <div className="rounded-[18px] border border-border bg-card p-4">
+      <div className="mb-3 flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <button
+            type="button"
+            aria-label={viewMode === "month" ? "Mês anterior" : "Ano anterior"}
+            onClick={() => setCursor((c) => (viewMode === "month" ? addMonths(c, -1) : addMonths(c, -12)))}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground hover:text-primary"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="display-title truncate text-[15px] text-foreground">
+            {viewMode === "month" ? format(cursor, "MMMM yyyy", { locale: ptBR }) : cursor.getFullYear()}
+          </span>
+          <button
+            type="button"
+            aria-label={viewMode === "month" ? "Próximo mês" : "Próximo ano"}
+            onClick={() => setCursor((c) => (viewMode === "month" ? addMonths(c, 1) : addMonths(c, 12)))}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-border bg-secondary text-muted-foreground hover:text-primary"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+        <div className="flex gap-0.5 rounded-[9px] border border-border bg-secondary p-[3px]">
+          {(["month", "year"] as const).map((mode) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setViewMode(mode)}
+              className={cn(
+                "rounded-md px-2.5 py-[5px] text-[11px]",
+                viewMode === mode ? "bg-primary font-bold text-primary-foreground" : "font-semibold text-muted-foreground",
+              )}
             >
-              <SelectTrigger className="w-[100px]">
-                <SelectValue placeholder="Ano" />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map((y) => (
-                  <SelectItem key={y} value={y.toString()}>
-                    {y}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
+              {mode === "month" ? "Mês" : "Ano"}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="overflow-x-auto overflow-y-visible">
-        <Calendar
-          mode="single"
-          selected={selectedDate ?? undefined}
-          onSelect={(d) => {
-            setSelectedDate(d ?? null);
-            if (d && onEmptyDaySelect) {
-              const key = format(startOfDay(d), "yyyy-MM-dd");
-              const list = workoutsByDate.get(key) ?? [];
-              if (list.length === 0) {
-                onEmptyDaySelect(d);
-              }
-            }
-          }}
-          month={currentMonth}
-          onMonthChange={setCurrentMonth}
-          numberOfMonths={viewMode === "year" ? 12 : 1}
-          pagedNavigation={viewMode === "year"}
-          locale={ptBR}
-          modifiers={{
-            hasWorkout: workoutDates,
-          }}
-          modifiersClassNames={{
-            hasWorkout: "bg-primary/15 text-foreground font-medium ring-1 ring-primary/40",
-          }}
-          components={{
-            DayContent: DayWithCheck,
-          }}
-          className={viewMode === "year" ? "p-2 sm:p-4 w-full" : "w-full p-2 sm:p-4"}
-          classNames={
-            viewMode === "year"
-              ? {
-                  row: "flex w-full mt-2 gap-1",
-                  months: "grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-4 gap-x-10 gap-y-12",
-                  month: "min-w-0 w-full flex flex-col shrink-0",
-                  caption: "flex justify-center pt-1 pb-3 relative",
-                  caption_label: "text-sm sm:text-base font-semibold",
-                  table: "w-full border-collapse",
-                  head_row: "flex w-full",
-                  head_cell: "text-muted-foreground flex-1 font-normal text-[0.7rem] sm:text-xs p-1 text-center",
-                  cell: "flex-1 aspect-square text-center text-xs sm:text-sm p-0 relative",
-                  day: "h-full w-full p-0 text-xs sm:text-sm font-normal aria-selected:opacity-100",
-                }
-              : {
-                  months: "flex flex-col w-full",
-                  month: "w-full space-y-4",
-                  table: "w-full border-collapse",
-                  head_row: "flex w-full",
-                  head_cell: "text-muted-foreground flex-1 font-normal text-xs sm:text-sm p-1 text-center",
-                  row: "flex w-full mt-2 gap-1 sm:gap-2",
-                  cell: "flex-1 aspect-square text-center text-sm p-0 relative",
-                  day: "h-full w-full p-0 text-sm sm:text-base font-normal aria-selected:opacity-100",
-                  caption: "flex justify-center pt-1 pb-3 relative items-center",
-                  caption_label: "text-sm sm:text-base font-semibold",
-                }
-          }
-        />
-      </div>
-
-      {selectedDate && (
-        <div className="rounded-lg border bg-muted/30 p-4">
-          <h4 className="mb-3 font-medium">
-            Treinos em {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
-          </h4>
-          {selectedWorkouts.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              Nenhum treino registrado neste dia.
-            </p>
-          ) : (
-            <ul className="space-y-2">
-              {selectedWorkouts.map((w) => (
-                <li
-                  key={w.id}
-                  className="flex items-center justify-between gap-2 rounded-md border bg-background px-3 py-2 text-sm"
+      {viewMode === "month" ? (
+        <>
+          <div className="mb-1.5 grid grid-cols-7 gap-1">
+            {DOW.map((l) => (
+              <span key={l} className="text-center font-mono text-[9px] font-semibold text-muted-foreground/70">
+                {l}
+              </span>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 gap-1">
+            {monthCells(cursor).map((d, i) =>
+              d === null ? (
+                <span key={`x${i}`} />
+              ) : (
+                <button
+                  key={d.getTime()}
+                  type="button"
+                  onClick={() => pickDay(d)}
+                  className={cn(
+                    "flex aspect-square items-center justify-center rounded-lg border font-mono text-xs transition-transform hover:scale-105",
+                    heatClass(workoutsOn(d).length, isSameDay(d, today)),
+                    selectedDate && isSameDay(d, selectedDate) && "ring-2 ring-ring ring-offset-1 ring-offset-card",
+                    isAfter(d, today) && "opacity-40",
+                  )}
                 >
-                  <span className="min-w-0 flex-1 truncate">{w.workout_type}</span>
-                  {w.notes && (
-                    <span className="text-xs text-muted-foreground truncate max-w-[120px]" title={w.notes}>
-                      {w.notes}
-                    </span>
-                  )}
-                  {onDeleteWorkout && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
-                      onClick={() =>
-                        onDeleteWorkout({
-                          id: w.id,
-                          group_id: w.group_id,
-                          label: w.workout_type,
-                        })
-                      }
-                      disabled={isDeleting}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
+                  {d.getDate()}
+                </button>
+              ),
+            )}
+          </div>
+          <div className="mt-3 flex items-center justify-between">
+            <span className="font-mono text-[10px] text-muted-foreground/70">
+              {monthTotal} {monthTotal === 1 ? "treino" : "treinos"} em {format(cursor, "MMMM", { locale: ptBR })}
+            </span>
+            <div className="flex items-center gap-1">
+              <span className="font-mono text-[9px] text-muted-foreground/70">menos</span>
+              <span className="h-[11px] w-[11px] rounded border border-border bg-transparent" />
+              <span className="h-[11px] w-[11px] rounded bg-primary/25" />
+              <span className="h-[11px] w-[11px] rounded bg-primary/55" />
+              <span className="h-[11px] w-[11px] rounded bg-primary" />
+              <span className="font-mono text-[9px] text-muted-foreground/70">mais</span>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          <div className="grid grid-cols-3 gap-3">
+            {MONTHS_SHORT.map((label, m) => {
+              const month = new Date(cursor.getFullYear(), m, 1);
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => {
+                    setCursor(month);
+                    setViewMode("month");
+                  }}
+                  className="flex flex-col gap-1.5 rounded-xl border border-border/60 bg-secondary/40 p-2 text-left hover:border-primary"
+                >
+                  <span className="font-mono text-[9px] font-bold tracking-[0.1em] text-muted-foreground">{label}</span>
+                  <span className="grid grid-cols-7 gap-[2px]">
+                    {monthCells(month).map((d, i) => (
+                      <span
+                        key={i}
+                        className={cn(
+                          "aspect-square rounded-[2px]",
+                          d === null
+                            ? "bg-transparent"
+                            : workoutsOn(d).length >= 2
+                              ? "bg-primary"
+                              : workoutsOn(d).length === 1
+                                ? "bg-primary/45"
+                                : "bg-border/60",
+                        )}
+                      />
+                    ))}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <span className="mt-3 block font-mono text-[10px] text-muted-foreground/70">
+            {yearTotal} {yearTotal === 1 ? "treino" : "treinos"} em {cursor.getFullYear()}
+          </span>
+        </>
+      )}
+
+      {selectedDate && viewMode === "month" && selectedWorkouts.length > 0 && (
+        <div className="mt-3 flex flex-col gap-1.5 border-t border-border pt-3">
+          <span className="mono-label">Treinos em {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}</span>
+          {selectedWorkouts.map((w) => (
+            <div key={w.id} className="flex items-center gap-2 rounded-xl border border-border/60 bg-secondary/50 px-3 py-2">
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-foreground">{w.workout_type}</p>
+                {w.notes && <p className="truncate text-xs text-muted-foreground">{w.notes}</p>}
+              </div>
+              {onDeleteWorkout && (
+                <button
+                  type="button"
+                  aria-label="Excluir treino"
+                  disabled={isDeleting}
+                  onClick={() => onDeleteWorkout({ id: w.id, group_id: w.group_id, label: w.workout_type })}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>

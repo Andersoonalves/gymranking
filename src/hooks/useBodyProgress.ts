@@ -11,7 +11,7 @@ export type BodyProgress = {
     created_at: string;
 };
 
-const bodyProgressTable = () => (supabase as any).from("body_progress");
+const bodyProgressTable = () => supabase.from("body_progress");
 
 const QUERY_KEY = "body_progress";
 

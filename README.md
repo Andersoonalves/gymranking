@@ -1,73 +1,96 @@
-# Welcome to your Lovable project
+# FitRank
 
-## Project info
+App de treinos com dinâmica social: você registra seus treinos, entra em grupos com amigos
+e disputa o ranking de consistência por semana, mês e ano.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+PWA instalável, mobile-first, com notificações push.
 
-## How can I edit this code?
+## Funcionalidades
 
-There are several ways of editing your application.
+- **Auth** — cadastro, login, troca de senha, rotas protegidas.
+- **Grupos** — criar grupo, entrar por código de convite, alternar grupo ativo.
+- **Registro de treino** — um ou mais tipos por lançamento, data/hora, observações, registro retroativo pelo calendário.
+- **Treinos salvos** — programas (Treino A, B…) com exercícios, séries, repetições e carga. 202 exercícios em 12 grupos musculares, além de templates prontos (PPL, Upper/Lower, Full Body).
+- **Calendário** — visão mensal e anual com destaque nos dias treinados.
+- **Rankings** — por semana/mês/ano, com filtro por tipo de treino.
+- **Progresso físico** — peso por data, foto de progresso e gráfico de evolução.
+- **Admin** — painel de gestão de usuários (listar, criar, resetar senha, excluir).
+- **Export/import** — histórico de treinos em JSON.
 
-**Use Lovable**
+Requisitos detalhados: [`docs/requisitos-app-treinos.md`](docs/requisitos-app-treinos.md).
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+## Stack
 
-Changes made via Lovable will be committed automatically to this repo.
+| Camada | Tecnologia |
+|---|---|
+| Build | Vite 5 + `@vitejs/plugin-react-swc` |
+| UI | React 18, TypeScript, Tailwind, shadcn/ui (Radix) |
+| Estado servidor | TanStack Query |
+| Rotas | React Router 6 |
+| Backend | Supabase (Postgres + RLS, Auth, Storage, Edge Functions) |
+| PWA | `vite-plugin-pwa` em modo `injectManifest` (`src/sw.ts`) |
+| Testes | Vitest + Testing Library |
 
-**Use your preferred IDE**
+## Rodando localmente
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+Requer Node 18+.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
+cp .env.local.example .env.local   # preencha com as credenciais do Supabase
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+O app sobe em `http://localhost:8080`.
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Variáveis de ambiente
 
-**Use GitHub Codespaces**
+| Variável | Descrição |
+|---|---|
+| `VITE_SUPABASE_URL` | URL da API do projeto Supabase |
+| `VITE_SUPABASE_PUBLISHABLE_KEY` | Chave anon/publishable |
+| `VITE_SUPABASE_PROJECT_ID` | ID do projeto |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+O Vite carrega `.env.local` com prioridade sobre `.env`, então dá para manter a nuvem no
+`.env` e o ambiente local no `.env.local`.
 
-## What technologies are used for this project?
+### Supabase local (opcional)
 
-This project is built with:
+Para rodar banco e Auth na sua máquina em vez do projeto na nuvem, siga
+[`docs/SUPABASE-LOCAL.md`](docs/SUPABASE-LOCAL.md). Precisa de Docker.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+```bash
+npx supabase start
+npx supabase db reset   # aplica todas as migrations de supabase/migrations
+```
 
-## How can I deploy this project?
+## Scripts
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento (porta 8080) |
+| `npm run build` | Build de produção em `dist/` |
+| `npm run preview` | Serve o build local |
+| `npm run lint` | ESLint |
+| `npm test` | Vitest (run único) |
+| `npm run test:watch` | Vitest em watch |
 
-## Can I connect a custom domain to my Lovable project?
+## Estrutura
 
-Yes, you can!
+```
+src/
+  pages/          rotas de tela (Index, Rankings, Treinos, Progresso, Settings, Admin, Login…)
+  components/     componentes da aplicação
+  components/ui/  primitivas shadcn/ui
+  hooks/          hooks de dados (TanStack Query sobre o Supabase)
+  contexts/       AuthContext, RegisterWorkoutContext
+  lib/            lógica pura: ranking, exercícios, templates, export
+  integrations/   client e tipos gerados do Supabase
+supabase/
+  migrations/     schema e políticas de RLS
+  functions/      Edge Functions em Deno (admin-users, notify-new-workout)
+```
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Deploy das Edge Functions
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Ver [`docs/EDGE-FUNCTIONS-DEPLOY.md`](docs/EDGE-FUNCTIONS-DEPLOY.md).
