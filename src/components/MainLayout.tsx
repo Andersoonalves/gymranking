@@ -40,6 +40,7 @@ export function MainLayout({ children }: MainLayoutProps) {
     workout_types: string[];
     workout_date: string;
     notes?: string | null;
+    photo_url?: string | null;
   }) => {
     await addWorkouts.mutateAsync(params);
     if (session?.access_token && allGroupIds.length > 0) {

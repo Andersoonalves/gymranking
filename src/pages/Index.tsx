@@ -10,7 +10,9 @@ import { useProfilesInGroup } from "@/hooks/useProfilesInGroup";
 import { useWorkoutLikes, useToggleWorkoutLike } from "@/hooks/useWorkoutLikes";
 import { useMyProfile } from "@/hooks/useMyProfile";
 import { useChallenges } from "@/hooks/useChallenges";
+import { useWorkoutPhotoUrls } from "@/hooks/useWorkoutPhotos";
 import { challengeStatus, daysLeft, computeChallengeScores } from "@/lib/challenges";
+import { PhotoLightbox } from "@/components/PhotoLightbox";
 import { useImportWorkouts } from "@/hooks/useImportWorkouts";
 import { useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
 import { filterWorkoutsByPeriod, computeRanking, computeStreak, buildCallout } from "@/lib/ranking";
@@ -134,6 +136,23 @@ export default function Index() {
 
   const feedTotalPages = Math.max(1, Math.ceil(workouts.length / FEED_PAGE_SIZE));
   const feedPaginated = workouts.slice((feedPage - 1) * FEED_PAGE_SIZE, feedPage * FEED_PAGE_SIZE);
+
+  // Fotos-prova da página atual do feed
+  const feedPhotoPaths = useMemo(() => feedPaginated.filter((w) => w.photo_url).map((w) => w.photo_url!), [feedPaginated]);
+  const { data: photoUrls = {} } = useWorkoutPhotoUrls(feedPhotoPaths);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const feedLightboxPhotos = useMemo(
+    () =>
+      feedPaginated
+        .filter((w) => w.photo_url)
+        .map((w) => ({
+          id: w.id,
+          url: photoUrls[w.photo_url!] ?? null,
+          title: w.user_id === userId ? "Você" : (profilesMap[w.user_id]?.display_name ?? "Alguém"),
+          subtitle: w.workout_type,
+        })),
+    [feedPaginated, photoUrls, profilesMap, userId],
+  );
 
   // Desafio ativo mais urgente (menos dias restantes) para o banner
   const activeChallenge = challenges
@@ -584,6 +603,24 @@ export default function Index() {
                         ))}
                       </div>
                       {w.notes && <span className="text-xs leading-snug text-muted-foreground">{w.notes}</span>}
+                      {w.photo_url && photoUrls[w.photo_url] && (
+                        <button
+                          type="button"
+                          aria-label="Ampliar foto do treino"
+                          onClick={() => {
+                            const idx = feedLightboxPhotos.findIndex((p) => p.id === w.id);
+                            if (idx >= 0) setLightboxIdx(idx);
+                          }}
+                          className="mt-1 overflow-hidden rounded-xl border border-border"
+                        >
+                          <img
+                            src={photoUrls[w.photo_url]}
+                            alt="Foto do treino"
+                            loading="lazy"
+                            className="max-h-56 w-full object-cover"
+                          />
+                        </button>
+                      )}
                       <div className="mt-0.5 flex items-center gap-2">
                         <button
                           type="button"
@@ -722,6 +759,15 @@ export default function Index() {
             {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
           </button>
         </div>
+      )}
+
+      {lightboxIdx !== null && (
+        <PhotoLightbox
+          photos={feedLightboxPhotos}
+          index={lightboxIdx}
+          onIndexChange={setLightboxIdx}
+          onClose={() => setLightboxIdx(null)}
+        />
       )}
 
       <CreateGroupDialog

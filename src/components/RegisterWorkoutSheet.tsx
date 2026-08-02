@@ -1,10 +1,11 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { WORKOUT_TYPES } from "@/lib/workout-types";
 import { useTrainingPrograms, type TrainingProgram } from "@/hooks/useTrainingPrograms";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
-import { CalendarClock, Check, ListChecks, Search, Zap } from "lucide-react";
+import { CalendarClock, Camera, Check, ListChecks, Loader2, Search, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 
 function toDateTimeLocalString(date: Date): string {
@@ -35,6 +36,7 @@ type RegisterWorkoutSheetProps = {
     workout_types: string[];
     workout_date: string;
     notes?: string | null;
+    photo_url?: string | null;
   }) => Promise<unknown>;
   isPending: boolean;
 };
@@ -60,6 +62,36 @@ export function RegisterWorkoutSheet({
   const [when, setWhen] = useState<WhenChoice>("now");
   const [customDateTime, setCustomDateTime] = useState(() => toDateTimeLocalString(new Date()));
   const [notes, setNotes] = useState("");
+  const [photoPath, setPhotoPath] = useState<string | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoFile = async (file: File) => {
+    if (!user) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Foto muito grande", { description: "O tamanho máximo é 5 MB." });
+      return;
+    }
+    setUploadingPhoto(true);
+    setPhotoPreview(URL.createObjectURL(file));
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${user.id}/${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("workout-photos").upload(path, file, { upsert: true });
+    setUploadingPhoto(false);
+    if (error) {
+      toast.error("Erro ao enviar foto");
+      setPhotoPreview(null);
+      return;
+    }
+    setPhotoPath(path);
+  };
+
+  const clearPhoto = () => {
+    setPhotoPath(null);
+    setPhotoPreview(null);
+    if (photoInputRef.current) photoInputRef.current.value = "";
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -89,6 +121,7 @@ export function RegisterWorkoutSheet({
       setSearch("");
       setSource("general");
       setWhen("now");
+      clearPhoto();
     }
     onOpenChange(next);
   };
@@ -109,7 +142,7 @@ export function RegisterWorkoutSheet({
     return myPrograms.filter((p) => p.title.toLowerCase().includes(q));
   }, [myPrograms, search]);
 
-  const register = async (params: { workout_types: string[]; workout_date: string; notes: string | null }) => {
+  const register = async (params: { workout_types: string[]; workout_date: string; notes: string | null; photo_url?: string | null }) => {
     try {
       await onRegister({ group_ids: groupIds, ...params });
       toast.success("Treino registrado!");
@@ -139,7 +172,7 @@ export function RegisterWorkoutSheet({
       toast.error("Selecione pelo menos um tipo de treino");
       return;
     }
-    register({ workout_types: types, workout_date: resolveDate(), notes: notes.trim() || null });
+    register({ workout_types: types, workout_date: resolveDate(), notes: notes.trim() || null, photo_url: photoPath });
   };
 
   return (
@@ -351,9 +384,55 @@ export function RegisterWorkoutSheet({
               />
             </div>
 
+            {/* Foto-prova opcional */}
+            <div className="flex flex-col gap-1.5">
+              <span className="mono-label">Foto de prova · opcional</span>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  const f = e.target.files?.[0];
+                  if (f) handlePhotoFile(f);
+                }}
+              />
+              {photoPreview ? (
+                <div className="relative h-20 w-20">
+                  <img src={photoPreview} alt="Prévia da foto do treino" className="h-20 w-20 rounded-xl border border-border object-cover" />
+                  {uploadingPhoto && (
+                    <span className="absolute inset-0 flex items-center justify-center rounded-xl bg-background/60">
+                      <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                    </span>
+                  )}
+                  <button
+                    type="button"
+                    aria-label="Remover foto"
+                    onClick={clearPhoto}
+                    className="absolute -right-2 -top-2 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  className="flex items-center gap-2.5 rounded-xl border border-dashed border-border bg-secondary/40 px-3.5 py-3 text-left hover:border-accent"
+                >
+                  <Camera className="h-5 w-5 shrink-0 text-accent" />
+                  <span className="flex flex-col gap-0.5">
+                    <span className="text-xs font-bold text-foreground">Anexar prova</span>
+                    <span className="text-[10px] leading-snug text-muted-foreground">Selfie suada, aparelho, print — o grupo vê no feed.</span>
+                  </span>
+                </button>
+              )}
+            </div>
+
             <button
               type="submit"
-              disabled={selectedTypes.length === 0 || isPending}
+              disabled={selectedTypes.length === 0 || isPending || uploadingPhoto}
               className="relative flex w-full items-center justify-center overflow-hidden rounded-[14px] bg-primary p-[17px] text-[15px] font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50"
             >
               <span className="absolute left-0 top-0 h-full w-2/5 animate-sheen bg-gradient-to-r from-transparent via-white/55 to-transparent [animation-duration:3.2s]" />

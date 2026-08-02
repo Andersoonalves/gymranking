@@ -59,6 +59,7 @@ export function useAddWorkouts(userId: string | undefined) {
       workout_types: string[];
       workout_date: string;
       notes?: string | null;
+      photo_url?: string | null;
     }) => {
       if (params.workout_types.length === 0) throw new Error("Selecione pelo menos um tipo.");
       if (params.group_ids.length === 0) throw new Error("Você não participa de nenhum grupo.");
@@ -69,6 +70,7 @@ export function useAddWorkouts(userId: string | undefined) {
         workout_type,
         workout_date: params.workout_date,
         notes: params.notes ?? null,
+        photo_url: params.photo_url ?? null,
       }));
       const { data, error } = await supabase
         .from("workouts")

@@ -362,6 +362,7 @@ export type Database = {
           group_id: string
           id: string
           notes: string | null
+          photo_url: string | null
           user_id: string
           workout_date: string
           workout_type: string
@@ -371,6 +372,7 @@ export type Database = {
           group_id: string
           id?: string
           notes?: string | null
+          photo_url?: string | null
           user_id: string
           workout_date?: string
           workout_type: string
@@ -380,6 +382,7 @@ export type Database = {
           group_id?: string
           id?: string
           notes?: string | null
+          photo_url?: string | null
           user_id?: string
           workout_date?: string
           workout_type?: string
