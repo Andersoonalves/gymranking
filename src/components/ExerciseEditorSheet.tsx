@@ -3,7 +3,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { extractYouTubeId, youTubeThumbnail, youTubeEmbedUrl } from "@/lib/youtube";
 import type { TrainingExercise } from "@/hooks/useTrainingPrograms";
 import { cn } from "@/lib/utils";
-import { CheckCircle2, ClipboardPaste, Link2, Play, Trash2 } from "lucide-react";
+import { CheckCircle2, ClipboardPaste, Link2, Play, Trash2, X } from "lucide-react";
 
 type ExerciseEditorSheetProps = {
   open: boolean;
@@ -96,15 +96,25 @@ export function ExerciseEditorSheet({
 
           {/* Player */}
           {videoId && (
-            <div className="overflow-hidden rounded-[18px] border border-border bg-black">
+            <div className="relative overflow-hidden rounded-[18px] border border-border bg-black">
               {playing ? (
-                <iframe
-                  src={youTubeEmbedUrl(videoId)}
-                  title={exercise.title}
-                  className="aspect-video w-full"
-                  allow="autoplay; encrypted-media; picture-in-picture"
-                  allowFullScreen
-                />
+                <>
+                  <iframe
+                    src={youTubeEmbedUrl(videoId)}
+                    title={exercise.title}
+                    className="aspect-video w-full"
+                    allow="autoplay; encrypted-media; picture-in-picture"
+                    allowFullScreen
+                  />
+                  <button
+                    type="button"
+                    aria-label="Fechar vídeo"
+                    onClick={() => setPlaying(false)}
+                    className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-[9px] bg-black/80 text-white hover:bg-black"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </>
               ) : (
                 <button
                   type="button"
