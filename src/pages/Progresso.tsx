@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useBodyProgress, useAddBodyProgress, useDeleteBodyProgress } from "@/hooks/useBodyProgress";
 import { ProgressPhotoUpload } from "@/components/ProgressPhotoUpload";
@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { format, parseISO, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
-import { GitCompareArrows, ImageOff, Lock, Scale, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, GitCompareArrows, ImageOff, Lock, Scale, Trash2, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,6 +35,118 @@ function deltaLabel(from: number, to: number) {
   return `${sign}${Math.abs(d).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg`;
 }
 
+/** Lightbox de fotos do histórico: abre na mesma tela, desliza entre as imagens. */
+function PhotoLightbox({
+  photos,
+  index,
+  onIndexChange,
+  onClose,
+}: {
+  photos: ComparePhoto[];
+  index: number;
+  onIndexChange: (i: number) => void;
+  onClose: () => void;
+}) {
+  const touchStartX = useRef<number | null>(null);
+  const photo = photos[index];
+
+  const prev = () => onIndexChange((index - 1 + photos.length) % photos.length);
+  const next = () => onIndexChange((index + 1) % photos.length);
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") prev();
+      if (e.key === "ArrowRight") next();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  });
+
+  if (!photo) return null;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex flex-col bg-background/95 backdrop-blur-sm animate-pop-in"
+      role="dialog"
+      aria-label="Foto de progresso ampliada"
+      onClick={onClose}
+      onPointerDown={(e) => {
+        touchStartX.current = e.clientX;
+      }}
+      onPointerUp={(e) => {
+        if (touchStartX.current === null) return;
+        const dx = e.clientX - touchStartX.current;
+        touchStartX.current = null;
+        if (dx > 40) prev();
+        else if (dx < -40) next();
+      }}
+    >
+      <div className="flex items-center justify-between px-5 pb-2 pt-4 safe-area-top" onClick={(e) => e.stopPropagation()}>
+        <span className="font-mono text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">
+          {index + 1} / {photos.length}
+        </span>
+        <button
+          type="button"
+          aria-label="Fechar"
+          onClick={onClose}
+          className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-border bg-secondary text-foreground"
+        >
+          <X className="h-[18px] w-[18px]" />
+        </button>
+      </div>
+
+      <div className="relative flex min-h-0 flex-1 items-center justify-center px-4" onClick={(e) => e.stopPropagation()}>
+        {photo.url ? (
+          <img src={photo.url} alt={`Foto de ${photo.date}`} className="max-h-full max-w-full rounded-2xl object-contain" draggable={false} />
+        ) : (
+          <div className="flex h-64 w-48 items-center justify-center rounded-2xl bg-secondary">
+            <ImageOff className="h-8 w-8 text-muted-foreground/40" />
+          </div>
+        )}
+        {photos.length > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label="Foto anterior"
+              onClick={prev}
+              className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/70 text-foreground backdrop-blur-sm"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <button
+              type="button"
+              aria-label="Próxima foto"
+              onClick={next}
+              className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/70 text-foreground backdrop-blur-sm"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
+          </>
+        )}
+      </div>
+
+      <div className="flex flex-col items-center gap-2 px-5 pb-6 pt-3 safe-area-bottom" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-baseline gap-2">
+          <span className="font-mono text-xl font-bold text-foreground">{kgLabel(photo.kg)}</span>
+          <span className="font-mono text-xs font-semibold text-muted-foreground">kg · {photo.date}</span>
+        </div>
+        <div className="flex items-center gap-1">
+          {photos.map((p, i) => (
+            <button
+              key={p.id}
+              type="button"
+              aria-label={`Foto ${i + 1}`}
+              onClick={() => onIndexChange(i)}
+              className={cn("h-1.5 rounded-full transition-all", i === index ? "w-5 bg-primary" : "w-1.5 bg-muted-foreground/30")}
+            />
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Progresso() {
   const { user } = useAuth();
   const userId = user?.id;
@@ -51,6 +163,7 @@ export default function Progresso() {
   const [saving, setSaving] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [compareOpen, setCompareOpen] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
 
   // URLs assinadas para as fotos (bucket privado)
@@ -355,17 +468,23 @@ export default function Progresso() {
             return (
               <div key={entry.id} className="flex items-center gap-3 rounded-[14px] border border-border/60 bg-card p-3 hover:border-border">
                 {entry.photo_url && (
-                  <div className="h-[52px] w-[42px] shrink-0 overflow-hidden rounded-[9px] border border-border bg-secondary">
+                  <button
+                    type="button"
+                    aria-label="Ampliar foto de progresso"
+                    onClick={() => {
+                      const idx = photos.findIndex((p) => p.id === entry.id);
+                      if (idx >= 0) setLightboxIdx(idx);
+                    }}
+                    className="h-[52px] w-[42px] shrink-0 overflow-hidden rounded-[9px] border border-border bg-secondary"
+                  >
                     {photoUrl ? (
-                      <a href={photoUrl} target="_blank" rel="noopener noreferrer">
-                        <img src={photoUrl} alt="Foto de progresso" className="h-full w-full object-cover" />
-                      </a>
+                      <img src={photoUrl} alt="Foto de progresso" className="h-full w-full object-cover" />
                     ) : (
-                      <div className="flex h-full w-full items-center justify-center">
+                      <span className="flex h-full w-full items-center justify-center">
                         <ImageOff className="h-4 w-4 text-muted-foreground/40" />
-                      </div>
+                      </span>
                     )}
-                  </div>
+                  </button>
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex items-baseline gap-2">
@@ -411,6 +530,10 @@ export default function Progresso() {
       </div>
 
       <PhotoCompare open={compareOpen} onOpenChange={setCompareOpen} photos={photos} />
+
+      {lightboxIdx !== null && (
+        <PhotoLightbox photos={photos} index={lightboxIdx} onIndexChange={setLightboxIdx} onClose={() => setLightboxIdx(null)} />
+      )}
 
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
