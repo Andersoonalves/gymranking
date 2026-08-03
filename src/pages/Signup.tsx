@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { EcgBackground } from "@/components/EcgBackground";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -61,8 +62,9 @@ export default function Signup() {
     "rounded-xl border border-border bg-card p-[15px] text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-primary";
 
   return (
-    <div className="dark min-h-dvh bg-background text-foreground">
-      <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center gap-5 px-7 py-10 safe-area-top safe-area-bottom">
+    <div className="dark relative min-h-dvh cursor-crosshair overflow-hidden bg-[#0A0907] text-foreground">
+      <EcgBackground />
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center gap-5 px-7 py-10 safe-area-top safe-area-bottom">
         {inviteGroup && (
           <div className="flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-4 animate-rise-in">
             <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[14px] bg-primary text-lg font-black text-primary-foreground">

@@ -30,7 +30,7 @@ export default function Login() {
     <div className="dark relative min-h-dvh cursor-crosshair overflow-hidden bg-[#0A0907] text-foreground">
       <EcgBackground />
 
-      <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-end gap-6 px-7 pb-9 pt-16 safe-area-bottom">
+      <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center gap-6 px-7 py-12 safe-area-bottom">
         <div className="flex flex-col gap-3.5 animate-rise-in">
           <span className="flex h-[52px] w-[52px] items-center justify-center rounded-[17px] bg-primary text-primary-foreground shadow-[0_0_44px_-6px_hsl(var(--primary)/0.6)]">
             <Zap className="h-7 w-7 fill-current" />
