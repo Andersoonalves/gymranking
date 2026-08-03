@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyGroups } from "@/hooks/useGroups";
@@ -37,6 +37,13 @@ export function MainLayout({ children }: MainLayoutProps) {
   const [registerTargetDate, setRegisterTargetDate] = useState<Date | null>(null);
 
   useOfflineWorkoutSync(userId);
+
+  // Troca de aba volta o scroll pro topo — sem isso a nova tela abre no meio.
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    mainRef.current?.scrollTo(0, 0);
+  }, [location.pathname]);
 
   const allGroupIds = groups.map((g) => g.id);
 
@@ -99,7 +106,7 @@ export function MainLayout({ children }: MainLayoutProps) {
       setRegisterTargetDate={setRegisterTargetDate}
     >
       <div className="flex min-h-dvh flex-col bg-background">
-        <main className="flex-1 overflow-auto pb-24">
+        <main ref={mainRef} className="flex-1 overflow-auto pb-24">
           {children}
         </main>
 
