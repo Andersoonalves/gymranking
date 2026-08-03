@@ -8,6 +8,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { InitialAvatar } from "@/components/InitialAvatar";
 import { EmptyState } from "@/components/EmptyState";
 import { ChallengesSection } from "@/components/ChallengesSection";
+import { MemberProfileSheet } from "@/components/MemberProfileSheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WORKOUT_TYPES } from "@/lib/workout-types";
 import { cn } from "@/lib/utils";
@@ -77,6 +78,9 @@ export default function Rankings() {
 
   const [period, setPeriod] = useState<RankingPeriod>("week");
   const [workoutTypeFilter, setWorkoutTypeFilter] = useState<string>("all");
+  const [profileMember, setProfileMember] = useState<{ user_id: string; display_name: string; avatar_url: string | null } | null>(
+    null,
+  );
 
   const filteredByType =
     workoutTypeFilter === "all" ? workouts : workouts.filter((w) => w.workout_type.split(", ").includes(workoutTypeFilter));
@@ -185,10 +189,14 @@ export default function Rankings() {
               (i > 0 && ranking[i - 1].count === entry.count) || (i < ranking.length - 1 && ranking[i + 1].count === entry.count);
             const isFirst = entry.position === 1;
             return (
-              <div
+              <button
+                type="button"
                 key={entry.user_id}
+                onClick={() =>
+                  setProfileMember({ user_id: entry.user_id, display_name: entry.display_name, avatar_url: entry.avatar_url })
+                }
                 className={cn(
-                  "flex items-center gap-3 rounded-[14px] border p-3 transition-transform hover:translate-x-[3px]",
+                  "flex w-full items-center gap-3 rounded-[14px] border p-3 text-left transition-transform hover:translate-x-[3px]",
                   isMe ? "border-primary/40 bg-primary/5" : "border-border/60 bg-card",
                 )}
               >
@@ -215,11 +223,19 @@ export default function Rankings() {
                     />
                   </div>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
       )}
+
+      <MemberProfileSheet
+        open={!!profileMember}
+        onOpenChange={(o) => !o && setProfileMember(null)}
+        member={profileMember}
+        workouts={workouts}
+        myUserId={userId}
+      />
     </div>
   );
 }

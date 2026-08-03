@@ -17,6 +17,7 @@ import { computeAchievements } from "@/lib/achievements";
 import { prCount } from "@/lib/personal-records";
 import { PhotoLightbox } from "@/components/PhotoLightbox";
 import { AchievementsSheet } from "@/components/AchievementsSheet";
+import { MemberProfileSheet } from "@/components/MemberProfileSheet";
 import { ShareInviteButton } from "@/components/ShareInviteButton";
 import { useImportWorkouts } from "@/hooks/useImportWorkouts";
 import { useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
@@ -133,6 +134,9 @@ export default function Index() {
 
   const { data: exerciseHistory = [] } = useExerciseHistory(userId);
   const [achievementsOpen, setAchievementsOpen] = useState(false);
+  const [profileMember, setProfileMember] = useState<{ user_id: string; display_name: string; avatar_url: string | null } | null>(
+    null,
+  );
   const achievements = useMemo(
     () => computeAchievements(myWorkouts, prCount(exerciseHistory)),
     [myWorkouts, exerciseHistory],
@@ -764,17 +768,23 @@ export default function Index() {
           ) : (
             <div className="flex flex-col gap-2">
               {Object.entries(profilesMap).map(([uid, profile]) => (
-                <div key={uid} className="flex items-center gap-3 rounded-[14px] border border-border/60 bg-card p-3">
+                <button
+                  key={uid}
+                  type="button"
+                  onClick={() => setProfileMember({ user_id: uid, display_name: profile.display_name, avatar_url: profile.avatar_url })}
+                  className="flex items-center gap-3 rounded-[14px] border border-border/60 bg-card p-3 text-left hover:border-primary"
+                >
                   <InitialAvatar
                     name={profile.display_name}
                     avatarUrl={profile.avatar_url}
                     isSelf={uid === userId}
                     className="h-9 w-9 text-sm"
                   />
-                  <span className="text-sm font-bold text-foreground">
+                  <span className="flex-1 text-sm font-bold text-foreground">
                     {uid === userId ? `${profile.display_name} (você)` : profile.display_name}
                   </span>
-                </div>
+                  <span className="font-mono text-[10px] uppercase text-muted-foreground/60">Ver perfil</span>
+                </button>
               ))}
             </div>
           )}
@@ -814,6 +824,14 @@ export default function Index() {
       )}
 
       <AchievementsSheet open={achievementsOpen} onOpenChange={setAchievementsOpen} achievements={achievements} />
+
+      <MemberProfileSheet
+        open={!!profileMember}
+        onOpenChange={(o) => !o && setProfileMember(null)}
+        member={profileMember}
+        workouts={workouts}
+        myUserId={userId}
+      />
 
       <CreateGroupDialog
         open={createOpen}
