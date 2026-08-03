@@ -11,7 +11,7 @@ import { enqueueWorkout, isNetworkError } from "@/lib/offline-queue";
 import { useOfflineWorkoutSync } from "@/hooks/useOfflineWorkoutSync";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { Home, Trophy, Plus, ClipboardList, TrendingUp } from "lucide-react";
+import { ArrowUp, Home, Trophy, Plus, ClipboardList, TrendingUp } from "lucide-react";
 
 const navItems = [
   { path: "/", label: "Início", icon: Home },
@@ -44,6 +44,15 @@ export function MainLayout({ children }: MainLayoutProps) {
     window.scrollTo(0, 0);
     mainRef.current?.scrollTo(0, 0);
   }, [location.pathname]);
+
+  // Botão "voltar ao topo" aparece depois de rolar uma tela.
+  // Captura pega o scroll onde quer que ele aconteça (window ou container).
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setShowScrollTop(window.scrollY > 400 || (mainRef.current?.scrollTop ?? 0) > 400);
+    document.addEventListener("scroll", onScroll, { passive: true, capture: true });
+    return () => document.removeEventListener("scroll", onScroll, { capture: true });
+  }, []);
 
   const allGroupIds = groups.map((g) => g.id);
 
@@ -109,6 +118,20 @@ export function MainLayout({ children }: MainLayoutProps) {
         <main ref={mainRef} className="flex-1 overflow-auto pb-24">
           {children}
         </main>
+
+        {showScrollTop && (
+          <button
+            type="button"
+            aria-label="Voltar ao topo"
+            onClick={() => {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            className="fixed bottom-28 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-[13px] border border-border bg-card/90 text-foreground shadow-lg backdrop-blur-sm animate-pop-in hover:border-primary hover:text-primary safe-area-bottom"
+          >
+            <ArrowUp className="h-5 w-5" />
+          </button>
+        )}
 
         <nav className="pointer-events-none fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-background from-[60%] to-transparent safe-area-bottom">
           <div className="pointer-events-auto mx-auto grid max-w-lg grid-cols-5 items-end gap-0.5 px-3 pb-3 pt-2">
