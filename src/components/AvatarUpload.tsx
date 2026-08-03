@@ -4,6 +4,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Camera, Loader2 } from "lucide-react";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 const MAX_SIZE = 1 * 1024 * 1024; // 1 MB
 
@@ -18,41 +19,55 @@ export function AvatarUpload({ userId, currentUrl, displayName, onUploaded }: Av
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [cropFile, setCropFile] = useState<File | null>(null);
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    if (file.size > MAX_SIZE) {
-      toast.error("Imagem muito grande", { description: "O tamanho máximo é 1 MB." });
-      return;
-    }
 
     if (!file.type.startsWith("image/")) {
       toast.error("Arquivo inválido", { description: "Selecione uma imagem." });
       return;
     }
 
+    setCropFile(file);
+    e.target.value = "";
+  };
+
+  const handleFile = async (file: File) => {
+    setCropFile(null);
+
+    if (file.size > MAX_SIZE) {
+      toast.error("Imagem muito grande", { description: "O tamanho máximo é 1 MB." });
+      return;
+    }
+
     setUploading(true);
-    const ext = file.name.split(".").pop();
-    const path = `${userId}/avatar.${ext}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(path, file, { upsert: true });
+    // Upload vai para o R2 via Worker (`/api/avatar`); ele valida o token e
+    // devolve a URL pública já com ?v=<timestamp> para furar o cache do CDN.
+    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch("/api/avatar", {
+      method: "PUT",
+      headers: {
+        authorization: `Bearer ${session?.access_token ?? ""}`,
+        "content-type": file.type,
+      },
+      body: file,
+    });
 
-    if (uploadError) {
-      toast.error("Erro no upload", { description: uploadError.message });
+    if (!response.ok) {
+      const { error } = (await response.json().catch(() => ({ error: null }))) as { error: string | null };
+      toast.error("Erro no upload", { description: error ?? "Tente de novo." });
       setUploading(false);
       return;
     }
 
-    const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path);
-    const urlWithCacheBust = `${publicUrl}?t=${Date.now()}`;
+    const { url } = (await response.json()) as { url: string };
 
     const { error: updateError } = await supabase
       .from("profiles")
-      .update({ avatar_url: publicUrl })
+      .update({ avatar_url: url })
       .eq("user_id", userId);
 
     if (updateError) {
@@ -61,8 +76,8 @@ export function AvatarUpload({ userId, currentUrl, displayName, onUploaded }: Av
       return;
     }
 
-    setPreview(urlWithCacheBust);
-    onUploaded(urlWithCacheBust);
+    setPreview(url);
+    onUploaded(url);
     toast.success("Foto atualizada!");
     setUploading(false);
   };
@@ -74,7 +89,9 @@ export function AvatarUpload({ userId, currentUrl, displayName, onUploaded }: Av
     .slice(0, 2)
     .toUpperCase() || "?";
 
-  const src = preview || (currentUrl ? `${currentUrl}?t=${Date.now()}` : null);
+  // A URL já vem versionada do upload — nada de cache-bust por render, que
+  // obrigava o navegador a rebaixar a foto toda vez.
+  const src = preview || currentUrl;
 
   return (
     <div className="flex items-center gap-4">
@@ -108,7 +125,13 @@ export function AvatarUpload({ userId, currentUrl, displayName, onUploaded }: Av
         type="file"
         accept="image/*"
         className="hidden"
-        onChange={handleFile}
+        onChange={handleSelect}
+      />
+      <ImageCropDialog
+        file={cropFile}
+        maxSize={512}
+        onCancel={() => setCropFile(null)}
+        onConfirm={handleFile}
       />
     </div>
   );

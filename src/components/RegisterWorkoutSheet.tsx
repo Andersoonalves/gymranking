@@ -5,6 +5,7 @@ import { useTrainingPrograms, type TrainingProgram } from "@/hooks/useTrainingPr
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
 import { CalendarClock, Camera, Check, ListChecks, Loader2, Search, X, Zap } from "lucide-react";
 import { toast } from "sonner";
 
@@ -65,9 +66,11 @@ export function RegisterWorkoutSheet({
   const [photoPath, setPhotoPath] = useState<string | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [cropFile, setCropFile] = useState<File | null>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const handlePhotoFile = async (file: File) => {
+    setCropFile(null);
     if (!user) return;
     if (file.size > 5 * 1024 * 1024) {
       toast.error("Foto muito grande", { description: "O tamanho máximo é 5 MB." });
@@ -395,8 +398,14 @@ export function RegisterWorkoutSheet({
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
-                  if (f) handlePhotoFile(f);
+                  if (f) setCropFile(f);
+                  e.target.value = "";
                 }}
+              />
+              <ImageCropDialog
+                file={cropFile}
+                onCancel={() => setCropFile(null)}
+                onConfirm={handlePhotoFile}
               />
               {photoPreview ? (
                 <div className="relative h-20 w-20">

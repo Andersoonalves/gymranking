@@ -31,6 +31,11 @@ export default defineConfig(({ mode }) => {
     hmr: {
       overlay: false,
     },
+    // O dev server não roda o Worker: /api/* vai para o de produção, do mesmo
+    // jeito que o .env já aponta para o Supabase de produção.
+    proxy: {
+      "/api": { target: "https://fitrank.oxehub.com.br", changeOrigin: true },
+    },
   },
   plugins: [
     react(),

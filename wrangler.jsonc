@@ -3,8 +3,19 @@
   // SPA: rotas do react-router caem no index.html.
   "name": "fitrank",
   "compatibility_date": "2026-08-01",
+  "routes": [{ "pattern": "fitrank.oxehub.com.br", "custom_domain": true }],
+  "main": "worker/index.ts",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "not_found_handling": "single-page-application",
+    // Só /api/* chega no Worker; o resto sai direto do CDN de assets.
+    "run_worker_first": ["/api/*"]
+  },
+  "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "fitrank" }],
+  "vars": {
+    "SUPABASE_URL": "https://swopnxzsmymolasnqloh.supabase.co",
+    "SUPABASE_ANON_KEY": "sb_publishable_jfGbuEE7ts0LXALbpmrYfQ_5He6N0aw",
+    // 1 nível só: o certificado universal (*.oxehub.com.br) não cobre sub-subdomínio.
+    "MEDIA_BASE_URL": "https://cdn-fitrank.oxehub.com.br"
   }
 }

@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 type Props = {
     userId: string;
@@ -15,6 +16,7 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
     const fileRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+    const [cropFile, setCropFile] = useState<File | null>(null);
 
     // O pai zera uploadedPath depois de salvar; sem isso o preview da foto anterior fica preso.
     useEffect(() => {
@@ -25,7 +27,7 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
     }, [uploadedPath]);
 
     const handleFile = async (file: File) => {
-        if (!file) return;
+        setCropFile(null);
         setUploading(true);
 
         // Show local blob preview immediately while uploading
@@ -58,7 +60,8 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
-        if (file) handleFile(file);
+        if (file) setCropFile(file);
+        e.target.value = "";
     };
 
     const handleClear = () => {
@@ -127,6 +130,11 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
                     {uploading ? "Enviando…" : "Selecionar foto"}
                 </Button>
             )}
+            <ImageCropDialog
+                file={cropFile}
+                onCancel={() => setCropFile(null)}
+                onConfirm={handleFile}
+            />
         </div>
     );
 }
