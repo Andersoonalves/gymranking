@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { addMonths, format, isAfter, isSameDay, isSameMonth, startOfDay, startOfMonth } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Trash2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Workout } from "@/hooks/useWorkouts";
 
@@ -212,6 +212,16 @@ export function WorkoutCalendar({ workouts, onEmptyDaySelect, onDeleteWorkout, i
               )}
             </div>
           ))}
+          {onEmptyDaySelect && !isAfter(selectedDate, today) && (
+            <button
+              type="button"
+              onClick={() => onEmptyDaySelect(selectedDate)}
+              className="flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-border py-2.5 text-xs font-bold text-muted-foreground hover:border-primary hover:text-primary"
+            >
+              <Plus className="h-3.5 w-3.5" />
+              Registrar outro treino neste dia
+            </button>
+          )}
         </div>
       )}
     </div>
