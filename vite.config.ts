@@ -8,12 +8,14 @@ import { VitePWA } from "vite-plugin-pwa";
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), "");
 
+  // Fallback aponta para a PRODUÇÃO (swopnxzsmymolasnqloh): um build sem env
+  // nunca pode sair falando com o projeto errado.
   const supabaseUrl =
-    env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://vzdyugtqywcinpafbtqw.supabase.co";
+    env.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || "https://swopnxzsmymolasnqloh.supabase.co";
   const supabasePublishableKey =
     env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ6ZHl1Z3RxeXdjaW5wYWZidHF3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1NDczODYsImV4cCI6MjA4NzEyMzM4Nn0.0PP7SKQQWWRFVSdDfJuyQ9e0UBitE7TTnRjgsb8KnBU";
+    "sb_publishable_jfGbuEE7ts0LXALbpmrYfQ_5He6N0aw";
 
   return ({
     define: {
@@ -42,9 +44,9 @@ export default defineConfig(({ mode }) => {
       manifest: {
         name: "FitRank",
         short_name: "FitRank",
-        description: "Workout Tracker & Friends Ranking",
-        theme_color: "#22c55e",
-        background_color: "#0f172a",
+        description: "Registre treinos e dispute o ranking de consistência com seus amigos",
+        theme_color: "#0E0D0B",
+        background_color: "#0E0D0B",
         display: "standalone",
         orientation: "portrait",
         scope: "/",
