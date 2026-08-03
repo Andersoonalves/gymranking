@@ -1,0 +1,10 @@
+{
+  // Deploy do FitRank como site estático (Workers static assets).
+  // SPA: rotas do react-router caem no index.html.
+  "name": "fitrank",
+  "compatibility_date": "2026-08-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
