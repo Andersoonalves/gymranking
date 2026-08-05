@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { errorMessage } from "@/lib/utils";
 import { toast } from "sonner";
 
 type JoinGroupDialogProps = {
@@ -39,7 +40,7 @@ export function JoinGroupDialog({
         onOpenChange(false);
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Não foi possível entrar no grupo.";
+      const message = errorMessage(err, "Não foi possível entrar no grupo.");
       toast.error(message);
     }
   };

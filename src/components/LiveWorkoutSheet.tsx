@@ -6,7 +6,7 @@ import { useExerciseHistory, useAddExerciseHistory } from "@/hooks/useExerciseHi
 import { useUpdateExercise, type TrainingProgram } from "@/hooks/useTrainingPrograms";
 import { isPersonalRecord } from "@/lib/personal-records";
 import { extractYouTubeId, youTubeThumbnail, youTubeEmbedUrl } from "@/lib/youtube";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 import { Check, Flag, Minus, Play, Plus, RotateCcw, SkipForward, X } from "lucide-react";
 import { toast } from "sonner";
 
@@ -119,7 +119,7 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
       toast.success("Treino registrado!");
       onOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível registrar o treino.");
+      toast.error(errorMessage(err, "Não foi possível registrar o treino."));
     }
   };
 

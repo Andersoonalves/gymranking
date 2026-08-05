@@ -8,7 +8,7 @@ import { useExerciseHistory } from "@/hooks/useExerciseHistory";
 import { useActiveGroupId } from "@/hooks/useActiveGroup";
 import { filterWorkoutsByPeriod, longestStreak } from "@/lib/ranking";
 import { bodyProgressToCSV, downloadTextFile } from "@/lib/export-workouts";
-import { NEW_WEIGHT_EVENT } from "@/lib/constants";
+import { NEW_WEIGHT_EVENT, NOTES_MAX_LENGTH } from "@/lib/constants";
 import { ProgressPhotoUpload } from "@/components/ProgressPhotoUpload";
 import { PhotoCompare, type ComparePhoto } from "@/components/PhotoCompare";
 import { PhotoLightbox } from "@/components/PhotoLightbox";
@@ -691,13 +691,24 @@ export default function Progresso() {
                 />
               </label>
             </div>
-            <textarea
-              placeholder="Como foi o treino? Como você está se sentindo?"
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              rows={2}
-              className={cn(inputClass, "resize-none text-xs leading-relaxed")}
-            />
+            <div className="flex flex-col gap-1">
+              <textarea
+                placeholder="Como foi o treino? Como você está se sentindo?"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                maxLength={NOTES_MAX_LENGTH}
+                rows={2}
+                className={cn(inputClass, "resize-none text-xs leading-relaxed")}
+              />
+              <span
+                className={cn(
+                  "self-end font-mono text-[10px] tabular-nums",
+                  notes.length >= NOTES_MAX_LENGTH ? "text-accent" : "text-muted-foreground/60",
+                )}
+              >
+                {notes.length}/{NOTES_MAX_LENGTH}
+              </span>
+            </div>
             <div className="flex flex-col gap-1.5">
               <span className="mono-label">Foto de progresso · opcional</span>
               {userId && (

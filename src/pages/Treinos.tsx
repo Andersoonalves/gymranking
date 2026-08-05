@@ -31,7 +31,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 import {
   ArrowRight,
   ChevronDown,
@@ -95,8 +95,8 @@ export default function Treinos() {
       setCreating(false);
       setExpandedId(created.id);
       toast.success("Treino criado!");
-    } catch {
-      toast.error("Erro ao criar treino");
+    } catch (err) {
+      toast.error(errorMessage(err, "Erro ao criar treino"));
     }
   };
 
@@ -123,8 +123,8 @@ export default function Treinos() {
         position: pickerFor.training_exercises?.length ?? 0,
       });
       toast.success(`${name} adicionado.`);
-    } catch {
-      toast.error("Erro ao adicionar exercício");
+    } catch (err) {
+      toast.error(errorMessage(err, "Erro ao adicionar exercício"));
     }
   };
 
@@ -168,8 +168,8 @@ export default function Treinos() {
         position: selectedExercises.length,
       });
       toast.success(`${name} adicionado em ${selectedProgram.title}.`);
-    } catch {
-      toast.error("Erro ao adicionar exercício");
+    } catch (err) {
+      toast.error(errorMessage(err, "Erro ao adicionar exercício"));
     }
   };
 
@@ -181,8 +181,8 @@ export default function Treinos() {
       setTemplateSheetOpen(false);
       setSelectedTemplate(null);
       setFilter("all");
-    } catch {
-      toast.error("Erro ao importar template");
+    } catch (err) {
+      toast.error(errorMessage(err, "Erro ao importar template"));
     }
   };
 

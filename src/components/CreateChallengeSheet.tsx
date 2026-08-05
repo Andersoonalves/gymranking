@@ -2,7 +2,7 @@ import { useState } from "react";
 import { addDays, format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 import { Swords } from "lucide-react";
 import { toast } from "sonner";
 
@@ -58,7 +58,7 @@ export function CreateChallengeSheet({ open, onOpenChange, onCreate, isPending }
       toast.success("Desafio lançado! Que vença o mais consistente.");
       handleOpenChange(false);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao criar desafio");
+      toast.error(errorMessage(err, "Erro ao criar desafio"));
     }
   };
 

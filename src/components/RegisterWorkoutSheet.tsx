@@ -1,10 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { WORKOUT_TYPES } from "@/lib/workout-types";
+import { NOTES_MAX_LENGTH } from "@/lib/constants";
 import { useTrainingPrograms, type TrainingProgram } from "@/hooks/useTrainingPrograms";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
+import { cn, errorMessage } from "@/lib/utils";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
 import { CalendarClock, Camera, Check, ListChecks, Loader2, Search, X, Zap } from "lucide-react";
 import { toast } from "sonner";
@@ -149,7 +150,7 @@ export function RegisterWorkoutSheet({
       toast.success("Treino registrado!");
       handleOpenChange(false);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Não foi possível registrar o treino.");
+      toast.error(errorMessage(err, "Não foi possível registrar o treino."));
     }
   };
 
@@ -380,15 +381,26 @@ export function RegisterWorkoutSheet({
 
             {/* Observações */}
             <div className="order-3 flex flex-col gap-1.5 lg:order-none">
-              <label htmlFor="workout-notes" className="mono-label">
-                Observações · opcional
-              </label>
+              <div className="flex items-baseline justify-between gap-2">
+                <label htmlFor="workout-notes" className="mono-label">
+                  Observações · opcional
+                </label>
+                <span
+                  className={cn(
+                    "font-mono text-[10px] tabular-nums",
+                    notes.length >= NOTES_MAX_LENGTH ? "text-accent" : "text-muted-foreground/60",
+                  )}
+                >
+                  {notes.length}/{NOTES_MAX_LENGTH}
+                </span>
+              </div>
               <textarea
                 id="workout-notes"
                 placeholder="Ex: 3 séries, treino leve…"
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 disabled={isPending}
+                maxLength={NOTES_MAX_LENGTH}
                 rows={2}
                 className="resize-none rounded-[11px] border border-border bg-background p-3 text-[13px] text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary"
               />
