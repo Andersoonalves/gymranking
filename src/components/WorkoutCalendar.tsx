@@ -4,6 +4,7 @@ import { ptBR } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Workout } from "@/hooks/useWorkouts";
+import type { DayPhoto } from "@/lib/workout-photos";
 
 type WorkoutCalendarProps = {
   workouts: Workout[];
@@ -11,7 +12,27 @@ type WorkoutCalendarProps = {
   onEmptyDaySelect?: (date: Date) => void;
   onDeleteWorkout?: (params: { id: string; label: string }) => void;
   isDeleting?: boolean;
+  /**
+   * Fotos por dia, chave `yyyy-MM-dd`, da mais recente para a mais antiga. No
+   * dia que tem foto elas ocupam a célula no lugar do número, empilhadas como
+   * um baralho; dia sem foto continua mostrando a data. Quem monta o mapa
+   * resolve as URLs (as fotos ficam em bucket privado).
+   */
+  photosByDay?: Record<string, DayPhoto[]>;
+  /** Clique num dia com foto abre as fotos em slides em vez de selecionar o dia. */
+  onPhotosOpen?: (photos: DayPhoto[]) => void;
 };
+
+/**
+ * Leque da pilha por profundidade (0 = foto de cima, reta). Todas na mesma
+ * escala, menor que a célula: é a rotação mais o deslocamento que fazem as de
+ * baixo aparecerem. Se as de baixo fossem menores, sumiriam atrás da de cima.
+ */
+const STACK_STYLES = [
+  { rotate: 0, scale: 0.76, x: 0, y: 0 },
+  { rotate: 15, scale: 0.76, x: 12, y: -6 },
+  { rotate: -16, scale: 0.76, x: -12, y: -5 },
+];
 
 const DOW = ["SEG", "TER", "QUA", "QUI", "SEX", "SÁB", "DOM"];
 const MONTHS_SHORT = ["JAN", "FEV", "MAR", "ABR", "MAI", "JUN", "JUL", "AGO", "SET", "OUT", "NOV", "DEZ"];
@@ -35,7 +56,14 @@ function monthCells(month: Date) {
   return cells;
 }
 
-export function WorkoutCalendar({ workouts, onEmptyDaySelect, onDeleteWorkout, isDeleting }: WorkoutCalendarProps) {
+export function WorkoutCalendar({
+  workouts,
+  onEmptyDaySelect,
+  onDeleteWorkout,
+  isDeleting,
+  photosByDay,
+  onPhotosOpen,
+}: WorkoutCalendarProps) {
   const today = startOfDay(new Date());
   const [viewMode, setViewMode] = useState<"month" | "year">("month");
   const [cursor, setCursor] = useState(() => startOfMonth(today));
@@ -113,25 +141,53 @@ export function WorkoutCalendar({ workouts, onEmptyDaySelect, onDeleteWorkout, i
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">
-            {monthCells(cursor).map((d, i) =>
-              d === null ? (
-                <span key={`x${i}`} />
-              ) : (
+            {monthCells(cursor).map((d, i) => {
+              if (d === null) return <span key={`x${i}`} />;
+              const photos = photosByDay?.[format(d, "yyyy-MM-dd")] ?? [];
+              const hasPhotos = photos.length > 0;
+              return (
                 <button
                   key={d.getTime()}
                   type="button"
-                  onClick={() => pickDay(d)}
+                  onClick={() => (hasPhotos && onPhotosOpen ? onPhotosOpen(photos) : pickDay(d))}
+                  aria-label={
+                    hasPhotos
+                      ? `${photos.length} ${photos.length === 1 ? "foto" : "fotos"} em ${format(d, "dd/MM")}`
+                      : undefined
+                  }
                   className={cn(
-                    "flex aspect-square items-center justify-center rounded-lg border font-mono text-xs transition-transform hover:scale-105",
-                    heatClass(workoutsOn(d).length, isSameDay(d, today)),
+                    "relative flex aspect-square items-center justify-center rounded-lg border font-mono text-xs transition-transform hover:scale-105",
+                    hasPhotos ? "border-transparent" : cn("overflow-hidden", heatClass(workoutsOn(d).length, isSameDay(d, today))),
                     selectedDate && isSameDay(d, selectedDate) && "ring-2 ring-ring ring-offset-1 ring-offset-card",
                     isAfter(d, today) && "opacity-40",
                   )}
                 >
-                  {d.getDate()}
+                  {hasPhotos
+                    ? // Pintadas de trás para frente: a mais antiga fica no fundo,
+                      // a mais recente reta e por cima.
+                      [...photos]
+                        .slice(0, STACK_STYLES.length)
+                        .reverse()
+                        .map((p, idx, arr) => {
+                          const { rotate, scale, x, y } = STACK_STYLES[arr.length - 1 - idx];
+                          return (
+                            <img
+                              key={p.id}
+                              src={p.url}
+                              alt=""
+                              loading="lazy"
+                              style={{
+                                transform: `translate(${x}%, ${y}%) rotate(${rotate}deg) scale(${scale})`,
+                                zIndex: idx,
+                              }}
+                              className="absolute inset-0 h-full w-full rounded-[6px] border border-card object-cover shadow-md"
+                            />
+                          );
+                        })
+                    : d.getDate()}
                 </button>
-              ),
-            )}
+              );
+            })}
           </div>
           <div className="mt-3 flex items-center justify-between">
             <span className="font-mono text-[10px] text-muted-foreground/70">

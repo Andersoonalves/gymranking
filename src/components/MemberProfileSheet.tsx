@@ -1,22 +1,28 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { InitialAvatar } from "@/components/InitialAvatar";
+import { WorkoutCalendar } from "@/components/WorkoutCalendar";
+import { PhotoLightbox, type LightboxPhoto } from "@/components/PhotoLightbox";
+import { useWorkoutPhotoUrls } from "@/hooks/useWorkoutPhotos";
 import { computeStreak, filterWorkoutsByPeriod } from "@/lib/ranking";
 import { computeAchievements, maxStreak } from "@/lib/achievements";
-import { cn } from "@/lib/utils";
-import { isSameDay, startOfDay, subDays } from "date-fns";
+import { groupPhotosByDay, type DayPhoto } from "@/lib/workout-photos";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Flame, Swords } from "lucide-react";
+import type { Workout } from "@/hooks/useWorkouts";
 
 type MemberProfileSheetProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   member: { user_id: string; display_name: string; avatar_url: string | null } | null;
   /** Treinos do grupo ativo (o perfil mostra a vida do membro neste grupo). */
-  workouts: { user_id: string; workout_date: string; photo_url?: string | null }[];
+  workouts: Workout[];
   myUserId: string | undefined;
 };
 
-/** Perfil do membro: números, últimas 4 semanas e conquistas — combustível de rivalidade. */
+/** Perfil do membro: números, calendário de treinos e conquistas — combustível de rivalidade. */
 export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUserId }: MemberProfileSheetProps) {
   const memberWorkouts = useMemo(
     () => workouts.filter((w) => w.user_id === member?.user_id),
@@ -50,10 +56,33 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
   );
   const unlocked = achievements.filter((a) => a.unlocked);
 
-  // Últimas 4 semanas em pontos (28 dias, hoje no fim)
-  const today = startOfDay(new Date());
-  const days = Array.from({ length: 28 }, (_, i) => subDays(today, 27 - i));
-  const trainedOn = (d: Date) => memberWorkouts.some((w) => isSameDay(new Date(w.workout_date), d));
+  // As fotos ficam em bucket privado, então precisam de URL assinada. Assina o
+  // histórico todo de uma vez: é uma ida só e o cache do hook dura 30min. O
+  // sheet fechado não tem membro, aí a lista fica vazia e a query nem roda.
+  // ponytail: se um membro passar de algumas centenas de fotos, assinar só o
+  // mês visível — hoje o calendário é quem sabe o mês, o sheet não.
+  const photoPaths = useMemo(
+    () => memberWorkouts.filter((w) => w.photo_url).map((w) => w.photo_url!),
+    [memberWorkouts],
+  );
+  const { data: photoUrls = {} } = useWorkoutPhotoUrls(photoPaths);
+
+  const photosByDay = useMemo(() => groupPhotosByDay(memberWorkouts, photoUrls), [memberWorkouts, photoUrls]);
+
+  // Fotos abertas em slides: guarda o dia clicado, não um índice global.
+  const [openPhotos, setOpenPhotos] = useState<DayPhoto[] | null>(null);
+  const [photoIndex, setPhotoIndex] = useState(0);
+
+  const lightboxPhotos: LightboxPhoto[] = useMemo(
+    () =>
+      (openPhotos ?? []).map((p) => ({
+        id: p.id,
+        url: p.url,
+        title: p.workout_type,
+        subtitle: format(new Date(p.workout_date), "dd MMM · HH:mm", { locale: ptBR }),
+      })),
+    [openPhotos],
+  );
 
   if (!member) return null;
 
@@ -61,6 +90,14 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
+        // Com o lightbox aberto, Esc e clique fora fecham só ele — sem levar o
+        // sheet embaixo junto.
+        onEscapeKeyDown={(e) => {
+          if (openPhotos) e.preventDefault();
+        }}
+        onPointerDownOutside={(e) => {
+          if (openPhotos) e.preventDefault();
+        }}
         className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
       >
         <div className="flex flex-col gap-4 px-5 pb-6 pt-3 safe-area-bottom">
@@ -119,21 +156,19 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
             </div>
           )}
 
-          {/* Últimas 4 semanas */}
+          {/* Calendário de treinos — mesmo componente da aba Treinos, com Mês e Ano.
+              Sem os callbacks de registrar/excluir: aqui é só leitura, inclusive no
+              próprio perfil (quem edita é a aba Treinos). */}
           <div className="flex flex-col gap-2">
-            <span className="mono-label">Últimas 4 semanas</span>
-            <div className="grid grid-cols-7 gap-1.5">
-              {days.map((d, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    "aspect-square rounded-md",
-                    trainedOn(d) ? "bg-primary" : "border border-border/60 bg-secondary/30",
-                    isSameDay(d, today) && "ring-1 ring-ring",
-                  )}
-                />
-              ))}
-            </div>
+            <span className="mono-label">Calendário</span>
+            <WorkoutCalendar
+              workouts={memberWorkouts}
+              photosByDay={photosByDay}
+              onPhotosOpen={(photos) => {
+                setOpenPhotos(photos);
+                setPhotoIndex(0);
+              }}
+            />
           </div>
 
           {/* Conquistas */}
@@ -163,6 +198,25 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
           </div>
         </div>
       </SheetContent>
+
+      {/* Em portal no body: o SheetContent do Radix também é portalizado, e sem
+          isso o card do sheet ficaria por cima do lightbox. O `pointer-events`
+          é obrigatório: enquanto o sheet está aberto o Radix zera os eventos de
+          ponteiro no body, e sem reativar aqui as setas e bolinhas do lightbox
+          não recebem clique (só o teclado responderia). */}
+      {openPhotos &&
+        lightboxPhotos.length > 0 &&
+        createPortal(
+          <div className="pointer-events-auto">
+            <PhotoLightbox
+              photos={lightboxPhotos}
+              index={photoIndex}
+              onIndexChange={setPhotoIndex}
+              onClose={() => setOpenPhotos(null)}
+            />
+          </div>,
+          document.body,
+        )}
     </Sheet>
   );
 }
