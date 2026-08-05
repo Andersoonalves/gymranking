@@ -616,9 +616,20 @@ export default function Index() {
               const maxCount = Math.max(1, weeklyRanking[0]?.count ?? 1);
               const isFirst = entry.position === 1;
               return (
-                <div
+                <button
+                  type="button"
                   key={entry.user_id}
-                  className={cn("flex items-center gap-3 border-t border-border/60 px-4 py-[11px]", isMe && "bg-primary/5")}
+                  onClick={() =>
+                    setProfileMember({
+                      user_id: entry.user_id,
+                      display_name: entry.display_name,
+                      avatar_url: entry.avatar_url,
+                    })
+                  }
+                  className={cn(
+                    "flex w-full items-center gap-3 border-t border-border/60 px-4 py-[11px] text-left hover:bg-secondary/40",
+                    isMe && "bg-primary/5",
+                  )}
                 >
                   <span
                     className={cn(
@@ -650,7 +661,7 @@ export default function Index() {
                       />
                     </div>
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
