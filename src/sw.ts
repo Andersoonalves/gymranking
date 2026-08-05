@@ -58,7 +58,8 @@ self.addEventListener("push", (event: PushEvent) => {
   const options: NotificationOptions = {
     body: data.body ?? "",
     data: data.data ?? { url: "/" },
-    icon: "/pwa-192x192.png",
+    icon: "/brand/icon-192.png",
+    badge: "/brand/favicon-32.png",
   };
   event.waitUntil(self.registration.showNotification(title, options));
 });

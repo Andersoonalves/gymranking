@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { BrandMark } from "@/components/BrandMark";
 import { Button } from "@/components/ui/button";
 import { Download, X } from "lucide-react";
 
@@ -73,9 +74,7 @@ export function PWAInstallPrompt() {
 
   return (
     <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto flex max-w-md items-center gap-3 rounded-[20px] border border-border bg-gradient-to-br from-secondary to-card p-4 shadow-2xl animate-rise-in">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] bg-primary font-mono text-[17px] font-black text-primary-foreground">
-        F
-      </div>
+      <BrandMark className="h-11 w-11 shrink-0 rounded-[13px]" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <p className="text-[13px] font-extrabold leading-tight text-foreground">Instale o FitRank</p>
         {showIOSHint ? (

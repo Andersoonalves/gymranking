@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { BrandMark } from "@/components/BrandMark";
 import { EcgBackground } from "@/components/EcgBackground";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -79,6 +80,7 @@ export default function Signup() {
         )}
 
         <div className="flex flex-col gap-2">
+          <BrandMark className="mb-1 h-[46px] w-[46px] rounded-[15px] shadow-[0_0_40px_-8px_hsl(var(--primary)/0.55)]" />
           <h1 className="display-title text-3xl leading-tight">Criar conta</h1>
           <p className="text-[13px] leading-normal text-muted-foreground">
             Leva 20 segundos. Depois disso é só treinar e registrar.

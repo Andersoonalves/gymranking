@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { BrandMark } from "@/components/BrandMark";
 import { EcgBackground } from "@/components/EcgBackground";
-import { ArrowRight, Eye, EyeOff, Loader2, Zap } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 // A entrada é sempre escura (classe `dark` no wrapper): o ECG é a cena, não o tema.
@@ -32,9 +33,7 @@ export default function Login() {
 
       <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center gap-6 px-7 py-12 safe-area-bottom">
         <div className="flex flex-col gap-3.5 animate-rise-in">
-          <span className="flex h-[52px] w-[52px] items-center justify-center rounded-[17px] bg-primary text-primary-foreground shadow-[0_0_44px_-6px_hsl(var(--primary)/0.6)]">
-            <Zap className="h-7 w-7 fill-current" />
-          </span>
+          <BrandMark className="h-[52px] w-[52px] rounded-[17px] shadow-[0_0_44px_-6px_hsl(var(--primary)/0.6)]" />
           <div className="flex flex-col gap-2">
             <h1 className="display-title text-5xl leading-[0.9] tracking-[-0.055em]">
               Fit<span className="text-primary">rank</span>

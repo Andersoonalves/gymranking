@@ -6,6 +6,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useMyGroups, useCreateGroup, useJoinGroupByCode } from "@/hooks/useGroups";
 import { useMyProfile } from "@/hooks/useMyProfile";
 import { useActiveGroupId } from "@/hooks/useActiveGroup";
+import { BrandMark } from "@/components/BrandMark";
 import { InitialAvatar } from "@/components/InitialAvatar";
 import { CreateGroupDialog } from "@/components/CreateGroupDialog";
 import { JoinGroupDialog } from "@/components/JoinGroupDialog";
@@ -150,13 +151,16 @@ export function MainLayout({ children }: MainLayoutProps) {
       <div className="flex min-h-dvh flex-col bg-background lg:pl-[248px]">
         {/* Sidebar fixa — só desktop; no mobile a navegação é a barra inferior */}
         <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col gap-6 border-r border-border bg-card px-4 py-6 lg:flex">
-          <div className="flex flex-col gap-1 px-1.5">
-            <span className="display-title text-2xl leading-none text-foreground">
-              Fit<span className="text-primary">rank</span>
-            </span>
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
-              {format(new Date(), "EEEE · dd MMM", { locale: ptBR })}
-            </span>
+          <div className="flex items-center gap-2.5 px-1.5">
+            <BrandMark className="h-[30px] w-[30px] shrink-0" />
+            <div className="flex min-w-0 flex-col gap-1">
+              <span className="display-title text-2xl leading-none text-foreground">
+                Fit<span className="text-primary">rank</span>
+              </span>
+              <span className="truncate font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                {format(new Date(), "EEEE · dd MMM", { locale: ptBR })}
+              </span>
+            </div>
           </div>
 
           {/* Seletor de grupo ativo — sincroniza com as páginas via useActiveGroupId */}

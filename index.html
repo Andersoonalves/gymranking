@@ -4,13 +4,24 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="theme-color" content="#0E0D0B" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- SVG primeiro: navegador moderno usa ele em qualquer densidade. Os PNG e o
+         .ico (16/32/48) ficam para quem não lê SVG. -->
+    <link rel="icon" type="image/svg+xml" href="/brand/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/brand/favicon-16.png" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/brand/apple-touch-icon.png" />
+
     <title>FitRank</title>
-    <meta name="description" content="Registre treinos e dispute o ranking de consistência com seus amigos" />
+    <meta name="description" content="Treine com o grupo, registre a série e suba no ranking." />
 
     <meta property="og:title" content="FitRank" />
-    <meta property="og:description" content="Registre treinos e dispute o ranking de consistência com seus amigos" />
+    <meta property="og:description" content="Treine com o grupo, registre a série e suba no ranking." />
     <meta property="og:type" content="website" />
+    <meta property="og:image" content="/brand/icon-512.png" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:image" content="/brand/icon-512.png" />
   </head>
 
   <body>
