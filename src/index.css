@@ -196,3 +196,18 @@
     box-shadow: 0 3px 0 hsl(var(--destructive-edge));
   }
 }
+
+/* Bottom sheets viram modal central no desktop. Fora do @layer para vencer
+   as utilities do Radix/Tailwind sem !important. Sem transform: a animação
+   slide-in-from-bottom sobrescreveria o translate e o fechamento pularia. */
+@media (min-width: 1024px) {
+  .sheet-desktop-modal {
+    inset: 8dvh 0 auto 0;
+    margin-inline: auto;
+    width: 620px;
+    max-width: 92vw;
+    max-height: 84dvh;
+    border-radius: 22px;
+    border: 1px solid hsl(var(--border));
+  }
+}

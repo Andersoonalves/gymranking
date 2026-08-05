@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import { format, formatDistanceToNowStrict, isSameDay, startOfDay, startOfWeek, addDays } from "date-fns";
+import { format, formatDistanceToNowStrict, isSameDay, startOfDay, startOfWeek, addDays, subMonths } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@/contexts/AuthContext";
 import { useIsAdmin } from "@/hooks/useIsAdmin";
@@ -21,9 +21,9 @@ import { MemberProfileSheet } from "@/components/MemberProfileSheet";
 import { ShareInviteButton } from "@/components/ShareInviteButton";
 import { useImportWorkouts } from "@/hooks/useImportWorkouts";
 import { useRegisterWorkout } from "@/contexts/RegisterWorkoutContext";
-import { filterWorkoutsByPeriod, computeRanking, computeStreak, buildCallout } from "@/lib/ranking";
+import { filterWorkoutsByPeriod, computeRanking, computeStreak, longestStreak, buildCallout } from "@/lib/ranking";
 import { exportWorkoutsToJSON } from "@/lib/export-workouts";
-import { GROUPS_STORAGE_KEY } from "@/lib/constants";
+import { useActiveGroupId } from "@/hooks/useActiveGroup";
 import { errorMessage } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { WorkoutCalendar } from "@/components/WorkoutCalendar";
@@ -104,22 +104,20 @@ export default function Index() {
   const [groupMenuOpen, setGroupMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [inviteCode, setInviteCode] = useState("");
-  const [activeGroupId, setActiveGroupId] = useState<string | null>(() =>
-    typeof window !== "undefined" ? localStorage.getItem(GROUPS_STORAGE_KEY) : null,
-  );
+  const [activeGroupId, setActiveGroupId] = useActiveGroupId();
 
   const selectedGroup = groups.find((g) => g.id === activeGroupId) ?? groups[0];
 
   const { data: workouts = [] } = useGroupWorkouts(selectedGroup?.id);
   const { data: profilesMap = {} } = useProfilesInGroup(selectedGroup?.id);
   const { data: challenges = [] } = useChallenges(selectedGroup?.id);
-  const { data: likesMap = {} } = useWorkoutLikes(selectedGroup?.id, userId);
-  const toggleLike = useToggleWorkoutLike(selectedGroup?.id, userId);
+  const { data: likesMap = {} } = useWorkoutLikes(userId);
+  const toggleLike = useToggleWorkoutLike(userId);
   const deleteWorkout = useDeleteWorkout();
-  const importWorkouts = useImportWorkouts(userId, selectedGroup?.id);
+  const importWorkouts = useImportWorkouts(userId);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [workoutToDelete, setWorkoutToDelete] = useState<{ id: string; group_id: string; label: string } | null>(null);
+  const [workoutToDelete, setWorkoutToDelete] = useState<{ id: string; label: string } | null>(null);
   const [feedPage, setFeedPage] = useState(1);
 
   const displayName = myProfile?.display_name || user?.user_metadata?.display_name || user?.email || "?";
@@ -160,6 +158,27 @@ export default function Index() {
     }
     localStorage.setItem(KEY, JSON.stringify(unlockedIds));
   }, [achievements, myWorkouts.length]);
+
+  // KPIs do desktop: treinos no mês, delta vs. mês anterior e recorde de streak
+  const monthCount = useMemo(() => filterWorkoutsByPeriod(myWorkouts, "month").length, [myWorkouts]);
+  const prevMonthCount = useMemo(
+    () => filterWorkoutsByPeriod(myWorkouts, "month", subMonths(new Date(), 1)).length,
+    [myWorkouts],
+  );
+  const monthDelta = monthCount - prevMonthCount;
+  const recordStreak = useMemo(() => longestStreak(myWorkouts.map((w) => w.workout_date)), [myWorkouts]);
+
+  // Divisão do mês: contagem por tipo de treino (top 6)
+  const monthSplit = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const w of filterWorkoutsByPeriod(myWorkouts, "month")) {
+      for (const t of w.workout_type.split(", ")) counts[t] = (counts[t] ?? 0) + 1;
+    }
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+  }, [myWorkouts]);
+  const monthSplitMax = Math.max(1, monthSplit[0]?.[1] ?? 1);
 
   const today = startOfDay(new Date());
   const weekStart = startOfWeek(today, { weekStartsOn: 1 });
@@ -204,7 +223,6 @@ export default function Index() {
   const myChallengeScore = activeChallengeScores.find((s) => s.user_id === userId);
 
   const setSelectedGroup = (id: string) => {
-    localStorage.setItem(GROUPS_STORAGE_KEY, id);
     setActiveGroupId(id);
     setGroupMenuOpen(false);
   };
@@ -219,7 +237,7 @@ export default function Index() {
   const handleDeleteWorkout = async () => {
     if (!workoutToDelete) return;
     try {
-      await deleteWorkout.mutateAsync({ workout_id: workoutToDelete.id, group_id: workoutToDelete.group_id });
+      await deleteWorkout.mutateAsync({ workout_id: workoutToDelete.id });
       toast.success("Treino excluído.");
       setWorkoutToDelete(null);
     } catch {
@@ -338,15 +356,19 @@ export default function Index() {
   }
 
   // ── Início ────────────────────────────────────────────────────────────────
+  // No desktop o container vira grid de 2 colunas (conteúdo + 392px). Os wrappers
+  // de coluna usam `contents` no mobile e as classes `order-*` mantêm a ordem
+  // visual mobile intacta; em lg cada wrapper vira uma coluna de verdade.
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-4 px-5 pb-4 pt-4 safe-area-top">
+    <div className="mx-auto flex max-w-lg flex-col gap-4 px-5 pb-4 pt-4 safe-area-top lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_392px] lg:items-start lg:gap-5 lg:px-8 lg:pt-7">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between lg:col-span-2">
         <div className="flex flex-col gap-0.5">
-          <span className="display-title text-[26px] leading-none text-foreground">
+          <span className="display-title text-[26px] leading-none text-foreground lg:hidden">
             Fit<span className="text-primary">rank</span>
           </span>
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+          <h1 className="display-title hidden text-[26px] leading-none text-foreground lg:block">Início</h1>
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground lg:hidden">
             {format(new Date(), "EEEE · dd MMM", { locale: ptBR })}
           </span>
         </div>
@@ -360,7 +382,8 @@ export default function Index() {
               <Shield className="h-4 w-4" />
             </Link>
           )}
-          <div className="relative">
+          {/* No desktop o seletor de grupo mora na sidebar */}
+          <div className="relative lg:hidden">
             <button
               type="button"
               onClick={() => setGroupMenuOpen((v) => !v)}
@@ -422,11 +445,15 @@ export default function Index() {
         </div>
       </div>
 
+      {/* Coluna principal (desktop); no mobile `contents` deixa a ordem com os order-* */}
+      <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
+      {/* Hero: streak + KPIs (KPIs só no desktop, como no protótipo) */}
+      <div className="order-1 lg:grid lg:grid-cols-[1.45fr_1fr] lg:gap-4">
       {/* Streak + meta semanal (toque abre as conquistas) */}
       <button
         type="button"
         onClick={() => setAchievementsOpen(true)}
-        className="relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-[18px] text-left animate-rise-in"
+        className="relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-[18px] text-left animate-rise-in"
       >
         <div className="pointer-events-none absolute inset-0 animate-glow-pulse bg-[radial-gradient(120px_80px_at_12%_50%,hsl(var(--accent)/0.22),transparent_70%)]" />
         <div className="relative flex items-baseline gap-1.5">
@@ -447,11 +474,29 @@ export default function Index() {
         </div>
       </button>
 
+      {/* KPIs: Este mês + Recorde */}
+      <div className="hidden lg:grid lg:grid-cols-2 lg:gap-4">
+        <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
+          <span className="mono-label">Este mês</span>
+          <span className="font-mono text-[34px] font-bold leading-none tabular-nums text-foreground">{monthCount}</span>
+          <span className={cn("text-[11px] font-semibold", monthDelta >= 0 ? "text-primary" : "text-muted-foreground")}>
+            {monthDelta >= 0 ? "+" : ""}
+            {monthDelta} vs. {format(subMonths(new Date(), 1), "MMMM", { locale: ptBR }).slice(0, 3)}
+          </span>
+        </div>
+        <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
+          <span className="mono-label">Recorde</span>
+          <span className="font-mono text-[34px] font-bold leading-none tabular-nums text-foreground">{recordStreak}</span>
+          <span className="text-[11px] font-semibold text-muted-foreground">dias seguidos</span>
+        </div>
+      </div>
+      </div>
+
       {/* Desafio ativo */}
       {activeChallenge && (
         <Link
           to="/rankings"
-          className="relative flex items-center gap-3 overflow-hidden rounded-2xl border border-accent/40 bg-gradient-to-r from-secondary to-card p-3.5 animate-rise-in"
+          className="order-2 relative flex items-center gap-3 overflow-hidden rounded-2xl border border-accent/40 bg-gradient-to-r from-secondary to-card p-3.5 animate-rise-in"
         >
           <span className="pointer-events-none absolute inset-0 animate-glow-pulse bg-[radial-gradient(160px_80px_at_90%_50%,hsl(var(--accent)/0.16),transparent_70%)] [animation-duration:4s]" />
           <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background/60 text-xl">
@@ -479,7 +524,7 @@ export default function Index() {
       )}
 
       {/* Faixa dos 7 dias */}
-      <div className="grid grid-cols-7 gap-1.5">
+      <div className="order-3 grid grid-cols-7 gap-1.5">
         {weekDays.map((d, i) => {
           const done = trainedOn(d);
           const isToday = isSameDay(d, today);
@@ -508,8 +553,44 @@ export default function Index() {
         })}
       </div>
 
+      {/* Calendário heatmap + divisão do mês (painel só no desktop) */}
+      <div className="order-5 min-w-0 lg:grid lg:grid-cols-[minmax(0,1fr)_212px] lg:gap-4">
+        <WorkoutCalendar
+          workouts={myWorkouts}
+          onEmptyDaySelect={openRegisterForDate}
+          onDeleteWorkout={(w) => setWorkoutToDelete(w)}
+          isDeleting={deleteWorkout.isPending}
+        />
+        <div className="hidden flex-col gap-3.5 rounded-[18px] border border-border bg-card p-4 lg:flex">
+          <span className="mono-label">Divisão do mês</span>
+          {monthSplit.length === 0 ? (
+            <span className="text-xs text-muted-foreground">Nenhum treino este mês ainda.</span>
+          ) : (
+            <div className="flex flex-col gap-3">
+              {monthSplit.map(([type, count]) => (
+                <div key={type} className="flex flex-col gap-1.5">
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-xs font-semibold text-foreground/80">{type}</span>
+                    <span className="font-mono text-xs font-bold tabular-nums text-muted-foreground">{count}</span>
+                  </div>
+                  <div className="h-1 overflow-hidden rounded-sm bg-secondary">
+                    <div
+                      className="h-full origin-left animate-bar-in rounded-sm bg-primary"
+                      style={{ width: `${(count / monthSplitMax) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      </div>
+
+      {/* Coluna direita (desktop): ranking, atividade e convite */}
+      <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
       {/* Ranking da semana */}
-      <div className="overflow-hidden rounded-[18px] border border-border bg-card">
+      <div className="order-4 overflow-hidden rounded-[18px] border border-border bg-card">
         <div className="flex flex-col gap-1.5 bg-gradient-to-b from-secondary/60 to-transparent px-4 pb-3 pt-4">
           <div className="flex items-center justify-between">
             <span className="display-title text-[17px] text-foreground">Ranking da semana</span>
@@ -582,16 +663,8 @@ export default function Index() {
         </Link>
       </div>
 
-      {/* Calendário heatmap */}
-      <WorkoutCalendar
-        workouts={myWorkouts}
-        onEmptyDaySelect={openRegisterForDate}
-        onDeleteWorkout={(w) => setWorkoutToDelete(w)}
-        isDeleting={deleteWorkout.isPending}
-      />
-
       {/* Abas */}
-      <Tabs defaultValue="feed" onValueChange={() => setFeedPage(1)}>
+      <Tabs defaultValue="feed" onValueChange={() => setFeedPage(1)} className="order-6">
         <TabsList className="grid h-auto w-full grid-cols-3 gap-[3px] rounded-xl border border-border bg-card p-[3px]">
           {[
             ["feed", "Atividade"],
@@ -731,7 +804,7 @@ export default function Index() {
                     type="button"
                     aria-label="Excluir treino"
                     disabled={deleteWorkout.isPending}
-                    onClick={() => setWorkoutToDelete({ id: w.id, group_id: w.group_id, label: w.workout_type })}
+                    onClick={() => setWorkoutToDelete({ id: w.id, label: w.workout_type })}
                     className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-destructive"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -793,7 +866,7 @@ export default function Index() {
 
       {/* Código de convite */}
       {selectedGroup && (
-        <div className="flex items-center gap-2.5 rounded-[14px] border border-border bg-card px-4 py-3">
+        <div className="order-7 flex items-center gap-2.5 rounded-[14px] border border-border bg-card px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className="mb-0.5 text-xs text-muted-foreground">Convide para {selectedGroup.name}</p>
             <code className="font-mono text-base font-bold tracking-[0.15em] text-primary">{selectedGroup.invite_code}</code>
@@ -813,6 +886,7 @@ export default function Index() {
           />
         </div>
       )}
+      </div>
 
       {lightboxIdx !== null && (
         <PhotoLightbox
@@ -851,7 +925,7 @@ export default function Index() {
             <AlertDialogTitle className="display-title">Excluir treino?</AlertDialogTitle>
             <AlertDialogDescription>
               {workoutToDelete && (
-                <>O treino &quot;{workoutToDelete.label}&quot; será excluído de todos os grupos. Isso não pode ser desfeito.</>
+                <>O treino &quot;{workoutToDelete.label}&quot; será excluído. Isso não pode ser desfeito.</>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>

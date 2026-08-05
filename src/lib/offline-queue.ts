@@ -1,7 +1,6 @@
 /** Fila de treinos registrados sem conexão, guardada em localStorage até sincronizar. */
 
 export type PendingWorkout = {
-  group_ids: string[];
   workout_types: string[];
   workout_date: string;
   notes: string | null;

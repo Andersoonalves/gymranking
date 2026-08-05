@@ -1,6 +1,5 @@
 import { useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMyGroups } from "@/hooks/useGroups";
 import {
   useTrainingPrograms,
   useCreateProgram,
@@ -12,8 +11,9 @@ import {
   type TrainingExercise,
 } from "@/hooks/useTrainingPrograms";
 import { useImportTemplate } from "@/hooks/useImportTemplate";
-import { GROUPS_STORAGE_KEY } from "@/lib/constants";
 import { WORKOUT_TEMPLATES, type WorkoutTemplate } from "@/lib/workout-templates";
+import { EXERCISES_BY_MUSCLE_GROUP } from "@/lib/exercises";
+import { MUSCLE_GROUPS } from "@/lib/workout-types";
 import { extractYouTubeId } from "@/lib/youtube";
 import { ExercisePickerSheet } from "@/components/ExercisePickerSheet";
 import { ExerciseEditorSheet } from "@/components/ExerciseEditorSheet";
@@ -53,12 +53,8 @@ type Filter = "all" | "video" | "templates";
 export default function Treinos() {
   const { user } = useAuth();
   const userId = user?.id;
-  const { data: groups = [] } = useMyGroups(userId);
 
-  const selectedGroupId = typeof window !== "undefined" ? localStorage.getItem(GROUPS_STORAGE_KEY) : null;
-  const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? groups[0];
-
-  const { data: programs = [], isLoading } = useTrainingPrograms(selectedGroup?.id);
+  const { data: programs = [], isLoading } = useTrainingPrograms(userId);
   const createProgram = useCreateProgram();
   const deleteProgram = useDeleteProgram();
   const addExercise = useAddExercise();
@@ -79,6 +75,7 @@ export default function Treinos() {
   const [liveProgram, setLiveProgram] = useState<TrainingProgram | null>(null);
 
   const myPrograms = useMemo(() => programs.filter((p) => p.user_id === userId), [programs, userId]);
+  const [libGroup, setLibGroup] = useState<string>(MUSCLE_GROUPS[0]);
 
   const visiblePrograms = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -91,9 +88,9 @@ export default function Treinos() {
   }, [myPrograms, search, filter]);
 
   const handleCreateProgram = async () => {
-    if (!newTitle.trim() || !userId || !selectedGroup) return;
+    if (!newTitle.trim() || !userId) return;
     try {
-      const created = await createProgram.mutateAsync({ user_id: userId, group_id: selectedGroup.id, title: newTitle.trim() });
+      const created = await createProgram.mutateAsync({ user_id: userId, title: newTitle.trim() });
       setNewTitle("");
       setCreating(false);
       setExpandedId(created.id);
@@ -104,9 +101,9 @@ export default function Treinos() {
   };
 
   const handleDeleteProgram = async () => {
-    if (!deleteTarget || !selectedGroup) return;
+    if (!deleteTarget) return;
     try {
-      await deleteProgram.mutateAsync({ id: deleteTarget.id, group_id: selectedGroup.id });
+      await deleteProgram.mutateAsync({ id: deleteTarget.id });
       setDeleteTarget(null);
       toast.success("Treino excluído.");
     } catch {
@@ -115,11 +112,10 @@ export default function Treinos() {
   };
 
   const handlePickExercise = async (name: string) => {
-    if (!pickerFor || !selectedGroup) return;
+    if (!pickerFor) return;
     try {
       await addExercise.mutateAsync({
         program_id: pickerFor.id,
-        group_id: selectedGroup.id,
         title: name,
         sets: 3,
         reps: 12,
@@ -132,10 +128,55 @@ export default function Treinos() {
     }
   };
 
-  const handleImportTemplate = async (template: WorkoutTemplate) => {
-    if (!userId || !selectedGroup) return;
+  // ── Desktop: ficha selecionada, volume por grupo e biblioteca lateral ──────
+  const muscleOf = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const [g, list] of Object.entries(EXERCISES_BY_MUSCLE_GROUP)) for (const ex of list) m[ex.pt] = g;
+    return m;
+  }, []);
+
+  // Séries somadas por grupo muscular, em todas as fichas (top 6)
+  const volumeByGroup = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (const p of myPrograms) {
+      for (const e of p.training_exercises ?? []) {
+        const g = muscleOf[e.title] ?? "Outros";
+        counts[g] = (counts[g] ?? 0) + e.sets;
+      }
+    }
+    return Object.entries(counts)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 6);
+  }, [myPrograms, muscleOf]);
+  const volumeMax = Math.max(1, volumeByGroup[0]?.[1] ?? 1);
+
+  // Ficha aberta no editor desktop (compartilha o expandedId do acordeão mobile)
+  const selectedProgram = visiblePrograms.find((p) => p.id === expandedId) ?? visiblePrograms[0];
+  const selectedExercises = (selectedProgram?.training_exercises ?? []).slice().sort((a, b) => a.position - b.position);
+  const totalLoad = selectedExercises.reduce((acc, e) => acc + e.sets * e.reps * e.load_kg, 0);
+  const totalSets = selectedExercises.reduce((acc, e) => acc + e.sets, 0);
+
+  const addToSelected = async (name: string) => {
+    if (!selectedProgram) return;
     try {
-      const result = await importTemplate.mutateAsync({ template, userId, groupId: selectedGroup.id });
+      await addExercise.mutateAsync({
+        program_id: selectedProgram.id,
+        title: name,
+        sets: 3,
+        reps: 12,
+        load_kg: 0,
+        position: selectedExercises.length,
+      });
+      toast.success(`${name} adicionado em ${selectedProgram.title}.`);
+    } catch {
+      toast.error("Erro ao adicionar exercício");
+    }
+  };
+
+  const handleImportTemplate = async (template: WorkoutTemplate) => {
+    if (!userId) return;
+    try {
+      const result = await importTemplate.mutateAsync({ template, userId });
       toast.success(`${result.length} treinos criados a partir do template!`);
       setTemplateSheetOpen(false);
       setSelectedTemplate(null);
@@ -145,16 +186,8 @@ export default function Treinos() {
     }
   };
 
-  if (!selectedGroup) {
-    return (
-      <div className="mx-auto flex min-h-[60vh] max-w-lg items-center px-5">
-        <EmptyState icon={ListChecks} title="Sem grupo" description="Selecione ou crie um grupo primeiro." className="w-full" />
-      </div>
-    );
-  }
-
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-3.5 px-5 pb-4 pt-4 safe-area-top">
+    <div className="mx-auto flex max-w-lg flex-col gap-3.5 px-5 pb-4 pt-4 safe-area-top lg:max-w-6xl lg:px-8 lg:pt-7">
       <div className="flex flex-col gap-1">
         <h1 className="display-title text-[28px] text-foreground">Meus treinos</h1>
         <p className="text-xs text-muted-foreground">Monte seus treinos ou importe um template pronto.</p>
@@ -255,7 +288,7 @@ export default function Treinos() {
           }
         />
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 lg:hidden">
           {visiblePrograms.map((program) => {
             const exercises = (program.training_exercises ?? []).slice().sort((a, b) => a.position - b.position);
             const isOpen = expandedId === program.id;
@@ -361,6 +394,219 @@ export default function Treinos() {
         </div>
       )}
 
+      {/* Desktop: fichas · editor · biblioteca (3 colunas, como no protótipo) */}
+      {!isLoading && visiblePrograms.length > 0 && (
+        <div className="hidden lg:grid lg:grid-cols-[248px_minmax(0,1fr)_300px] lg:items-start lg:gap-5">
+          {/* Coluna 1 — Suas fichas */}
+          <div className="flex flex-col gap-3">
+            <span className="mono-label px-1">Suas fichas</span>
+            <div className="flex flex-col gap-2">
+              {visiblePrograms.map((program) => {
+                const exercises = program.training_exercises ?? [];
+                const isSelected = program.id === selectedProgram?.id;
+                const groupsLabel = [...new Set(exercises.map((e) => muscleOf[e.title]).filter(Boolean))]
+                  .slice(0, 2)
+                  .join(" · ");
+                return (
+                  <button
+                    key={program.id}
+                    type="button"
+                    onClick={() => setExpandedId(program.id)}
+                    className={cn(
+                      "flex flex-col gap-2 rounded-[14px] border p-3.5 text-left",
+                      isSelected ? "border-primary bg-primary/10" : "border-border bg-card hover:border-primary/50",
+                    )}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="truncate text-[15px] font-extrabold text-foreground">{program.title}</span>
+                      <span className={cn("font-mono text-[11px] font-bold", isSelected ? "text-primary" : "text-muted-foreground")}>
+                        {exercises.length} EX
+                      </span>
+                    </span>
+                    {groupsLabel && (
+                      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                        {groupsLabel}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => setCreating((v) => !v)}
+              className="flex h-[42px] items-center justify-center gap-2 rounded-xl border border-dashed border-border text-xs font-bold text-muted-foreground hover:border-primary hover:text-primary"
+            >
+              <Plus className="h-[18px] w-[18px]" />
+              Criar ficha
+            </button>
+            {volumeByGroup.length > 0 && (
+              <div className="flex flex-col gap-3 rounded-[14px] border border-border bg-card p-3.5">
+                <span className="mono-label">Volume por grupo</span>
+                {volumeByGroup.map(([g, sets]) => (
+                  <div key={g} className="flex flex-col gap-1.5">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="truncate text-[11px] font-semibold text-foreground/80">{g}</span>
+                      <span className="font-mono text-[11px] font-bold tabular-nums text-muted-foreground">{sets}</span>
+                    </div>
+                    <div className="h-1 overflow-hidden rounded-sm bg-secondary">
+                      <div
+                        className="h-full origin-left animate-bar-in rounded-sm bg-primary"
+                        style={{ width: `${(sets / volumeMax) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Coluna 2 — Editor da ficha selecionada */}
+          {selectedProgram ? (
+            <div className="flex min-w-0 flex-col gap-4">
+              <div className="flex items-start gap-3">
+                <div className="flex min-w-0 flex-1 flex-col gap-1">
+                  <h2 className="display-title truncate text-[26px] text-foreground">{selectedProgram.title}</h2>
+                  <span className="text-[13px] text-muted-foreground">
+                    {selectedExercises.length} {selectedExercises.length === 1 ? "exercício" : "exercícios"} · {totalSets}{" "}
+                    séries
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Excluir ficha"
+                  onClick={() =>
+                    setDeleteTarget({ id: selectedProgram.id, title: selectedProgram.title, count: selectedExercises.length })
+                  }
+                  className="flex h-10 w-10 items-center justify-center rounded-[11px] border border-border bg-card text-muted-foreground hover:border-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
+                <button
+                  type="button"
+                  disabled={selectedExercises.length === 0}
+                  onClick={() => setLiveProgram(selectedProgram)}
+                  className="flex h-10 items-center gap-2 rounded-[11px] bg-primary px-4 text-[13px] font-extrabold text-primary-foreground shadow-hard-sm active-hard disabled:opacity-50"
+                >
+                  <Play className="h-[17px] w-[17px] fill-current" />
+                  Iniciar treino
+                </button>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="flex flex-col gap-1.5 rounded-[14px] border border-border bg-card p-3.5">
+                  <span className="mono-label">Carga total</span>
+                  <span className="font-mono text-2xl font-bold tabular-nums text-foreground">
+                    {totalLoad.toLocaleString("pt-BR")} <span className="text-[13px] text-muted-foreground">kg</span>
+                  </span>
+                </div>
+                <div className="flex flex-col gap-1.5 rounded-[14px] border border-border bg-card p-3.5">
+                  <span className="mono-label">Séries</span>
+                  <span className="font-mono text-2xl font-bold tabular-nums text-foreground">{totalSets}</span>
+                </div>
+                <div className="flex flex-col gap-1.5 rounded-[14px] border border-border bg-card p-3.5">
+                  <span className="mono-label">Com vídeo</span>
+                  <span className="font-mono text-2xl font-bold tabular-nums text-primary">
+                    {selectedExercises.filter((e) => e.video_url && extractYouTubeId(e.video_url)).length}
+                  </span>
+                </div>
+              </div>
+
+              <div className="overflow-hidden rounded-[16px] border border-border bg-card">
+                <div className="grid grid-cols-[36px_minmax(0,1fr)_120px_70px] items-center gap-3.5 border-b border-border bg-secondary/50 px-4 py-2.5">
+                  <span className="mono-label">#</span>
+                  <span className="mono-label">Exercício</span>
+                  <span className="mono-label">Séries · carga</span>
+                  <span className="mono-label">Execução</span>
+                </div>
+                {selectedExercises.map((e, idx) => {
+                  const hasVideo = e.video_url && extractYouTubeId(e.video_url);
+                  return (
+                    <button
+                      key={e.id}
+                      type="button"
+                      onClick={() => setEditing({ exercise: e, program: selectedProgram })}
+                      className="grid w-full grid-cols-[36px_minmax(0,1fr)_120px_70px] items-center gap-3.5 border-b border-border/50 px-4 py-3 text-left last:border-b-0 hover:bg-secondary/40"
+                    >
+                      <span className="font-mono text-[13px] font-bold tabular-nums text-muted-foreground/60">{idx + 1}</span>
+                      <span className="truncate text-sm font-bold text-foreground">{e.title}</span>
+                      <span className="font-mono text-[13px] font-semibold tabular-nums text-foreground/80">
+                        {e.sets}×{e.reps} · {e.load_kg} kg
+                      </span>
+                      <span
+                        className={cn(
+                          "font-mono text-[9px] font-bold tracking-[0.12em]",
+                          hasVideo ? "text-primary" : "text-muted-foreground/50",
+                        )}
+                      >
+                        {hasVideo ? "VÍDEO" : "—"}
+                      </span>
+                    </button>
+                  );
+                })}
+                <button
+                  type="button"
+                  onClick={() => setPickerFor(selectedProgram)}
+                  className="flex w-full items-center justify-center gap-1.5 py-3 font-mono text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-primary"
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar exercício
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div />
+          )}
+
+          {/* Coluna 3 — Biblioteca de exercícios */}
+          <div className="flex flex-col gap-3 rounded-[18px] border border-border bg-card p-4">
+            <div className="flex items-center justify-between">
+              <span className="display-title text-sm text-foreground">Biblioteca</span>
+              <span className="font-mono text-[11px] text-muted-foreground">
+                {EXERCISES_BY_MUSCLE_GROUP[libGroup]?.length ?? 0}
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {MUSCLE_GROUPS.map((g) => (
+                <button
+                  key={g}
+                  type="button"
+                  onClick={() => setLibGroup(g)}
+                  className={cn(
+                    "rounded-lg px-2.5 py-1.5 text-[11px]",
+                    g === libGroup
+                      ? "bg-primary font-bold text-primary-foreground"
+                      : "border border-border bg-secondary/60 font-semibold text-foreground/70 hover:border-primary",
+                  )}
+                >
+                  {g}
+                </button>
+              ))}
+            </div>
+            <div className="flex max-h-[520px] flex-col gap-1.5 overflow-y-auto">
+              {(EXERCISES_BY_MUSCLE_GROUP[libGroup] ?? []).map((ex) => (
+                <button
+                  key={ex.pt}
+                  type="button"
+                  disabled={!selectedProgram || addExercise.isPending}
+                  onClick={() => addToSelected(ex.pt)}
+                  title={selectedProgram ? `Adicionar em ${selectedProgram.title}` : undefined}
+                  className="group flex items-center gap-2.5 rounded-[12px] border border-border/60 bg-secondary/40 p-2.5 text-left hover:border-primary disabled:opacity-50"
+                >
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="truncate text-[13px] font-bold text-foreground">{ex.pt}</span>
+                    <span className="truncate font-mono text-[10px] uppercase text-muted-foreground/70">{ex.en}</span>
+                  </span>
+                  <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground/60 group-hover:border-primary group-hover:text-primary">
+                    <Plus className="h-4 w-4" />
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Banner de template */}
       <button
         type="button"
@@ -385,7 +631,7 @@ export default function Treinos() {
       >
         <SheetContent
           side="bottom"
-          className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)]"
+          className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
         >
           <div className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
             <div className="h-1 w-9 self-center rounded-full bg-border" />
@@ -475,9 +721,9 @@ export default function Treinos() {
         programTitle={editing?.program.title ?? ""}
         isSaving={updateExercise.isPending}
         onSave={async (fields) => {
-          if (!editing || !selectedGroup) return;
+          if (!editing) return;
           try {
-            await updateExercise.mutateAsync({ id: editing.exercise.id, group_id: selectedGroup.id, ...fields });
+            await updateExercise.mutateAsync({ id: editing.exercise.id, ...fields });
             toast.success("Exercício salvo.");
             setEditing(null);
           } catch {
@@ -485,9 +731,9 @@ export default function Treinos() {
           }
         }}
         onDelete={async () => {
-          if (!editing || !selectedGroup) return;
+          if (!editing) return;
           try {
-            await deleteExercise.mutateAsync({ id: editing.exercise.id, group_id: selectedGroup.id });
+            await deleteExercise.mutateAsync({ id: editing.exercise.id });
             toast.success("Exercício removido.");
             setEditing(null);
           } catch {

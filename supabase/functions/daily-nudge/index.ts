@@ -131,10 +131,11 @@ Deno.serve(async (req) => {
     for (const c of endedChallenges ?? []) {
       const participantIds = (c.challenge_participants ?? []).map((p: { user_id: string }) => p.user_id);
       if (participantIds.length === 0) continue;
+      // Treino não tem grupo: contam os treinos dos participantes no período.
       const { data: ws } = await supabase
         .from("workouts")
         .select("user_id, workout_date")
-        .eq("group_id", c.group_id)
+        .in("user_id", participantIds)
         .gte("workout_date", `${c.starts_at}T00:00:00-03:00`)
         .lte("workout_date", `${c.ends_at}T23:59:59-03:00`);
       const counts: Record<string, number> = {};

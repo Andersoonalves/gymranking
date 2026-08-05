@@ -12,12 +12,12 @@ interface ImportData {
   workouts: ImportWorkout[];
 }
 
-export function useImportWorkouts(userId: string | undefined, groupId: string | undefined) {
+export function useImportWorkouts(userId: string | undefined) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (file: File) => {
-      if (!userId || !groupId) throw new Error("Usuário ou grupo não selecionado.");
+      if (!userId) throw new Error("Usuário não autenticado.");
 
       const text = await file.text();
       let data: ImportData;
@@ -36,7 +36,6 @@ export function useImportWorkouts(userId: string | undefined, groupId: string | 
         const workoutDate = `${w.date}T${w.time || "12:00"}:00`;
         return {
           user_id: userId,
-          group_id: groupId,
           workout_type: w.workout_type,
           workout_date: new Date(workoutDate).toISOString(),
           notes: w.notes || null,

@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 /**
  * Sincroniza a fila offline de treinos: tenta no load e sempre que a conexão volta.
- * Cada item vira as linhas de workouts que teriam sido criadas na hora.
+ * Cada item vira a linha de workouts que teria sido criada na hora.
  */
 export function useOfflineWorkoutSync(userId: string | undefined) {
   const qc = useQueryClient();
@@ -25,15 +25,13 @@ export function useOfflineWorkoutSync(userId: string | undefined) {
       try {
         while (remaining.length > 0) {
           const item = remaining[0];
-          const rows = item.group_ids.map((group_id) => ({
+          const { error } = await supabase.from("workouts").insert({
             user_id: userId,
-            group_id,
             workout_type: item.workout_types.join(", "),
             workout_date: item.workout_date,
             notes: item.notes,
             photo_url: item.photo_url,
-          }));
-          const { error } = await supabase.from("workouts").insert(rows);
+          });
           if (error) {
             if (isNetworkError(error)) break; // ainda offline, tenta depois
             // erro de negócio: descarta o item para não travar a fila

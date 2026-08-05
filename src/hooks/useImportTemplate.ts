@@ -6,18 +6,14 @@ export function useImportTemplate() {
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: async (params: {
-      template: WorkoutTemplate;
-      userId: string;
-      groupId: string;
-    }) => {
-      const { template, userId, groupId } = params;
+    mutationFn: async (params: { template: WorkoutTemplate; userId: string }) => {
+      const { template, userId } = params;
       const createdPrograms: { id: string; title: string }[] = [];
 
       for (const day of template.days) {
         const { data: program, error: progErr } = await supabase
           .from("training_programs")
-          .insert({ user_id: userId, group_id: groupId, title: day.name })
+          .insert({ user_id: userId, title: day.name })
           .select()
           .single();
         if (progErr) throw progErr;
@@ -42,8 +38,8 @@ export function useImportTemplate() {
 
       return createdPrograms;
     },
-    onSuccess: (_, vars) => {
-      qc.invalidateQueries({ queryKey: ["training_programs", vars.groupId] });
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["training_programs"] });
     },
   });
 }

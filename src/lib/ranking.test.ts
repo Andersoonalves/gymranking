@@ -4,6 +4,8 @@ import {
   filterWorkoutsByPeriod,
   computeRanking,
   computeStreak,
+  longestStreak,
+  formatPeriodCountdown,
   buildCallout,
   getMedalEmoji,
 } from "./ranking";
@@ -197,5 +199,42 @@ describe("buildCallout", () => {
 
   it("ranking vazio devolve null", () => {
     expect(buildCallout([], "a")).toBeNull();
+  });
+});
+
+describe("longestStreak", () => {
+  it("sem treinos devolve 0", () => {
+    expect(longestStreak([])).toBe(0);
+  });
+
+  it("acha a maior sequência mesmo no passado", () => {
+    expect(
+      longestStreak([
+        "2026-01-01T10:00:00",
+        "2026-01-02T10:00:00",
+        "2026-01-03T10:00:00",
+        "2026-03-10T10:00:00",
+        "2026-03-11T10:00:00",
+      ])
+    ).toBe(3);
+  });
+
+  it("dois treinos no mesmo dia contam uma vez", () => {
+    expect(longestStreak(["2026-05-05T08:00:00", "2026-05-05T20:00:00", "2026-05-06T08:00:00"])).toBe(2);
+  });
+});
+
+describe("formatPeriodCountdown", () => {
+  it("dias e horas quando falta mais de um dia", () => {
+    // terça 31/07/2026 09:40 → domingo 02/08 23:59
+    expect(formatPeriodCountdown("week", new Date("2026-07-28T09:40:00"))).toBe("5d 14h");
+  });
+
+  it("horas e minutos no último dia", () => {
+    expect(formatPeriodCountdown("week", new Date("2026-08-02T20:47:00"))).toBe("3h 12min");
+  });
+
+  it("só minutos na última hora", () => {
+    expect(formatPeriodCountdown("week", new Date("2026-08-02T23:30:00"))).toBe("29min");
   });
 });

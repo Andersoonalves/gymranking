@@ -95,6 +95,37 @@ export function computeStreak(workoutDates: string[], refDate: Date = new Date()
   return streak;
 }
 
+/** Tempo até o período fechar, no formato curto do placar: "5d 14h", "14h 3min". */
+export function formatPeriodCountdown(period: RankingPeriod, refDate: Date = new Date()): string {
+  const { end } = getPeriodBounds(period, refDate);
+  const minutesLeft = Math.max(0, Math.floor((end.getTime() - refDate.getTime()) / 60_000));
+  const days = Math.floor(minutesLeft / 1440);
+  const hours = Math.floor((minutesLeft % 1440) / 60);
+  const minutes = minutesLeft % 60;
+  if (days > 0) return `${days}d ${hours}h`;
+  if (hours > 0) return `${hours}h ${minutes}min`;
+  return `${minutes}min`;
+}
+
+/** Maior sequência de dias seguidos com treino, em todo o histórico. */
+export function longestStreak(workoutDates: string[]): number {
+  const dayKeys = new Set(
+    workoutDates.map((d) => {
+      const dt = new Date(d);
+      return new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
+    })
+  );
+  const days = [...dayKeys].sort((a, b) => a - b);
+  let best = 0;
+  let run = 0;
+  for (let i = 0; i < days.length; i++) {
+    // round: horário de verão faz o dia ter 23h/25h
+    run = i > 0 && Math.round((days[i] - days[i - 1]) / 86_400_000) === 1 ? run + 1 : 1;
+    if (run > best) best = run;
+  }
+  return best;
+}
+
 /** Chamada provocativa do ranking: distância até o líder, em uma frase. */
 export function buildCallout(ranking: RankingEntry[], myUserId: string | undefined): string | null {
   if (ranking.length === 0) return null;

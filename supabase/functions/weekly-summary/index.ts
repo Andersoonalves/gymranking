@@ -64,10 +64,15 @@ Deno.serve(async (req) => {
 
   let sent = 0;
   for (const group of groups ?? []) {
+    // Treino não tem grupo: o placar do grupo são os treinos dos membros dele.
+    const { data: members } = await supabase.from("group_members").select("user_id").eq("group_id", group.id);
+    const memberIds = (members ?? []).map((m) => m.user_id);
+    if (memberIds.length === 0) continue;
+
     const { data: weekWorkouts } = await supabase
       .from("workouts")
       .select("user_id")
-      .eq("group_id", group.id)
+      .in("user_id", memberIds)
       .gte("workout_date", weekStart)
       .lt("workout_date", weekEnd);
     if (!weekWorkouts?.length) continue;
@@ -84,7 +89,6 @@ Deno.serve(async (req) => {
       .single();
     const leaderName = leaderProfile?.display_name ?? "Alguém";
 
-    const { data: members } = await supabase.from("group_members").select("user_id").eq("group_id", group.id);
     for (const member of members ?? []) {
       const subs = subsByUser[member.user_id];
       if (!subs?.length) continue;

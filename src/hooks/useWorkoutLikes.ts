@@ -3,17 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 
 export type LikeSummary = { count: number; likedByMe: boolean };
 
-/** Mapa workout_id -> curtidas (⚡) dos treinos do grupo. */
-export function useWorkoutLikes(groupId: string | undefined, userId: string | undefined) {
+/**
+ * Mapa workout_id -> curtidas (⚡). Sem filtro de grupo: a RLS já entrega só as
+ * curtidas de treinos visíveis (meus e de quem divide grupo comigo), e o feed
+ * consulta o mapa pelo id do treino.
+ */
+export function useWorkoutLikes(userId: string | undefined) {
   return useQuery({
-    queryKey: ["workout-likes", groupId],
-    enabled: !!groupId && !!userId,
+    queryKey: ["workout-likes"],
+    enabled: !!userId,
     queryFn: async (): Promise<Record<string, LikeSummary>> => {
-      if (!groupId) return {};
-      const { data, error } = await supabase
-        .from("workout_likes")
-        .select("workout_id, user_id, workouts!inner(group_id)")
-        .eq("workouts.group_id", groupId);
+      const { data, error } = await supabase.from("workout_likes").select("workout_id, user_id");
       if (error) throw error;
       const map: Record<string, LikeSummary> = {};
       for (const like of data ?? []) {
@@ -26,7 +26,7 @@ export function useWorkoutLikes(groupId: string | undefined, userId: string | un
   });
 }
 
-export function useToggleWorkoutLike(groupId: string | undefined, userId: string | undefined) {
+export function useToggleWorkoutLike(userId: string | undefined) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (params: { workout_id: string; liked: boolean }) => {
@@ -46,7 +46,7 @@ export function useToggleWorkoutLike(groupId: string | undefined, userId: string
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["workout-likes", groupId] });
+      queryClient.invalidateQueries({ queryKey: ["workout-likes"] });
     },
   });
 }

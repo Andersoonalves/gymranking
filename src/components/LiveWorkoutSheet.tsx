@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMyGroups } from "@/hooks/useGroups";
-import { useAddWorkouts } from "@/hooks/useWorkouts";
+import { useAddWorkout } from "@/hooks/useWorkouts";
 import { useExerciseHistory, useAddExerciseHistory } from "@/hooks/useExerciseHistory";
 import { useUpdateExercise, type TrainingProgram } from "@/hooks/useTrainingPrograms";
 import { isPersonalRecord } from "@/lib/personal-records";
@@ -28,8 +27,7 @@ type LiveWorkoutSheetProps = {
 /** Execução ao vivo: marca exercícios, cronometra o descanso e vira o registro do dia. */
 export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutSheetProps) {
   const { user } = useAuth();
-  const { data: groups = [] } = useMyGroups(user?.id);
-  const addWorkouts = useAddWorkouts(user?.id);
+  const addWorkout = useAddWorkout(user?.id);
   const { data: history = [] } = useExerciseHistory(user?.id);
   const addHistory = useAddExerciseHistory(user?.id);
   const updateExercise = useUpdateExercise();
@@ -90,8 +88,7 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
 
   const finish = async () => {
     try {
-      await addWorkouts.mutateAsync({
-        group_ids: groups.map((g) => g.id),
+      await addWorkout.mutateAsync({
         workout_types: [program.title],
         workout_date: new Date().toISOString(),
         notes: exercises.length > 0 ? exercises.map((e) => e.title).join(", ") : null,
@@ -110,7 +107,7 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
           addHistory.mutate({ exercise_title: e.title, load_kg: load, reps: e.reps, sets: e.sets });
         }
         if (load !== e.load_kg) {
-          updateExercise.mutate({ id: e.id, group_id: program.group_id, load_kg: load });
+          updateExercise.mutate({ id: e.id, load_kg: load });
         }
       }
       if (prs > 0) {
@@ -130,7 +127,7 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[96dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-background p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)]"
+        className="max-h-[96dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-background p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
       >
         <div className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
           <div className="h-1 w-9 self-center rounded-full bg-border" />
@@ -295,13 +292,13 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
           <div className="flex flex-col gap-2.5">
             <button
               type="button"
-              disabled={addWorkouts.isPending}
+              disabled={addWorkout.isPending}
               onClick={finish}
               className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[14px] bg-primary p-[18px] text-[15px] font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50"
             >
               <span className="absolute left-0 top-0 h-full w-2/5 animate-sheen bg-gradient-to-r from-transparent via-white/50 to-transparent [animation-duration:3.4s]" />
               <Flag className="h-5 w-5" />
-              {addWorkouts.isPending ? "Registrando…" : "Concluir e registrar"}
+              {addWorkout.isPending ? "Registrando…" : "Concluir e registrar"}
             </button>
             <span className="text-center text-[11px] leading-relaxed text-muted-foreground/70">
               Conta como 1 treino em todos os seus grupos e mantém sua sequência.

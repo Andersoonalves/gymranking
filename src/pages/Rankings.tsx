@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useGroupWorkouts } from "@/hooks/useWorkouts";
 import { useProfilesInGroup } from "@/hooks/useProfilesInGroup";
-import { filterWorkoutsByPeriod, computeRanking, buildCallout, type RankingPeriod, type RankingEntry } from "@/lib/ranking";
-import { GROUPS_STORAGE_KEY } from "@/lib/constants";
+import { filterWorkoutsByPeriod, computeRanking, computeStreak, buildCallout, type RankingPeriod, type RankingEntry } from "@/lib/ranking";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { useMyGroups } from "@/hooks/useGroups";
+import { useActiveGroupId } from "@/hooks/useActiveGroup";
 import { useAuth } from "@/contexts/AuthContext";
 import { InitialAvatar } from "@/components/InitialAvatar";
 import { EmptyState } from "@/components/EmptyState";
@@ -12,7 +14,8 @@ import { MemberProfileSheet } from "@/components/MemberProfileSheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { WORKOUT_TYPES } from "@/lib/workout-types";
 import { cn } from "@/lib/utils";
-import { Crown, Swords, Trophy } from "lucide-react";
+import { Crown, Flame, Share2, Swords, Trophy } from "lucide-react";
+import { toast } from "sonner";
 
 const PERIODS: { value: RankingPeriod; label: string }[] = [
   { value: "week", label: "Semana" },
@@ -70,7 +73,7 @@ export default function Rankings() {
   const { user } = useAuth();
   const userId = user?.id;
   const { data: groups = [] } = useMyGroups(userId);
-  const [selectedGroupId, setSelectedGroupId] = useState<string>(() => localStorage.getItem(GROUPS_STORAGE_KEY) ?? "");
+  const [selectedGroupId, setSelectedGroupId] = useActiveGroupId();
   const selectedGroup = groups.find((g) => g.id === selectedGroupId) ?? groups[0];
 
   const { data: workouts = [] } = useGroupWorkouts(selectedGroup?.id);
@@ -89,6 +92,36 @@ export default function Rankings() {
   const maxCount = Math.max(1, ranking[0]?.count ?? 1);
   const callout = period === "week" ? buildCallout(ranking, userId) : null;
 
+  // Streak atual e último treino por usuário — colunas da tabela desktop
+  const userStats = useMemo(() => {
+    const byUser: Record<string, string[]> = {};
+    for (const w of workouts) (byUser[w.user_id] ??= []).push(w.workout_date);
+    const stats: Record<string, { streak: number; last: Date }> = {};
+    for (const [uid, dates] of Object.entries(byUser)) {
+      stats[uid] = { streak: computeStreak(dates), last: new Date(Math.max(...dates.map((d) => +new Date(d)))) };
+    }
+    return stats;
+  }, [workouts]);
+
+  const sharePlacar = async () => {
+    if (!selectedGroup) return;
+    const label = PERIODS.find((p) => p.value === period)?.label ?? "";
+    const lines = ranking
+      .slice(0, 5)
+      .map((e) => `${e.position}º ${e.user_id === userId ? "Você" : e.display_name} — ${e.count}`);
+    const text = `Placar ${selectedGroup.name} · ${label}\n${lines.join("\n")}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ text });
+      } catch {
+        /* usuário cancelou */
+      }
+    } else {
+      await navigator.clipboard.writeText(text);
+      toast.success("Placar copiado!");
+    }
+  };
+
   // Pódio na ordem visual 2º · 1º · 3º
   const podium = ranking.slice(0, 3);
   const podiumOrder = [podium[1], podium[0], podium[2]].filter(Boolean) as RankingEntry[];
@@ -102,28 +135,38 @@ export default function Rankings() {
   }
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-4 px-5 pb-4 pt-4 safe-area-top">
+    <div className="mx-auto flex max-w-lg flex-col gap-4 px-5 pb-4 pt-4 safe-area-top lg:max-w-5xl lg:gap-5 lg:px-8 lg:pt-7">
       <div className="flex items-center justify-between gap-3">
         <h1 className="display-title text-[28px] text-foreground">Rankings</h1>
-        {groups.length > 1 && (
-          <Select value={selectedGroup.id} onValueChange={setSelectedGroupId}>
-            <SelectTrigger className="h-9 w-auto shrink-0 gap-1.5 rounded-[10px] border-border bg-card text-xs font-bold">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent align="end">
-              {groups.map((g) => (
-                <SelectItem key={g.id} value={g.id}>
-                  {g.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={sharePlacar}
+            className="hidden h-9 items-center gap-2 rounded-[10px] border border-border bg-card px-3.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary lg:flex"
+          >
+            <Share2 className="h-4 w-4" />
+            Compartilhar placar
+          </button>
+          {groups.length > 1 && (
+            <Select value={selectedGroup.id} onValueChange={setSelectedGroupId}>
+              <SelectTrigger className="h-9 w-auto shrink-0 gap-1.5 rounded-[10px] border-border bg-card text-xs font-bold">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent align="end">
+                {groups.map((g) => (
+                  <SelectItem key={g.id} value={g.id}>
+                    {g.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        </div>
       </div>
 
-      {/* Pódio */}
+      {/* Pódio mobile: colunas com altura */}
       {podium.length > 0 && (
-        <div className="relative overflow-hidden rounded-[20px] border border-border bg-gradient-to-b from-secondary to-card px-3.5 pb-3.5 pt-5">
+        <div className="relative overflow-hidden rounded-[20px] border border-border bg-gradient-to-b from-secondary to-card px-3.5 pb-3.5 pt-5 lg:hidden">
           <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(180px_110px_at_50%_0%,hsl(var(--primary)/0.18),transparent_70%)]" />
           <div className="relative flex items-end justify-center gap-2.5">
             {podiumOrder.map((entry) => (
@@ -136,6 +179,72 @@ export default function Rankings() {
               <span className="flex-1 text-xs font-semibold leading-snug text-accent">{callout}</span>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Pódio desktop: 3 cards, líder ao centro (como no protótipo) */}
+      {podium.length > 0 && (
+        <div className="hidden lg:grid lg:grid-cols-3 lg:items-end lg:gap-4">
+          {[podium[1], podium[0], podium[2]].map((entry, slot) => {
+            if (!entry) return <div key={`empty-${slot}`} />;
+            const isMe = entry.user_id === userId;
+            const champion = slot === 1;
+            const tied = podium.some((p) => p !== entry && p.count === entry.count);
+            return (
+              <div
+                key={entry.user_id}
+                className={cn(
+                  "relative flex flex-col items-center gap-2.5 overflow-hidden rounded-[18px] border p-5",
+                  champion
+                    ? "border-primary/40 bg-gradient-to-b from-secondary to-card"
+                    : isMe
+                      ? "border-accent/40 bg-accent/5"
+                      : "border-border bg-card",
+                )}
+              >
+                {champion && (
+                  <>
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(200px_120px_at_50%_0%,hsl(var(--primary)/0.16),transparent_70%)]" />
+                    <Trophy className="relative h-6 w-6 text-primary" />
+                  </>
+                )}
+                <InitialAvatar
+                  name={entry.display_name}
+                  avatarUrl={entry.avatar_url}
+                  isSelf={isMe}
+                  className={champion ? "h-[62px] w-[62px] rounded-[18px] text-2xl" : "h-[52px] w-[52px] rounded-[15px] text-xl"}
+                />
+                <span className={cn("max-w-full truncate font-extrabold", champion ? "text-lg" : "text-base", isMe ? "text-accent" : "text-foreground")}>
+                  {isMe ? "Você" : entry.display_name}
+                </span>
+                <span
+                  className={cn(
+                    "font-mono font-bold tabular-nums leading-none",
+                    champion ? "text-[40px] text-primary" : "text-[30px]",
+                    !champion && (isMe ? "text-accent" : "text-foreground/70"),
+                  )}
+                >
+                  {entry.count}
+                </span>
+                <span
+                  className={cn(
+                    "relative rounded-md px-2.5 py-1 font-mono text-[10px] font-bold tracking-[0.12em]",
+                    champion ? "bg-primary/15 text-primary" : isMe ? "bg-accent/15 text-accent" : "bg-secondary text-muted-foreground",
+                  )}
+                >
+                  {champion ? "LÍDER" : `${entry.position}º${tied ? " · EMPATE" : ""}`}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Chamada provocativa (desktop, fora do card do pódio) */}
+      {callout && (
+        <div className="hidden items-center gap-2 rounded-[11px] border border-accent/30 bg-accent/10 px-3 py-2.5 lg:flex">
+          <Swords className="h-[17px] w-[17px] shrink-0 text-accent" />
+          <span className="flex-1 text-xs font-semibold leading-snug text-accent">{callout}</span>
         </div>
       )}
 
@@ -182,7 +291,69 @@ export default function Rankings() {
           description={period === "week" ? "O ranking zera toda segunda. Seja o primeiro a marcar." : "Nenhum registro neste período ainda."}
         />
       ) : (
-        <div className="flex flex-col gap-1.5">
+        <>
+        {/* Tabela desktop: Pos · Atleta · Treinos · Barra · Streak · Último */}
+        <div className="hidden overflow-hidden rounded-[18px] border border-border bg-card lg:block">
+          <div className="grid grid-cols-[56px_minmax(160px,1fr)_90px_minmax(120px,220px)_80px_110px] items-center gap-4 border-b border-border bg-secondary/50 px-5 py-3">
+            {["Pos", "Atleta", "Treinos", "Período", "Streak", "Último"].map((h, i) => (
+              <span key={h} className={cn("mono-label", i === 5 && "text-right")}>
+                {h}
+              </span>
+            ))}
+          </div>
+          {ranking.map((entry, i) => {
+            const isMe = entry.user_id === userId;
+            const tied =
+              (i > 0 && ranking[i - 1].count === entry.count) || (i < ranking.length - 1 && ranking[i + 1].count === entry.count);
+            const isFirst = entry.position === 1;
+            const stats = userStats[entry.user_id];
+            return (
+              <button
+                type="button"
+                key={entry.user_id}
+                onClick={() =>
+                  setProfileMember({ user_id: entry.user_id, display_name: entry.display_name, avatar_url: entry.avatar_url })
+                }
+                className={cn(
+                  "grid w-full grid-cols-[56px_minmax(160px,1fr)_90px_minmax(120px,220px)_80px_110px] items-center gap-4 border-b border-border/50 px-5 py-3.5 text-left last:border-b-0 hover:bg-secondary/40",
+                  isMe && "bg-primary/5",
+                )}
+              >
+                <span className="flex items-baseline gap-1.5">
+                  <span className={cn("font-mono text-[17px] font-bold tabular-nums", isFirst ? "text-primary" : "text-muted-foreground")}>
+                    {entry.position}
+                  </span>
+                  {tied && <span className="font-mono text-[9px] font-semibold text-muted-foreground/70">=</span>}
+                </span>
+                <span className="flex min-w-0 items-center gap-3">
+                  <InitialAvatar name={entry.display_name} avatarUrl={entry.avatar_url} isSelf={isMe} className="h-[34px] w-[34px] rounded-[10px] text-[13px]" />
+                  <span className={cn("truncate text-[15px] font-bold", isMe ? "text-primary" : "text-foreground")}>
+                    {isMe ? "Você" : entry.display_name}
+                  </span>
+                </span>
+                <span className={cn("font-mono text-[17px] font-bold tabular-nums", isFirst ? "text-primary" : "text-muted-foreground")}>
+                  {entry.count}
+                </span>
+                <span className="block h-2 overflow-hidden rounded-[4px] bg-secondary">
+                  <span
+                    className={cn("block h-full origin-left animate-bar-in rounded-[4px]", isFirst ? "bg-primary" : "bg-muted-foreground/40")}
+                    style={{ width: `${(entry.count / maxCount) * 100}%` }}
+                  />
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <Flame className={cn("h-4 w-4", (stats?.streak ?? 0) > 0 ? "fill-accent/20 text-accent" : "text-muted-foreground/30")} />
+                  <span className="font-mono text-[13px] font-bold tabular-nums text-foreground/80">{stats?.streak ?? 0}</span>
+                </span>
+                <span className="text-right font-mono text-xs text-muted-foreground">
+                  {stats ? format(stats.last, "dd MMM · HH:mm", { locale: ptBR }) : "—"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Lista mobile */}
+        <div className="flex flex-col gap-1.5 lg:hidden">
           {ranking.map((entry, i) => {
             const isMe = entry.user_id === userId;
             const tied =
@@ -227,6 +398,7 @@ export default function Rankings() {
             );
           })}
         </div>
+        </>
       )}
 
       <MemberProfileSheet

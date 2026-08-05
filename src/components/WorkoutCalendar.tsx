@@ -9,7 +9,7 @@ type WorkoutCalendarProps = {
   workouts: Workout[];
   /** Ao escolher um dia sem treinos, abre o fluxo de registro para esse dia. */
   onEmptyDaySelect?: (date: Date) => void;
-  onDeleteWorkout?: (params: { id: string; group_id: string; label: string }) => void;
+  onDeleteWorkout?: (params: { id: string; label: string }) => void;
   isDeleting?: boolean;
 };
 
@@ -204,7 +204,7 @@ export function WorkoutCalendar({ workouts, onEmptyDaySelect, onDeleteWorkout, i
                   type="button"
                   aria-label="Excluir treino"
                   disabled={isDeleting}
-                  onClick={() => onDeleteWorkout({ id: w.id, group_id: w.group_id, label: w.workout_type })}
+                  onClick={() => onDeleteWorkout({ id: w.id, label: w.workout_type })}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted-foreground/60 hover:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />

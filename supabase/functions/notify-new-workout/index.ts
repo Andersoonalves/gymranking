@@ -174,10 +174,11 @@ Deno.serve(async (req) => {
       const weekStartUtc = new Date(
         Date.UTC(nowSp.getUTCFullYear(), nowSp.getUTCMonth(), nowSp.getUTCDate() - dow, 3, 0, 0),
       );
+      // Treino não tem grupo: o placar do grupo são os treinos dos membros dele.
       const { data: weekWorkouts } = await supabase
         .from("workouts")
         .select("user_id")
-        .eq("group_id", group_id)
+        .in("user_id", [...userIds, exclude_user_id])
         .gte("workout_date", weekStartUtc.toISOString());
       const counts: Record<string, number> = {};
       for (const w of weekWorkouts ?? []) counts[w.user_id] = (counts[w.user_id] ?? 0) + 1;

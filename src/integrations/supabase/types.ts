@@ -313,34 +313,23 @@ export type Database = {
       training_programs: {
         Row: {
           created_at: string
-          group_id: string
           id: string
           title: string
           user_id: string
         }
         Insert: {
           created_at?: string
-          group_id: string
           id?: string
           title: string
           user_id: string
         }
         Update: {
           created_at?: string
-          group_id?: string
           id?: string
           title?: string
           user_id?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "training_programs_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       user_roles: {
         Row: {
@@ -392,7 +381,6 @@ export type Database = {
       workouts: {
         Row: {
           created_at: string
-          group_id: string
           id: string
           notes: string | null
           photo_url: string | null
@@ -402,7 +390,6 @@ export type Database = {
         }
         Insert: {
           created_at?: string
-          group_id: string
           id?: string
           notes?: string | null
           photo_url?: string | null
@@ -412,7 +399,6 @@ export type Database = {
         }
         Update: {
           created_at?: string
-          group_id?: string
           id?: string
           notes?: string | null
           photo_url?: string | null
@@ -420,15 +406,7 @@ export type Database = {
           workout_date?: string
           workout_type?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "workouts_group_id_fkey"
-            columns: ["group_id"]
-            isOneToOne: false
-            referencedRelation: "groups"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
     }
     Views: {
@@ -445,6 +423,24 @@ export type Database = {
       get_my_group_ids: {
         Args: Record<PropertyKey, never>
         Returns: string[]
+      }
+      group_workouts: {
+        Args: { _group_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          notes: string | null
+          photo_url: string | null
+          user_id: string
+          workout_date: string
+          workout_type: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "workouts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
       has_role: {
         Args: {

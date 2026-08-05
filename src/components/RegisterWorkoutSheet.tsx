@@ -31,9 +31,9 @@ type RegisterWorkoutSheetProps = {
   onOpenChange: (open: boolean) => void;
   /** Quando definido ao abrir, pré-preenche data/hora com este dia (e hora atual). */
   initialTargetDate?: Date | null;
+  /** Só para listar os programas de treino, que continuam sendo por grupo. */
   groupIds: string[];
   onRegister: (params: {
-    group_ids: string[];
     workout_types: string[];
     workout_date: string;
     notes?: string | null;
@@ -53,9 +53,7 @@ export function RegisterWorkoutSheet({
   isPending,
 }: RegisterWorkoutSheetProps) {
   const { user } = useAuth();
-  const firstGroupId = groupIds[0];
-  const { data: programs = [] } = useTrainingPrograms(firstGroupId);
-  const myPrograms = programs.filter((p) => p.user_id === user?.id);
+  const { data: myPrograms = [] } = useTrainingPrograms(user?.id);
 
   const [source, setSource] = useState<"general" | "programs">("general");
   const [search, setSearch] = useState("");
@@ -147,7 +145,7 @@ export function RegisterWorkoutSheet({
 
   const register = async (params: { workout_types: string[]; workout_date: string; notes: string | null; photo_url?: string | null }) => {
     try {
-      await onRegister({ group_ids: groupIds, ...params });
+      await onRegister(params);
       toast.success("Treino registrado!");
       handleOpenChange(false);
     } catch (err: unknown) {
@@ -182,12 +180,15 @@ export function RegisterWorkoutSheet({
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)]"
+        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal lg:!w-[920px]"
       >
         <div className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
           <div className="h-1 w-9 self-center rounded-full bg-border" />
 
-          <SheetTitle className="display-title text-[22px] text-foreground">Registrar treino</SheetTitle>
+          <div className="flex flex-col gap-1">
+            <SheetTitle className="display-title text-[22px] text-foreground">Registrar treino</SheetTitle>
+            <span className="hidden font-mono text-xs text-muted-foreground lg:block">Leva menos de 10 segundos</span>
+          </div>
 
           {/* Atalhos de 1 toque */}
           {myPrograms.length > 0 && (
@@ -219,9 +220,11 @@ export function RegisterWorkoutSheet({
             </>
           )}
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start lg:gap-6">
+            {/* Coluna esquerda (desktop): tipos, observações e foto */}
+            <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-3.5">
             {/* Tipos */}
-            <div className="flex flex-col gap-2">
+            <div className="order-1 flex flex-col gap-2 lg:order-none">
               <div className="flex items-center justify-between">
                 <span className="mono-label">
                   Tipos{selectedTypes.length > 0 && ` · ${selectedTypes.length} ${selectedTypes.length === 1 ? "selecionado" : "selecionados"}`}
@@ -320,8 +323,12 @@ export function RegisterWorkoutSheet({
               )}
             </div>
 
+            </div>
+
+            {/* Coluna direita (desktop): quando, resumo e ações */}
+            <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-3.5">
             {/* Quando */}
-            <div className="flex flex-col gap-1.5">
+            <div className="order-2 flex flex-col gap-1.5 lg:order-none">
               <span className="mono-label">Quando</span>
               <div className="flex gap-1.5">
                 <button
@@ -372,7 +379,7 @@ export function RegisterWorkoutSheet({
             </div>
 
             {/* Observações */}
-            <div className="flex flex-col gap-1.5">
+            <div className="order-3 flex flex-col gap-1.5 lg:order-none">
               <label htmlFor="workout-notes" className="mono-label">
                 Observações · opcional
               </label>
@@ -388,7 +395,7 @@ export function RegisterWorkoutSheet({
             </div>
 
             {/* Foto-prova opcional */}
-            <div className="flex flex-col gap-1.5">
+            <div className="order-4 flex flex-col gap-1.5 lg:order-none">
               <span className="mono-label">Foto de prova · opcional</span>
               <input
                 ref={photoInputRef}
@@ -439,14 +446,41 @@ export function RegisterWorkoutSheet({
               )}
             </div>
 
+            {/* Resumo (desktop) */}
+            <div className="hidden flex-col gap-3 rounded-[14px] border border-border bg-secondary/40 p-4 lg:flex">
+              <span className="mono-label">Resumo</span>
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-xs font-semibold text-muted-foreground">Tipos</span>
+                <span className="text-right text-[13px] font-bold text-foreground">
+                  {selectedTypes.length > 0 ? selectedTypes.join(", ") : "—"}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-muted-foreground">Data</span>
+                <span className="font-mono text-[13px] font-bold text-foreground">
+                  {when === "now"
+                    ? "Agora"
+                    : when === "yesterday"
+                      ? "Ontem"
+                      : customDateTime.replace("T", " · ")}
+                </span>
+              </div>
+              <div className="h-px bg-border" />
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-xs font-semibold text-muted-foreground">Grupos</span>
+                <span className="font-mono text-[13px] font-bold text-primary">{groupIds.length}</span>
+              </div>
+            </div>
+
             <button
               type="submit"
               disabled={selectedTypes.length === 0 || isPending || uploadingPhoto}
-              className="relative flex w-full items-center justify-center overflow-hidden rounded-[14px] bg-primary p-[17px] text-[15px] font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50"
+              className="order-5 relative flex w-full items-center justify-center overflow-hidden rounded-[14px] bg-primary p-[17px] text-[15px] font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50 lg:order-none"
             >
               <span className="absolute left-0 top-0 h-full w-2/5 animate-sheen bg-gradient-to-r from-transparent via-white/55 to-transparent [animation-duration:3.2s]" />
               {isPending ? "Registrando…" : "Registrar treino"}
             </button>
+            </div>
           </form>
         </div>
       </SheetContent>

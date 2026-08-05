@@ -127,7 +127,7 @@ export function PhotoCompare({ open, onOpenChange, photos }: PhotoCompareProps) 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[96dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-background p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)]"
+        className="max-h-[96dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-background p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
       >
         <div className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
           <div className="h-1 w-9 self-center rounded-full bg-border" />
