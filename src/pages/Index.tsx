@@ -600,7 +600,7 @@ export default function Index() {
           </div>
           {callout && <span className="text-[13px] font-semibold leading-snug text-accent">{callout}</span>}
         </div>
-        {weeklyRanking.length === 0 ? (
+        {!weeklyRanking.some((e) => e.count > 0) ? (
           <div className="px-4 pb-4">
             <EmptyState
               icon={Trophy}

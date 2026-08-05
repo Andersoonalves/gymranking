@@ -53,6 +53,12 @@ export function computeRanking(
   profilesByUserId: Record<string, ProfileInfo>
 ): RankingEntry[] {
   const countByUser: Record<string, number> = {};
+  // Todo membro do grupo entra no placar, mesmo sem treino no período — quem
+  // acabou de entrar aparece com 0 no fim da lista em vez de sumir dela.
+  // As chaves de `profilesByUserId` são os membros (ver useProfilesInGroup).
+  for (const user_id of Object.keys(profilesByUserId)) {
+    countByUser[user_id] = 0;
+  }
   for (const w of workouts) {
     countByUser[w.user_id] = (countByUser[w.user_id] ?? 0) + 1;
   }
@@ -130,6 +136,9 @@ export function longestStreak(workoutDates: string[]): number {
 export function buildCallout(ranking: RankingEntry[], myUserId: string | undefined): string | null {
   if (ranking.length === 0) return null;
   const leader = ranking[0];
+  // Ninguém treinou no período: o placar existe (tem membros) mas está zerado,
+  // e aí não há liderança para provocar.
+  if (leader.count === 0) return null;
   const me = ranking.find((e) => e.user_id === myUserId);
   if (me && me.position === 1) {
     return ranking.length > 1 && ranking[1].count === me.count

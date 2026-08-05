@@ -89,6 +89,8 @@ export default function Rankings() {
     workoutTypeFilter === "all" ? workouts : workouts.filter((w) => w.workout_type.split(", ").includes(workoutTypeFilter));
   const periodWorkouts = filterWorkoutsByPeriod(filteredByType, period);
   const ranking = computeRanking(periodWorkouts, profilesMap);
+  // O placar lista todo membro, então "vazio" agora é "ninguém treinou".
+  const anyTrained = ranking.some((e) => e.count > 0);
   const maxCount = Math.max(1, ranking[0]?.count ?? 1);
   const callout = period === "week" ? buildCallout(ranking, userId) : null;
 
@@ -107,6 +109,7 @@ export default function Rankings() {
     if (!selectedGroup) return;
     const label = PERIODS.find((p) => p.value === period)?.label ?? "";
     const lines = ranking
+      .filter((e) => e.count > 0)
       .slice(0, 5)
       .map((e) => `${e.position}º ${e.user_id === userId ? "Você" : e.display_name} — ${e.count}`);
     const text = `Placar ${selectedGroup.name} · ${label}\n${lines.join("\n")}`;
@@ -122,8 +125,8 @@ export default function Rankings() {
     }
   };
 
-  // Pódio na ordem visual 2º · 1º · 3º
-  const podium = ranking.slice(0, 3);
+  // Pódio na ordem visual 2º · 1º · 3º — só sobe quem pontuou
+  const podium = ranking.filter((e) => e.count > 0).slice(0, 3);
   const podiumOrder = [podium[1], podium[0], podium[2]].filter(Boolean) as RankingEntry[];
 
   if (!selectedGroup) {
@@ -284,7 +287,7 @@ export default function Rankings() {
       </Select>
 
       {/* Lista completa */}
-      {ranking.length === 0 ? (
+      {!anyTrained ? (
         <EmptyState
           icon={Trophy}
           title="Nenhum treino no período"

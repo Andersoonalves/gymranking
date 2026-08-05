@@ -111,8 +111,28 @@ describe("computeRanking", () => {
     expect(fantasma.avatar_url).toBeNull();
   });
 
-  it("sem treinos, ranking vazio", () => {
-    expect(computeRanking([], profiles)).toEqual([]);
+  it("sem treinos no período, todo membro aparece com 0", () => {
+    expect(computeRanking([], profiles).map((e) => [e.display_name, e.count])).toEqual([
+      ["Ana", 0],
+      ["Bruno", 0],
+    ]);
+  });
+
+  it("sem membro nenhum, ranking vazio", () => {
+    expect(computeRanking([], {})).toEqual([]);
+  });
+
+  it("membro que não treinou no período fica no fim, não desaparece", () => {
+    const r = computeRanking([{ user_id: "a" }], profiles);
+    expect(r.map((e) => [e.display_name, e.count, e.position])).toEqual([
+      ["Ana", 1, 1],
+      ["Bruno", 0, 2],
+    ]);
+  });
+
+  it("empate em 0 divide a mesma posição", () => {
+    const r = computeRanking([], { ...profiles, c: { display_name: "Caio", avatar_url: null } });
+    expect(r.every((e) => e.position === 1)).toBe(true);
   });
 
   it("empate mantém a mesma posição para contagens iguais", () => {
@@ -199,6 +219,10 @@ describe("buildCallout", () => {
 
   it("ranking vazio devolve null", () => {
     expect(buildCallout([], "a")).toBeNull();
+  });
+
+  it("placar zerado não provoca ninguém", () => {
+    expect(buildCallout(computeRanking([], profiles), "a")).toBeNull();
   });
 });
 

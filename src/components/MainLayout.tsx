@@ -320,7 +320,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                   {myProfile?.display_name || user?.email || "Você"}
                 </span>
                 <span className="font-mono text-[10px] text-muted-foreground">
-                  {myWeekEntry
+                  {myWeekEntry && myWeekEntry.count > 0
                     ? `${myWeekEntry.position}º · ${myWeekEntry.count} ${myWeekEntry.count === 1 ? "treino" : "treinos"}`
                     : "sem treino na semana"}
                 </span>
