@@ -70,10 +70,10 @@ export async function notifyNewWorkout(
   supabaseUrl: string,
   anonKey: string,
   accessToken: string,
+  // Quem registrou sai do JWT no servidor — nada de mandar user_id no body.
   payload: {
     group_id: string;
     group_name: string;
-    exclude_user_id: string;
     display_name: string;
     workout_type: string;
   }

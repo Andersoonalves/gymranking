@@ -30,7 +30,6 @@ async function getVapidJwk(): Promise<string | null> {
 
 interface NotifyBody {
   group_id: string;
-  exclude_user_id: string;
   display_name: string;
   workout_type: string;
   group_name: string;
@@ -98,8 +97,12 @@ Deno.serve(async (req) => {
 
   try {
     const body: NotifyBody = await req.json();
-    const { group_id, exclude_user_id, display_name, workout_type, group_name } = body;
-    if (!group_id || !exclude_user_id || !display_name || !workout_type || !group_name) {
+    const { group_id, display_name, workout_type, group_name } = body;
+    // Quem registrou é sempre o próprio chamador: vem do JWT já validado, nunca
+    // do body. Com service role a RLS não vale, então id vindo de fora daria
+    // pra ler contagem de treino de gente de fora do grupo.
+    const exclude_user_id = callerId;
+    if (!group_id || !display_name || !workout_type || !group_name) {
       return new Response(JSON.stringify({ error: "Missing fields" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },

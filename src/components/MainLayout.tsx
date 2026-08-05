@@ -125,7 +125,6 @@ export function MainLayout({ children }: MainLayoutProps) {
         notifyNewWorkout(supabaseUrl, anonKey, session.access_token, {
           group_id: group.id,
           group_name: group.name,
-          exclude_user_id: userId!,
           display_name: displayName,
           workout_type: params.workout_types.join(", "),
         }).catch(() => { });
