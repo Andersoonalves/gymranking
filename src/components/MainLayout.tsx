@@ -341,7 +341,9 @@ export function MainLayout({ children }: MainLayoutProps) {
               window.scrollTo({ top: 0, behavior: "smooth" });
               mainRef.current?.scrollTo({ top: 0, behavior: "smooth" });
             }}
-            className="fixed bottom-28 right-4 z-40 flex h-11 w-11 items-center justify-center rounded-[13px] border border-border bg-card/90 text-foreground shadow-lg backdrop-blur-sm animate-pop-in hover:border-primary hover:text-primary safe-area-bottom"
+            // Centralizado na área de conteúdo: no desktop desloca metade da
+            // sidebar (248px) para não ficar torto em relação ao que se lê.
+            className="fixed bottom-28 left-1/2 z-40 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-[13px] border border-border bg-card/90 text-foreground shadow-lg backdrop-blur-sm animate-pop-in hover:border-primary hover:text-primary safe-area-bottom lg:left-[calc(50%+124px)]"
           >
             <ArrowUp className="h-5 w-5" />
           </button>
