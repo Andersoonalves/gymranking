@@ -197,6 +197,24 @@
   }
 }
 
+/* O Safari no iOS dá zoom ao focar um campo com fonte menor que 16px, e depois
+   não desfaz o zoom — a tela fica torta até recarregar. Manter 16px em ponteiro
+   grosso remove o gatilho na origem, em todo campo de texto de uma vez.
+   Preferido a `maximum-scale=1` no viewport, que resolveria o zoom automático
+   mas mataria o pinch-to-zoom de quem precisa ampliar a tela.
+
+   Os `:not()` não são frescura: o `@tailwind utilities` do Tailwind v3 gera CSS
+   comum, sem @layer nativo, então quem decide aqui é especificidade. Seletor de
+   elemento puro (0,0,1) perde de `.text-xs` (0,1,0) e a regra não valeria; cada
+   `:not([atributo])` soma 0,1,0 e põe estes seletores na frente. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select:not([hidden]),
+  textarea:not([hidden]) {
+    font-size: 16px;
+  }
+}
+
 /* Bottom sheets viram modal central no desktop. Fora do @layer para vencer
    as utilities do Radix/Tailwind sem !important. Sem transform: a animação
    slide-in-from-bottom sobrescreveria o translate e o fechamento pularia. */
