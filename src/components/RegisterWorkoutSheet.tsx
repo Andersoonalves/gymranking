@@ -71,15 +71,18 @@ export function RegisterWorkoutSheet({
   const handlePhotoFile = async (file: File) => {
     setCropFile(null);
     if (!user) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Foto muito grande", { description: "O tamanho máximo é 5 MB." });
+    if (file.size > 1024 * 1024) {
+      toast.error("Foto muito grande", { description: "O tamanho máximo é 1 MB." });
       return;
     }
     setUploadingPhoto(true);
     setPhotoPreview(URL.createObjectURL(file));
     const ext = file.name.split(".").pop() || "jpg";
     const path = `${user.id}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from("workout-photos").upload(path, file, { upsert: true });
+    // O caminho tem timestamp, então o objeto nunca muda: cache de 1 ano.
+    const { error } = await supabase.storage
+      .from("workout-photos")
+      .upload(path, file, { upsert: true, cacheControl: "31536000" });
     setUploadingPhoto(false);
     if (error) {
       toast.error("Erro ao enviar foto");

@@ -8,6 +8,15 @@
 
 const MAX_AVATAR_BYTES = 1024 * 1024; // 1 MB
 
+/** Tipos aceitos no avatar e a extensão do objeto no R2. AVIF é o padrão que o
+ * app gera; os outros são a queda para navegador que não codifica AVIF. */
+const AVATAR_TYPES: Record<string, string> = {
+  "image/avif": "avif",
+  "image/webp": "webp",
+  "image/jpeg": "jpg",
+  "image/png": "png",
+};
+
 // Tipagem mínima do binding: evita depender de @cloudflare/workers-types.
 type R2PutOptions = { httpMetadata?: { contentType?: string; cacheControl?: string } };
 type R2Like = { put(key: string, value: ArrayBuffer, options?: R2PutOptions): Promise<unknown> };
@@ -41,17 +50,20 @@ async function putAvatar(request: Request, env: Env): Promise<Response> {
   if (!userId) return json({ error: "Não autenticado" }, 401);
 
   const contentType = request.headers.get("content-type") ?? "";
-  if (!contentType.startsWith("image/")) return json({ error: "Arquivo inválido" }, 415);
+  // Whitelist em vez de `image/*`: o tipo vai para o httpMetadata do objeto, que
+  // o CDN devolve como Content-Type — nada de `image/svg+xml` aqui.
+  const ext = AVATAR_TYPES[contentType];
+  if (!ext) return json({ error: "Arquivo inválido" }, 415);
 
   const body = await request.arrayBuffer();
   if (body.byteLength === 0) return json({ error: "Arquivo vazio" }, 400);
   // Content-Length é palpite do cliente; o que vale é o tamanho real recebido.
   if (body.byteLength > MAX_AVATAR_BYTES) return json({ error: "Imagem muito grande" }, 413);
 
-  const key = `avatars/${userId}/avatar.jpg`;
+  const key = `avatars/${userId}/avatar.${ext}`;
   await env.MEDIA.put(key, body, {
     httpMetadata: {
-      contentType: "image/jpeg",
+      contentType,
       // A URL gravada no perfil carrega ?v=<timestamp>, então o objeto pode
       // ficar em cache eterno: trocar a foto muda a URL.
       cacheControl: "public, max-age=31536000, immutable",

@@ -1,10 +1,28 @@
 import { useEffect, useRef, useState } from "react";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { clampOffset, computeCrop, coverScale } from "@/lib/image-crop";
+import { clampOffset, computeCrop, coverScale, ENCODE_FORMATS, extensionForMime } from "@/lib/image-crop";
 
 const FRAME = 260;
 const MAX_ZOOM = 4;
+
+/**
+ * Codifica no melhor formato que o navegador suportar: AVIF primeiro, WebP e
+ * JPEG como queda. `toBlob` não avisa quando não sabe gerar o tipo pedido — ele
+ * devolve PNG silenciosamente —, então a confirmação é o `type` do blob que
+ * voltou. Sem isso o Safari geraria PNG (maior que o JPEG de antes) com nome
+ * `.avif`.
+ */
+async function encodeCanvas(canvas: HTMLCanvasElement): Promise<{ blob: Blob; ext: string } | null> {
+  let fallback: Blob | null = null;
+  for (const { mime, quality } of ENCODE_FORMATS) {
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, mime, quality));
+    if (!blob) continue;
+    if (blob.type === mime) return { blob, ext: extensionForMime(mime) };
+    fallback ??= blob;
+  }
+  return fallback ? { blob: fallback, ext: extensionForMime(fallback.type) } : null;
+}
 
 type Props = {
   file: File | null;
@@ -88,14 +106,12 @@ export function ImageCropDialog({ file, maxSize = 1024, onCancel, onConfirm }: P
     canvas.height = outSize;
     canvas.getContext("2d")?.drawImage(imgRef.current, sx, sy, sw, sh, 0, 0, outSize, outSize);
 
-    const blob = await new Promise<Blob | null>((resolve) =>
-      canvas.toBlob(resolve, "image/jpeg", 0.85),
-    );
+    const encoded = await encodeCanvas(canvas);
     setWorking(false);
-    if (!blob) return;
+    if (!encoded) return;
 
     const name = file.name.replace(/\.[^.]+$/, "");
-    onConfirm(new File([blob], `${name}.jpg`, { type: "image/jpeg" }));
+    onConfirm(new File([encoded.blob], `${name}.${encoded.ext}`, { type: encoded.blob.type }));
   };
 
   return (

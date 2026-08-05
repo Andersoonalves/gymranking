@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampOffset, computeCrop, coverScale } from "./image-crop";
+import { clampOffset, computeCrop, coverScale, ENCODE_FORMATS, extensionForMime } from "./image-crop";
 
 describe("image-crop", () => {
   it("cobre o quadro pelo lado menor", () => {
@@ -62,5 +62,25 @@ describe("image-crop", () => {
 
   it("clampOffset prende as bordas ao quadro", () => {
     expect(clampOffset({ x: 50, y: -400 }, 400, 400, 200)).toEqual({ x: 0, y: -200 });
+  });
+});
+
+describe("extensionForMime", () => {
+  it("mapeia os formatos que o app gera", () => {
+    expect(extensionForMime("image/avif")).toBe("avif");
+    expect(extensionForMime("image/webp")).toBe("webp");
+    // jpeg vira jpg, não "jpeg"
+    expect(extensionForMime("image/jpeg")).toBe("jpg");
+    // toBlob cai para PNG quando não sabe gerar o tipo pedido
+    expect(extensionForMime("image/png")).toBe("png");
+  });
+
+  it("não quebra com tipo vazio", () => {
+    expect(extensionForMime("")).toBe("bin");
+  });
+
+  it("AVIF é a primeira opção de codificação", () => {
+    expect(ENCODE_FORMATS[0].mime).toBe("image/avif");
+    expect(ENCODE_FORMATS.map((f) => f.mime)).toEqual(["image/avif", "image/webp", "image/jpeg"]);
   });
 });

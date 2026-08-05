@@ -1,5 +1,18 @@
 /** Matemática do recorte de imagem. Sem DOM: o canvas fica no componente. */
 
+/** Ordem de preferência ao codificar: o primeiro que o navegador souber gerar. */
+export const ENCODE_FORMATS = [
+  { mime: "image/avif", quality: 0.6 },
+  { mime: "image/webp", quality: 0.82 },
+  { mime: "image/jpeg", quality: 0.85 },
+] as const;
+
+/** Extensão do arquivo a partir do tipo MIME que o `toBlob` devolveu. */
+export function extensionForMime(mime: string): string {
+  const sub = mime.split("/")[1] ?? "";
+  return sub === "jpeg" ? "jpg" : sub || "bin";
+}
+
 export type CropInput = {
   naturalWidth: number;
   naturalHeight: number;

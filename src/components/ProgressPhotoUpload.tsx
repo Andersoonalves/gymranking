@@ -37,9 +37,10 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
         const ext = file.name.split(".").pop();
         const filePath = `${userId}/${Date.now()}.${ext}`;
 
+        // O caminho tem timestamp, então o objeto nunca muda: cache de 1 ano.
         const { error } = await supabase.storage
             .from("progress-photos")
-            .upload(filePath, file, { upsert: true });
+            .upload(filePath, file, { upsert: true, cacheControl: "31536000" });
 
         if (error) {
             console.error("Upload error:", error);
