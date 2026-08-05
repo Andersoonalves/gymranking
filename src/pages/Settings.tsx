@@ -1,16 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyGroups, useLeaveGroup } from "@/hooks/useGroups";
-import { useMyProfile, useUpdateWeeklyGoal } from "@/hooks/useMyProfile";
+import { useMyProfile, useUpdatePrimaryColor, useUpdateWeeklyGoal } from "@/hooks/useMyProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { GROUPS_STORAGE_KEY, NOTIFICATIONS_PREFERENCE_KEY } from "@/lib/constants";
 import { getVapidPublicKey, subscribePush, subscriptionToPayload } from "@/lib/push";
+import { COLOR_PRESETS, loadPrimaryColor, savePrimaryColor } from "@/lib/theme-color";
 import { useTheme } from "next-themes";
 import { Switch } from "@/components/ui/switch";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { ShareInviteButton } from "@/components/ShareInviteButton";
 import { cn } from "@/lib/utils";
-import { Check, Copy, LogOut } from "lucide-react";
+import { Check, Copy, LogOut, Pipette } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -42,6 +43,7 @@ export default function Settings() {
   const { data: groups = [] } = useMyGroups(userId);
   const { data: myProfile } = useMyProfile(userId);
   const updateWeeklyGoal = useUpdateWeeklyGoal(userId);
+  const updatePrimaryColor = useUpdatePrimaryColor(userId);
   const leaveGroup = useLeaveGroup(userId);
 
   const [displayName, setDisplayName] = useState("");
@@ -55,6 +57,7 @@ export default function Settings() {
   const [copiedGroupId, setCopiedGroupId] = useState<string | null>(null);
   const [leaveGroupId, setLeaveGroupId] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [primaryColor, setPrimaryColor] = useState(loadPrimaryColor);
 
   useEffect(() => {
     if (!userId) return;
@@ -65,6 +68,11 @@ export default function Settings() {
       setLoadingProfile(false);
     })();
   }, [userId]);
+
+  // Dispositivo novo: o perfil traz a cor e o seletor já mostra a certa.
+  useEffect(() => {
+    if (myProfile?.primary_color) setPrimaryColor(myProfile.primary_color);
+  }, [myProfile?.primary_color]);
 
   useEffect(() => {
     const stored = localStorage.getItem(NOTIFICATIONS_PREFERENCE_KEY);
@@ -179,6 +187,20 @@ export default function Settings() {
     setCopiedGroupId(groupId);
     toast.success("Código copiado!");
     setTimeout(() => setCopiedGroupId(null), 2000);
+  };
+
+  // O colorpicker nativo dispara a cada arrasto: pinta na hora, grava no perfil
+  // só quando o usuário para de mexer.
+  const colorSaveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const handleColorChange = (hex: string) => {
+    setPrimaryColor(hex);
+    savePrimaryColor(hex);
+    clearTimeout(colorSaveTimer.current);
+    colorSaveTimer.current = setTimeout(() => {
+      updatePrimaryColor.mutate(hex, {
+        onError: () => toast.error("Cor salva só neste dispositivo"),
+      });
+    }, 500);
   };
 
   const handleLeaveGroup = async () => {
@@ -337,6 +359,46 @@ export default function Settings() {
               {label}
             </button>
           ))}
+        </div>
+
+        <div className="flex flex-col gap-2 border-t border-border/60 pt-3">
+          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            Cor principal
+          </span>
+          <div className="flex items-center gap-2">
+            {COLOR_PRESETS.map(({ name, hex }) => (
+              <button
+                key={hex}
+                type="button"
+                aria-label={name}
+                aria-pressed={primaryColor.toLowerCase() === hex.toLowerCase()}
+                onClick={() => handleColorChange(hex)}
+                style={{ backgroundColor: hex }}
+                className={cn(
+                  "h-9 flex-1 rounded-[11px] border-2 transition-transform active:scale-95",
+                  primaryColor.toLowerCase() === hex.toLowerCase()
+                    ? "border-foreground"
+                    : "border-transparent",
+                )}
+              />
+            ))}
+            <label
+              className="relative h-9 w-9 shrink-0 overflow-hidden rounded-[11px] border border-border bg-secondary/60"
+              title="Escolher outra cor"
+            >
+              <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+                <Pipette className="h-4 w-4 text-muted-foreground" />
+              </span>
+              <input
+                type="color"
+                value={primaryColor}
+                onChange={(e) => handleColorChange(e.target.value)}
+                aria-label="Escolher outra cor"
+                className="h-full w-full cursor-pointer opacity-0"
+              />
+            </label>
+          </div>
+          <span className="font-mono text-[11px] text-muted-foreground/70">{primaryColor.toUpperCase()}</span>
         </div>
       </Section>
 

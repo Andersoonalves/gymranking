@@ -209,6 +209,7 @@ export type Database = {
           created_at: string
           display_name: string
           id: string
+          primary_color: string | null
           updated_at: string
           user_id: string
           weekly_goal: number
@@ -218,6 +219,7 @@ export type Database = {
           created_at?: string
           display_name: string
           id?: string
+          primary_color?: string | null
           updated_at?: string
           user_id: string
           weekly_goal?: number
@@ -227,6 +229,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           id?: string
+          primary_color?: string | null
           updated_at?: string
           user_id?: string
           weekly_goal?: number
