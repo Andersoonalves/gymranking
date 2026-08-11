@@ -71,8 +71,8 @@ export function RegisterWorkoutSheet({
   const handlePhotoFile = async (file: File) => {
     setCropFile(null);
     if (!user) return;
-    if (file.size > 1024 * 1024) {
-      toast.error("Foto muito grande", { description: "O tamanho máximo é 1 MB." });
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Foto muito grande", { description: "O tamanho máximo é 5 MB." });
       return;
     }
     setUploadingPhoto(true);
