@@ -114,7 +114,6 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 className="hidden"
                 onChange={handleChange}
             />
