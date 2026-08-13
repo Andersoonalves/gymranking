@@ -1,8 +1,35 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import { execSync } from "child_process";
+import { readFileSync } from "fs";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+
+/**
+ * Versão do app: `major.minor` vem do package.json e o patch é a contagem de
+ * commits, então todo deploy sai com número novo sem ninguém precisar lembrar de
+ * bumpar. Subir major/minor é decisão manual no package.json.
+ *
+ * `VITE_APP_VERSION` no ambiente vence tudo (build reprodutível no CI). Sem git
+ * disponível (deploy a partir de tarball), o patch cai para 0.
+ */
+function appVersion(envVersion: string | undefined): { version: string; commit: string } {
+  const git = (cmd: string) => {
+    try {
+      return execSync(cmd, { stdio: ["ignore", "pipe", "ignore"] }).toString().trim();
+    } catch {
+      return "";
+    }
+  };
+  const commit = git("git rev-parse --short HEAD");
+  if (envVersion) return { version: envVersion, commit };
+
+  const pkg = JSON.parse(readFileSync(path.resolve(__dirname, "package.json"), "utf-8")) as { version?: string };
+  const [major = "0", minor = "0"] = (pkg.version ?? "0.0.0").split(".");
+  const commitCount = git("git rev-list --count HEAD") || "0";
+  return { version: `${major}.${minor}.${commitCount}`, commit };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -17,11 +44,13 @@ export default defineConfig(({ mode }) => {
     process.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
     "sb_publishable_jfGbuEE7ts0LXALbpmrYfQ_5He6N0aw";
 
+  const { version, commit } = appVersion(env.VITE_APP_VERSION || process.env.VITE_APP_VERSION);
+
   return ({
     define: {
-      __APP_VERSION__: JSON.stringify(
-        env.VITE_APP_VERSION || process.env.VITE_APP_VERSION || new Date().toISOString().slice(0, 16).replace("T", "/")
-      ),
+      __APP_VERSION__: JSON.stringify(version),
+      __APP_COMMIT__: JSON.stringify(commit),
+      __APP_BUILT_AT__: JSON.stringify(new Date().toISOString()),
       "import.meta.env.VITE_SUPABASE_URL": JSON.stringify(supabaseUrl),
       "import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY": JSON.stringify(supabasePublishableKey),
     },

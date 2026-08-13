@@ -12,6 +12,8 @@ import { useMyProfile } from "@/hooks/useMyProfile";
 import { useChallenges } from "@/hooks/useChallenges";
 import { useWorkoutPhotoUrls } from "@/hooks/useWorkoutPhotos";
 import { useExerciseHistory } from "@/hooks/useExerciseHistory";
+import { useDietMeals, useDietLogs } from "@/hooks/useDiet";
+import { adherenceForDate, mealsForDate, toDateKey } from "@/lib/diet";
 import { challengeStatus, daysLeft, computeChallengeScores } from "@/lib/challenges";
 import { computeAchievements } from "@/lib/achievements";
 import { prCount } from "@/lib/personal-records";
@@ -25,6 +27,7 @@ import { filterWorkoutsByPeriod, computeRanking, computeStreak, longestStreak, b
 import { exportWorkoutsToJSON } from "@/lib/export-workouts";
 import { useActiveGroupId } from "@/hooks/useActiveGroup";
 import { errorMessage } from "@/lib/utils";
+import { APP_VERSION, versionTitle } from "@/lib/version";
 import { cn } from "@/lib/utils";
 import { WorkoutCalendar } from "@/components/WorkoutCalendar";
 import { InitialAvatar } from "@/components/InitialAvatar";
@@ -56,6 +59,7 @@ import {
   Trophy,
   Upload,
   Users,
+  UtensilsCrossed,
   Zap,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -131,6 +135,20 @@ export default function Index() {
   const streak = useMemo(() => computeStreak(myWorkouts.map((w) => w.workout_date)), [myWorkouts]);
 
   const { data: exerciseHistory = [] } = useExerciseHistory(userId);
+
+  // Atalho da dieta: só existe para quem já cadastrou plano — sem isso o card
+  // viraria propaganda de recurso na tela principal de quem não usa.
+  const { data: dietMeals = [] } = useDietMeals(userId);
+  const { data: dietLogs = [] } = useDietLogs(userId);
+  const diet = useMemo(() => {
+    const key = toDateKey(new Date());
+    const vigentes = dietMeals.filter((m) => m.archived_at === null || m.archived_at > key);
+    if (vigentes.length === 0) return null;
+    // Plano existe, mas pode não prever refeição para hoje (ex.: só domingo).
+    const hasToday = mealsForDate(dietMeals, key).length > 0;
+    return { today: hasToday ? adherenceForDate(dietMeals, dietLogs, key) : null };
+  }, [dietMeals, dietLogs]);
+
   const [achievementsOpen, setAchievementsOpen] = useState(false);
   const [profileMember, setProfileMember] = useState<{ user_id: string; display_name: string; avatar_url: string | null } | null>(
     null,
@@ -360,7 +378,7 @@ export default function Index() {
   // de coluna usam `contents` no mobile e as classes `order-*` mantêm a ordem
   // visual mobile intacta; em lg cada wrapper vira uma coluna de verdade.
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-4 px-5 pb-4 pt-4 safe-area-top lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_392px] lg:items-start lg:gap-5 lg:px-8 lg:pt-7">
+    <div className="mx-auto flex max-w-lg flex-col gap-4 px-5 pb-4 pt-7 safe-area-top lg:grid lg:max-w-6xl lg:grid-cols-[minmax(0,1fr)_392px] lg:items-start lg:gap-5 lg:px-8 lg:pt-7">
       {/* Header */}
       <div className="flex items-center justify-between lg:col-span-2">
         <div className="flex flex-col gap-0.5">
@@ -520,6 +538,30 @@ export default function Index() {
           >
             {daysLeft(activeChallenge) === 1 ? "ÚLTIMO DIA" : `${daysLeft(activeChallenge)} DIAS`}
           </span>
+        </Link>
+      )}
+
+      {/* Atalho da dieta — só para quem tem plano cadastrado */}
+      {diet && (
+        <Link
+          to="/dieta"
+          className="order-2 flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 hover:border-primary"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
+            <UtensilsCrossed className="h-5 w-5" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+            <span className="truncate text-[13px] font-extrabold text-foreground">Dieta</span>
+            <span className="font-mono text-[10px] uppercase text-muted-foreground">
+              {diet.today ? `${diet.today.done}/${diet.today.total} refeições hoje` : "nada previsto hoje"}
+            </span>
+          </span>
+          {diet.today && (
+            <span className="shrink-0 font-mono text-sm font-bold tabular-nums text-primary">
+              {Math.round(diet.today.ratio * 100)}%
+            </span>
+          )}
+          <ArrowRight className="h-4 w-4 shrink-0 text-muted-foreground" />
         </Link>
       )}
 
@@ -897,6 +939,15 @@ export default function Index() {
           />
         </div>
       )}
+
+      {/* Versão do build — pequena, no fim de tudo. O title tem commit e data,
+          que é o que se pede em suporte. */}
+      <p
+        title={versionTitle()}
+        className="order-last pt-1 text-center font-mono text-[9px] text-muted-foreground/50 lg:col-span-2"
+      >
+        v{APP_VERSION}
+      </p>
       </div>
 
       {lightboxIdx !== null && (

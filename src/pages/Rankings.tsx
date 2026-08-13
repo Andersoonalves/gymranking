@@ -138,7 +138,7 @@ export default function Rankings() {
   }
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-4 px-5 pb-4 pt-4 safe-area-top lg:max-w-5xl lg:gap-5 lg:px-8 lg:pt-7">
+    <div className="mx-auto flex max-w-lg flex-col gap-4 px-5 pb-4 pt-7 safe-area-top lg:max-w-5xl lg:gap-5 lg:px-8 lg:pt-7">
       <div className="flex items-center justify-between gap-3">
         <h1 className="display-title text-[28px] text-foreground">Rankings</h1>
         <div className="flex items-center gap-2">

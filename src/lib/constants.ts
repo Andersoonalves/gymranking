@@ -5,6 +5,12 @@ export const PRIMARY_COLOR_KEY = "fitrank-primary-color";
 /** Sidebar (desktop) pede a Progresso que abra o formulário de pesagem. */
 export const NEW_WEIGHT_EVENT = "fitrank:new-weight";
 
+/** Tours de novidades já vistos (array de ids em JSON). */
+export const SEEN_TOURS_KEY = "fitrank-seen-tours";
+
+/** Ajustes pede ao layout que reabra o tour de novidades. */
+export const SHOW_TOUR_EVENT = "fitrank:show-tour";
+
 /**
  * Teto do texto que o usuário digita (observação de treino e de pesagem).
  * No banco a trava é 500: o treino ao vivo grava a lista de exercícios em

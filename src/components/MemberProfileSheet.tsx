@@ -1,16 +1,28 @@
 import { useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { InitialAvatar } from "@/components/InitialAvatar";
 import { WorkoutCalendar } from "@/components/WorkoutCalendar";
 import { PhotoLightbox, type LightboxPhoto } from "@/components/PhotoLightbox";
+import { DietMealList } from "@/components/DietMealList";
 import { useWorkoutPhotoUrls } from "@/hooks/useWorkoutPhotos";
+import { useDietMeals, useDietLogs } from "@/hooks/useDiet";
 import { computeStreak, filterWorkoutsByPeriod } from "@/lib/ranking";
 import { computeAchievements, maxStreak } from "@/lib/achievements";
+import {
+  DIET_ADHERENCE_GOAL,
+  adherenceForDate,
+  adherenceStreak,
+  mealsForDate,
+  rangeAdherence,
+  toDateKey,
+} from "@/lib/diet";
 import { groupPhotosByDay, type DayPhoto } from "@/lib/workout-photos";
-import { format } from "date-fns";
+import { cn } from "@/lib/utils";
+import { addDays, format, startOfWeek } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Flame, Swords } from "lucide-react";
+import { Flame, Swords, UtensilsCrossed } from "lucide-react";
 import type { Workout } from "@/hooks/useWorkouts";
 
 type MemberProfileSheetProps = {
@@ -69,6 +81,25 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
 
   const photosByDay = useMemo(() => groupPhotosByDay(memberWorkouts, photoUrls), [memberWorkouts, photoUrls]);
 
+  // Dieta do membro. Quem decide se aparece é a RLS: sem o opt-in (profiles.
+  // diet_shared) a consulta volta vazia e o bloco nem é montado — o cliente não
+  // precisa checar permissão, só reagir ao que veio.
+  const { data: dietMeals = [] } = useDietMeals(member?.user_id);
+  const { data: dietLogs = [] } = useDietLogs(member?.user_id);
+
+  const diet = useMemo(() => {
+    if (dietMeals.length === 0) return null;
+    const today = toDateKey(new Date());
+    const weekStart = startOfWeek(new Date(), { weekStartsOn: 1, locale: ptBR });
+    return {
+      today: adherenceForDate(dietMeals, dietLogs, today),
+      streak: adherenceStreak(dietMeals, dietLogs, today),
+      week: rangeAdherence(dietMeals, dietLogs, toDateKey(weekStart), toDateKey(addDays(weekStart, 6)), today),
+      meals: mealsForDate(dietMeals, today),
+      doneIds: new Set(dietLogs.filter((l) => l.log_date === today).map((l) => l.meal_id)),
+    };
+  }, [dietMeals, dietLogs]);
+
   // Fotos abertas em slides: guarda o dia clicado, não um índice global.
   const [openPhotos, setOpenPhotos] = useState<DayPhoto[] | null>(null);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -85,6 +116,20 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
   );
 
   if (!member) return null;
+
+  // Calendário de treinos — mesmo componente da aba Treinos, com Mês e Ano. Sem
+  // os callbacks de registrar/excluir: aqui é só leitura, inclusive no próprio
+  // perfil (quem edita é a aba Treinos).
+  const calendario = (
+    <WorkoutCalendar
+      workouts={memberWorkouts}
+      photosByDay={photosByDay}
+      onPhotosOpen={(photos) => {
+        setOpenPhotos(photos);
+        setPhotoIndex(0);
+      }}
+    />
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -156,20 +201,70 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
             </div>
           )}
 
-          {/* Calendário de treinos — mesmo componente da aba Treinos, com Mês e Ano.
-              Sem os callbacks de registrar/excluir: aqui é só leitura, inclusive no
-              próprio perfil (quem edita é a aba Treinos). */}
-          <div className="flex flex-col gap-2">
-            <span className="mono-label">Calendário</span>
-            <WorkoutCalendar
-              workouts={memberWorkouts}
-              photosByDay={photosByDay}
-              onPhotosOpen={(photos) => {
-                setOpenPhotos(photos);
-                setPhotoIndex(0);
-              }}
-            />
-          </div>
+          {/* Calendário e dieta em abas: empilhados, o sheet ficava longo demais e
+              a dieta nascia fora da tela. A aba de dieta só existe para quem
+              compartilhou — sem isso fica só o calendário, sem abas. */}
+          {diet ? (
+            <Tabs defaultValue="calendario" className="flex flex-col gap-3">
+              <TabsList className="grid grid-cols-2">
+                <TabsTrigger value="calendario">Calendário</TabsTrigger>
+                <TabsTrigger value="dieta">
+                  <UtensilsCrossed className="mr-1.5 h-3.5 w-3.5" />
+                  Dieta
+                </TabsTrigger>
+              </TabsList>
+              <TabsContent value="calendario" className="mt-0">
+                {calendario}
+              </TabsContent>
+              <TabsContent value="dieta" className="mt-0">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center justify-between">
+                    <span className="mono-label">Hoje</span>
+                    <span className="font-mono text-[11px] font-bold text-muted-foreground">
+                      {diet.week.goodDays}/{diet.week.days} dias na meta nesta semana
+                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-3 rounded-2xl border border-border bg-secondary/40 p-3.5">
+                    <span
+                      className={cn(
+                        "font-mono text-2xl font-bold leading-none tabular-nums",
+                        diet.today.total > 0 && diet.today.ratio >= DIET_ADHERENCE_GOAL ? "text-primary" : "text-foreground",
+                      )}
+                    >
+                      {diet.today.total === 0 ? "—" : `${Math.round(diet.today.ratio * 100)}%`}
+                    </span>
+                    <div className="flex min-w-0 flex-1 flex-col gap-1">
+                      <div className="h-1.5 overflow-hidden rounded-full bg-background">
+                        <div
+                          className={cn(
+                            "h-full rounded-full",
+                            diet.today.ratio >= DIET_ADHERENCE_GOAL ? "bg-primary" : "bg-accent",
+                          )}
+                          style={{ width: `${Math.min(100, Math.round(diet.today.ratio * 100))}%` }}
+                        />
+                      </div>
+                      <span className="text-[11px] text-muted-foreground">
+                        {diet.today.total === 0
+                          ? "Nada previsto para hoje."
+                          : `${diet.today.done} de ${diet.today.total} refeições hoje.`}
+                      </span>
+                    </div>
+                    {diet.streak > 0 && (
+                      <span className="flex shrink-0 items-center gap-1 rounded-xl bg-primary/10 px-2.5 py-2 font-mono text-sm font-bold text-primary">
+                        <Flame className="h-4 w-4" />
+                        {diet.streak}
+                      </span>
+                    )}
+                  </div>
+
+                  {diet.meals.length > 0 && <DietMealList meals={diet.meals} doneIds={diet.doneIds} />}
+                </div>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            calendario
+          )}
 
           {/* Conquistas */}
           <div className="flex flex-col gap-2">

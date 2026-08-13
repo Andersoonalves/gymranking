@@ -11,6 +11,7 @@ const Rankings = lazy(() => import("@/pages/Rankings"));
 const Treinos = lazy(() => import("@/pages/Treinos"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Progresso = lazy(() => import("@/pages/Progresso"));
+const Dieta = lazy(() => import("@/pages/Dieta"));
 
 export function ProtectedShell() {
   const { user } = useAuth();
@@ -35,6 +36,7 @@ export function ProtectedShell() {
           <Route path="treinos" element={<Treinos />} />
           <Route path="settings" element={<Settings />} />
           <Route path="progresso" element={<Progresso />} />
+          <Route path="dieta" element={<Dieta />} />
         </Routes>
       </Suspense>
     </MainLayout>

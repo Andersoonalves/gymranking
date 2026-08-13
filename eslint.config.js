@@ -5,8 +5,10 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  // dev-dist é saída do vite-plugin-pwa; types.ts é gerado pelo Supabase CLI.
-  { ignores: ["dist", "dev-dist", "src/integrations/supabase/types.ts"] },
+  // dev-dist é saída do vite-plugin-pwa; types.ts é gerado pelo Supabase CLI;
+  // supabase/.temp aparece quando se roda `supabase start` (bundle das Edge
+  // Functions, código de terceiro).
+  { ignores: ["dist", "dev-dist", "supabase/.temp", "src/integrations/supabase/types.ts"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],

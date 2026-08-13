@@ -67,6 +67,23 @@ Edge Functions (`supabase/functions/`) rodam em Deno com imports por URL — nã
 `tsc` do app. A `admin-users` valida o JWT com `getClaims` e confere o papel `admin` na
 `user_roles` **antes** de usar a service role key. Manter essa ordem em qualquer rota admin nova.
 
+## Tour de novidades
+
+Feature nova visível ao usuário = novo tour em `FEATURE_TOURS` (`src/lib/feature-tours.ts`):
+`id` novo, `releasedAt` no dia do deploy, passos com título/texto/ícone e um `cta` opcional.
+`FeatureTour` (montado no `MainLayout`) abre o pendente sozinho, com spotlight sobre o
+elemento real.
+
+Cada passo aponta um elemento por `target` (o valor do `data-tour-id` dele) e a `route` onde
+ele mora — o tour navega até lá, rola até o elemento e mede. **Passo novo = `data-tour-id`
+no elemento.** O mesmo id pode estar em dois lugares (barra do mobile e sidebar do desktop):
+vale o que estiver visível. Sem alvo na tela, o passo cai centralizado, sem furo — é o
+fallback e não quebra nada. A geometria vive em `src/lib/tour-position.ts` (com testes).
+
+Quem criou a conta depois do `releasedAt` não vê (não é novidade para essa pessoa), e quem já
+viu só revê pelo botão em Ajustes (`SHOW_TOUR_EVENT`). Ids vistos ficam em `localStorage` sob
+`SEEN_TOURS_KEY`.
+
 ## PWA
 
 `vite-plugin-pwa` em modo `injectManifest`; o service worker é `src/sw.ts` (escrito à mão) e o

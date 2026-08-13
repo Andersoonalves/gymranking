@@ -224,7 +224,7 @@ export default function Progresso() {
   return (
     // Desktop: grid de 2 colunas (gráfico + histórico | fotos + ações), mesma
     // técnica do Início — wrappers `contents` no mobile, ordem via `order-*`.
-    <div className="mx-auto flex max-w-lg flex-col gap-3.5 px-5 pb-4 pt-4 safe-area-top lg:grid lg:max-w-5xl lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-5 lg:px-8 lg:pt-7">
+    <div className="mx-auto flex max-w-lg flex-col gap-3.5 px-5 pb-4 pt-7 safe-area-top lg:grid lg:max-w-5xl lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-5 lg:px-8 lg:pt-7">
       <div className="flex items-end justify-between gap-3 lg:col-span-2">
         <div className="flex flex-col gap-1">
           <h1 className="display-title text-[28px] text-foreground">Progresso</h1>

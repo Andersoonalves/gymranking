@@ -31,3 +31,6 @@ dist-ssr
 
 # Build artifacts do tsc (composite projects)
 *.tsbuildinfo
+
+# Gerado por `supabase start` (bundle das Edge Functions e secrets locais).
+supabase/.temp/

@@ -133,7 +133,22 @@ Deno.serve(async (req) => {
       .select("user_id")
       .eq("group_id", group_id)
       .neq("user_id", exclude_user_id);
-    const userIds = (members ?? []).map((m) => m.user_id);
+    const memberIds = (members ?? []).map((m) => m.user_id);
+
+    // Quem silenciou este grupo (muted_user_id null) ou este registrante fica de
+    // fora. Filtro em JS pra não interpolar id em string de filtro do PostgREST.
+    const { data: mutes } = await supabase
+      .from("notification_mutes")
+      .select("user_id, muted_user_id")
+      .eq("group_id", group_id)
+      .in("user_id", memberIds.length ? memberIds : ["00000000-0000-0000-0000-000000000000"]);
+    const muted = new Set(
+      (mutes ?? [])
+        .filter((m) => m.muted_user_id === null || m.muted_user_id === exclude_user_id)
+        .map((m) => m.user_id),
+    );
+    const userIds = memberIds.filter((id) => !muted.has(id));
+
     if (userIds.length === 0) {
       return new Response(JSON.stringify({ sent: 0 }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },

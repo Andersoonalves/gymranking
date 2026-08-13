@@ -117,6 +117,89 @@ export type Database = {
           },
         ]
       }
+      diet_meal_logs: {
+        Row: {
+          created_at: string
+          id: string
+          log_date: string
+          meal_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          log_date: string
+          meal_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          log_date?: string
+          meal_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_meal_logs_meal_id_fkey"
+            columns: ["meal_id"]
+            isOneToOne: false
+            referencedRelation: "diet_meals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diet_meals: {
+        Row: {
+          archived_at: string | null
+          carbs_g: number | null
+          created_at: string
+          day_of_week: number | null
+          effective_from: string
+          fat_g: number | null
+          id: string
+          items: Json
+          kcal: number | null
+          name: string
+          position: number
+          protein_g: number | null
+          time_of_day: string | null
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          carbs_g?: number | null
+          created_at?: string
+          day_of_week?: number | null
+          effective_from?: string
+          fat_g?: number | null
+          id?: string
+          items?: Json
+          kcal?: number | null
+          name: string
+          position?: number
+          protein_g?: number | null
+          time_of_day?: string | null
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          carbs_g?: number | null
+          created_at?: string
+          day_of_week?: number | null
+          effective_from?: string
+          fat_g?: number | null
+          id?: string
+          items?: Json
+          kcal?: number | null
+          name?: string
+          position?: number
+          protein_g?: number | null
+          time_of_day?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercise_history: {
         Row: {
           exercise_title: string
@@ -203,10 +286,43 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_mutes: {
+        Row: {
+          created_at: string
+          group_id: string
+          id: string
+          muted_user_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          id?: string
+          muted_user_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          id?: string
+          muted_user_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notification_mutes_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
+          diet_shared: boolean
           display_name: string
           id: string
           primary_color: string | null
@@ -217,6 +333,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          diet_shared?: boolean
           display_name: string
           id?: string
           primary_color?: string | null
@@ -227,6 +344,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          diet_shared?: boolean
           display_name?: string
           id?: string
           primary_color?: string | null
@@ -416,6 +534,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_view_diet: {
+        Args: { _owner: string }
+        Returns: boolean
+      }
       find_group_by_invite_code: {
         Args: { _code: string }
         Returns: {

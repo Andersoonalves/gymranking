@@ -7,6 +7,8 @@ export type MyProfile = {
   avatar_url: string | null;
   weekly_goal: number;
   primary_color: string | null;
+  /** Deixa o grupo ver a dieta e a aderência. Opt-in, default false. */
+  diet_shared: boolean;
 };
 
 export function useMyProfile(userId: string | undefined) {
@@ -17,7 +19,7 @@ export function useMyProfile(userId: string | undefined) {
       if (!userId) return null;
       const { data, error } = await supabase
         .from("profiles")
-        .select("display_name, avatar_url, weekly_goal, primary_color")
+        .select("display_name, avatar_url, weekly_goal, primary_color, diet_shared")
         .eq("user_id", userId)
         .single();
       if (error) throw error;
@@ -36,6 +38,22 @@ export function useUpdatePrimaryColor(userId: string | undefined) {
       const { error } = await supabase
         .from("profiles")
         .update({ primary_color })
+        .eq("user_id", userId!);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-profile", userId] });
+    },
+  });
+}
+
+export function useUpdateDietShared(userId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (diet_shared: boolean) => {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ diet_shared })
         .eq("user_id", userId!);
       if (error) throw error;
     },

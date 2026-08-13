@@ -18,20 +18,22 @@ import { EXERCISES_BY_MUSCLE_GROUP } from "@/lib/exercises";
 import { NEW_WEIGHT_EVENT } from "@/lib/constants";
 import { RegisterWorkoutProvider } from "@/contexts/RegisterWorkoutContext";
 import { RegisterWorkoutSheet } from "@/components/RegisterWorkoutSheet";
+import { FeatureTour } from "@/components/FeatureTour";
 import { supabase } from "@/integrations/supabase/client";
 import { notifyNewWorkout } from "@/lib/push";
 import { enqueueWorkout, isNetworkError } from "@/lib/offline-queue";
 import { useOfflineWorkoutSync } from "@/hooks/useOfflineWorkoutSync";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { ArrowRight, ArrowUp, Check, ChevronsUpDown, Home, Trophy, Plus, ClipboardList, Scale, TrendingUp, Settings } from "lucide-react";
+import { ArrowRight, ArrowUp, Check, ChevronsUpDown, Home, Trophy, Plus, ClipboardList, Scale, TrendingUp, Settings, UtensilsCrossed } from "lucide-react";
 
+// Registrar treino não é aba: virou botão flutuante, então a barra é só navegação.
 const navItems = [
   { path: "/", label: "Início", icon: Home },
   { path: "/rankings", label: "Rankings", icon: Trophy },
-  { path: "/register", label: "", icon: Plus, isAction: true },
   { path: "/treinos", label: "Treinos", icon: ClipboardList },
   { path: "/progresso", label: "Progresso", icon: TrendingUp },
+  { path: "/dieta", label: "Dieta", icon: UtensilsCrossed },
 ];
 
 const LIBRARY_SIZE = Object.values(EXERCISES_BY_MUSCLE_GROUP).reduce((acc, list) => acc + list.length, 0);
@@ -133,13 +135,6 @@ export function MainLayout({ children }: MainLayoutProps) {
     }
   };
 
-  const handleNav = (item: (typeof navItems)[0]) => {
-    if (item.isAction) {
-      setRegisterOpen(true);
-      return;
-    }
-    navigate(item.path);
-  };
 
   return (
     <RegisterWorkoutProvider
@@ -230,7 +225,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           )}
 
           <div className="flex flex-col gap-1">
-            {[...navItems.filter((i) => !i.isAction), { path: "/settings", label: "Ajustes", icon: Settings }].map(
+            {[...navItems, { path: "/settings", label: "Ajustes", icon: Settings }].map(
               (item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
@@ -238,6 +233,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                   <button
                     key={item.path}
                     type="button"
+                    data-tour-id={item.path === "/dieta" ? "nav-dieta" : undefined}
                     onClick={() => navigate(item.path)}
                     className={cn(
                       "flex h-[42px] items-center gap-3 rounded-[11px] px-3 text-[13px]",
@@ -268,6 +264,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             <button
               type="button"
               onClick={() => setRegisterOpen(true)}
+              data-tour-id="registrar-treino"
               className="flex h-12 items-center justify-center gap-2 rounded-[13px] bg-primary text-sm font-extrabold text-primary-foreground shadow-hard active-hard"
             >
               <Plus className="h-[22px] w-[22px]" strokeWidth={2.75} />
@@ -329,7 +326,10 @@ export function MainLayout({ children }: MainLayoutProps) {
           )}
         </aside>
 
-        <main ref={mainRef} className="flex-1 overflow-auto pb-24 lg:pb-8">
+        {/* O padding de baixo reserva a faixa da barra de navegação (~76px) mais o
+            botão flutuante (60px, a 96px do fundo): sem isso o "+" fica em cima
+            do último card e engole o toque de quem está lendo o fim da página. */}
+        <main ref={mainRef} className="flex-1 overflow-auto pb-44 lg:pb-8">
           {children}
         </main>
 
@@ -343,38 +343,38 @@ export function MainLayout({ children }: MainLayoutProps) {
             }}
             // Centralizado na área de conteúdo: no desktop desloca metade da
             // sidebar (248px) para não ficar torto em relação ao que se lê.
-            className="fixed bottom-28 left-1/2 z-40 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-[13px] border border-border bg-card/90 text-foreground shadow-lg backdrop-blur-sm animate-pop-in hover:border-primary hover:text-primary safe-area-bottom lg:left-[calc(50%+124px)]"
+            className="fixed bottom-[104px] left-1/2 z-40 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-[13px] border border-border bg-card/90 text-foreground shadow-lg backdrop-blur-sm animate-pop-in hover:border-primary hover:text-primary safe-area-bottom lg:left-[calc(50%+124px)]"
           >
             <ArrowUp className="h-5 w-5" />
           </button>
         )}
 
+        {/* Registrar treino: flutuante no canto, acima da barra de navegação.
+            No desktop quem faz esse papel é o CTA da sidebar. O bottom soma a
+            altura da barra (~76px) com a safe area do aparelho. */}
+        <button
+          type="button"
+          aria-label="Registrar treino"
+          data-tour-id="registrar-treino"
+          onClick={() => setRegisterOpen(true)}
+          style={{ bottom: "calc(96px + env(safe-area-inset-bottom, 0px))" }}
+          className="fixed right-5 z-40 flex h-[60px] w-[60px] items-center justify-center rounded-[19px] bg-primary text-primary-foreground shadow-[0_5px_0_hsl(var(--primary-edge)),0_16px_32px_-8px_hsl(var(--primary)/0.4)] transition-[transform,box-shadow] active:translate-y-[2px] active:shadow-[0_3px_0_hsl(var(--primary-edge)),0_12px_24px_-8px_hsl(var(--primary)/0.4)] lg:hidden"
+        >
+          <Plus className="h-7 w-7" strokeWidth={2.75} />
+        </button>
+
         <nav className="pointer-events-none fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-background from-[60%] to-transparent safe-area-bottom lg:hidden">
           <div className="pointer-events-auto mx-auto grid max-w-lg grid-cols-5 items-end gap-0.5 px-3 pb-3 pt-2">
             {navItems.map((item) => {
-              const isActive = !item.isAction && location.pathname === item.path;
+              const isActive = location.pathname === item.path;
               const Icon = item.icon;
-
-              if (item.isAction) {
-                return (
-                  <div key={item.path} className="flex justify-center">
-                    <button
-                      type="button"
-                      aria-label="Registrar treino"
-                      onClick={() => handleNav(item)}
-                      className="mb-1.5 flex h-[60px] w-[60px] items-center justify-center rounded-[19px] bg-primary text-primary-foreground shadow-[0_5px_0_hsl(var(--primary-edge)),0_16px_32px_-8px_hsl(var(--primary)/0.4)] transition-[transform,box-shadow] active:translate-y-[2px] active:shadow-[0_3px_0_hsl(var(--primary-edge)),0_12px_24px_-8px_hsl(var(--primary)/0.4)]"
-                    >
-                      <Icon className="h-7 w-7" strokeWidth={2.75} />
-                    </button>
-                  </div>
-                );
-              }
 
               return (
                 <button
                   key={item.path}
                   type="button"
-                  onClick={() => handleNav(item)}
+                  data-tour-id={item.path === "/dieta" ? "nav-dieta" : undefined}
+                  onClick={() => navigate(item.path)}
                   className={cn(
                     "flex min-h-[48px] flex-col items-center justify-end gap-1 py-1.5 text-[9px] transition-colors",
                     isActive ? "font-bold text-primary" : "font-semibold text-muted-foreground hover:text-foreground",
@@ -387,6 +387,8 @@ export function MainLayout({ children }: MainLayoutProps) {
             })}
           </div>
         </nav>
+
+        <FeatureTour />
 
         <CreateGroupDialog
           open={createGroupOpen}

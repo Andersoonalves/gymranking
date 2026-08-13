@@ -2,8 +2,14 @@ import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyGroups, useLeaveGroup } from "@/hooks/useGroups";
 import { useMyProfile, useUpdatePrimaryColor, useUpdateWeeklyGoal } from "@/hooks/useMyProfile";
+import { useProfilesInGroup } from "@/hooks/useProfilesInGroup";
+import {
+  useNotificationMutes,
+  useToggleNotificationMute,
+  type NotificationMute,
+} from "@/hooks/useNotificationMutes";
 import { supabase } from "@/integrations/supabase/client";
-import { GROUPS_STORAGE_KEY, NOTIFICATIONS_PREFERENCE_KEY } from "@/lib/constants";
+import { GROUPS_STORAGE_KEY, NOTIFICATIONS_PREFERENCE_KEY, SHOW_TOUR_EVENT } from "@/lib/constants";
 import { getVapidPublicKey, subscribePush, subscriptionToPayload } from "@/lib/push";
 import { COLOR_PRESETS, loadPrimaryColor, savePrimaryColor } from "@/lib/theme-color";
 import { useTheme } from "next-themes";
@@ -11,7 +17,8 @@ import { Switch } from "@/components/ui/switch";
 import { AvatarUpload } from "@/components/AvatarUpload";
 import { ShareInviteButton } from "@/components/ShareInviteButton";
 import { cn } from "@/lib/utils";
-import { Check, Copy, LogOut, Pipette } from "lucide-react";
+import { APP_VERSION, versionTitle } from "@/lib/version";
+import { Check, Copy, LogOut, Pipette, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -36,6 +43,64 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 const pushSupported =
   typeof window !== "undefined" && "Notification" in window && "PushManager" in window && "serviceWorker" in navigator;
 
+/** Linha de um grupo: liga/desliga o grupo todo e, dentro, cada membro. */
+function GroupNotifyRow({
+  groupId,
+  groupName,
+  userId,
+  mutes,
+  onToggle,
+  disabled,
+}: {
+  groupId: string;
+  groupName: string;
+  userId: string | undefined;
+  mutes: NotificationMute[];
+  onToggle: (args: { groupId: string; mutedUserId?: string | null; muted: boolean }) => void;
+  disabled: boolean;
+}) {
+  const { data: profiles = {} } = useProfilesInGroup(groupId);
+  const groupMuted = mutes.some((m) => m.group_id === groupId && m.muted_user_id === null);
+  const members = Object.entries(profiles).filter(([id]) => id !== userId);
+
+  return (
+    <div className="flex flex-col gap-2 rounded-[13px] border border-border/60 bg-secondary/40 p-3">
+      <div className="flex items-center gap-3">
+        <span className="min-w-0 flex-1 truncate text-sm font-extrabold text-foreground">{groupName}</span>
+        <Switch
+          checked={!groupMuted}
+          disabled={disabled}
+          onCheckedChange={(c) => onToggle({ groupId, muted: !c })}
+          aria-label={`Notificações do grupo ${groupName}`}
+        />
+      </div>
+      {!groupMuted && members.length > 0 && (
+        <details className="group">
+          <summary className="cursor-pointer text-[11px] font-semibold text-muted-foreground marker:text-muted-foreground/60">
+            Quem avisa ({members.length})
+          </summary>
+          <div className="mt-2 flex flex-col gap-2 border-t border-border/60 pt-2">
+            {members.map(([memberId, p]) => {
+              const muted = mutes.some((m) => m.group_id === groupId && m.muted_user_id === memberId);
+              return (
+                <div key={memberId} className="flex items-center gap-3">
+                  <span className="min-w-0 flex-1 truncate text-xs font-semibold text-foreground">{p.display_name}</span>
+                  <Switch
+                    checked={!muted}
+                    disabled={disabled}
+                    onCheckedChange={(c) => onToggle({ groupId, mutedUserId: memberId, muted: !c })}
+                    aria-label={`Notificações de ${p.display_name} em ${groupName}`}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </details>
+      )}
+    </div>
+  );
+}
+
 export default function Settings() {
   const { user, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -45,6 +110,8 @@ export default function Settings() {
   const updateWeeklyGoal = useUpdateWeeklyGoal(userId);
   const updatePrimaryColor = useUpdatePrimaryColor(userId);
   const leaveGroup = useLeaveGroup(userId);
+  const { data: mutes = [] } = useNotificationMutes(userId);
+  const toggleMute = useToggleNotificationMute(userId);
 
   const [displayName, setDisplayName] = useState("");
   const [loadingProfile, setLoadingProfile] = useState(true);
@@ -223,7 +290,7 @@ export default function Settings() {
   const weeklyGoal = myProfile?.weekly_goal ?? 4;
 
   return (
-    <div className="mx-auto flex max-w-lg flex-col gap-3 px-5 pb-4 pt-4 safe-area-top">
+    <div className="mx-auto flex max-w-lg flex-col gap-3 px-5 pb-4 pt-7 safe-area-top">
       <div className="flex flex-col gap-1">
         <h1 className="display-title text-[28px] text-foreground">Configurações</h1>
         <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
@@ -332,6 +399,46 @@ export default function Settings() {
             onCheckedChange={handleWeeklySummaryChange}
             aria-label="Resumo semanal"
           />
+        </div>
+        {groups.length > 0 && (
+          <div className={cn("flex flex-col gap-2 border-t border-border/60 pt-3", !notifications && "opacity-50")}>
+            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+              Avisos de treino por grupo
+            </span>
+            {groups.map((g) => (
+              <GroupNotifyRow
+                key={g.id}
+                groupId={g.id}
+                groupName={g.name}
+                userId={userId}
+                mutes={mutes}
+                disabled={!notifications || toggleMute.isPending}
+                onToggle={(args) =>
+                  toggleMute.mutate(args, { onError: () => toast.error("Erro ao salvar preferência") })
+                }
+              />
+            ))}
+          </div>
+        )}
+      </Section>
+
+      {/* Novidades */}
+      <Section label="Novidades">
+        <div className="flex items-center gap-3">
+          <div className="flex flex-1 flex-col gap-0.5">
+            <span className="text-sm font-bold text-foreground">O que mudou no app</span>
+            <span className="text-[11px] leading-snug text-muted-foreground">
+              Rever a apresentação da última novidade.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new Event(SHOW_TOUR_EVENT))}
+            className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-border bg-secondary px-3 py-2.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary"
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Ver novidades
+          </button>
         </div>
       </Section>
 
@@ -452,8 +559,8 @@ export default function Settings() {
         Sair da conta
       </button>
 
-      <p className="pb-4 text-center font-mono text-[10px] text-muted-foreground/60">
-        v{typeof __APP_VERSION__ !== "undefined" ? __APP_VERSION__ : "dev"}
+      <p title={versionTitle()} className="pb-4 text-center font-mono text-[10px] text-muted-foreground/60">
+        v{APP_VERSION}
       </p>
 
       <AlertDialog open={!!leaveGroupId} onOpenChange={(open) => !open && setLeaveGroupId(null)}>

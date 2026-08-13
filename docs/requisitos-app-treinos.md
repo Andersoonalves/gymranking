@@ -83,14 +83,25 @@ O app permite que usuarios registrem treinos, acompanhem desempenho individual e
 - Definir tema (claro, escuro, sistema).
 - Ativar/desativar notificacoes push.
 
-### 4.10 Administracao
+### 4.10 Dieta
+- Cadastrar refeicoes do plano com nome, horario e lista de itens (o que comer e quanto).
+- Definir refeicao para todo dia ou para um dia da semana especifico.
+- Informar kcal e macros por refeicao (opcional; a aderencia nao depende deles).
+- Marcar refeicao cumprida no dia, inclusive em dia retroativo.
+- Ver aderencia do dia, aderencia da semana e sequencia de dias na meta.
+- Editar refeicao preservando o historico: a versao antiga continua valendo para os dias passados.
+- Excluir refeicao do plano a partir de hoje, sem apagar o historico ja marcado.
+- Optar por mostrar a dieta e a aderencia para quem divide grupo (opt-in, desligado por padrao).
+- Ver, no perfil de um membro do grupo, a aderencia do dia, a sequencia e as refeicoes de hoje quando ele compartilha.
+
+### 4.11 Administracao
 - Listar usuarios.
 - Criar usuario.
 - Resetar senha de usuario.
 - Excluir usuario (com protecoes basicas para evitar autoexclusao acidental).
 - Exibir papeis (roles) por usuario.
 
-### 4.11 PWA
+### 4.12 PWA
 - Prompt de instalacao do app.
 - Prompt de atualizacao quando houver nova versao.
 
@@ -102,6 +113,11 @@ O app permite que usuarios registrem treinos, acompanhem desempenho individual e
 - Senha deve respeitar tamanho minimo.
 - Apenas o dono do treino pode excluir seu proprio registro no fluxo comum.
 - Notificacoes push dependem de permissao do navegador/dispositivo.
+- Dia de dieta conta como cumprido a partir de 80% das refeicoes previstas.
+- Dia sem refeicao prevista nao entra na conta de aderencia nem quebra a sequencia.
+- Dieta e privada por padrao: leitura pelo grupo depende do opt-in do dono.
+- Dias que ainda nao aconteceram nao entram na aderencia da semana.
+- O atalho de dieta no Inicio so aparece para quem tem plano cadastrado.
 
 ## 6) Requisitos Nao Funcionais (Iniciais)
 - UX mobile-first e responsiva.
