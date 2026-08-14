@@ -34,3 +34,6 @@ dist-ssr
 
 # Gerado por `supabase start` (bundle das Edge Functions e secrets locais).
 supabase/.temp/
+
+# Backups de produção: dados de usuário, não vão para o repositório.
+backups/

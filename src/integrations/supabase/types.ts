@@ -12,8 +12,48 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.1"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
+      app_secrets: {
+        Row: {
+          name: string
+          value: string
+        }
+        Insert: {
+          name: string
+          value: string
+        }
+        Update: {
+          name?: string
+          value?: string
+        }
+        Relationships: []
+      }
       body_progress: {
         Row: {
           created_at: string
@@ -534,10 +574,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      can_view_diet: {
-        Args: { _owner: string }
-        Returns: boolean
-      }
+      can_view_diet: { Args: { _owner: string }; Returns: boolean }
       find_group_by_invite_code: {
         Args: { _code: string }
         Returns: {
@@ -545,10 +582,7 @@ export type Database = {
           name: string
         }[]
       }
-      get_my_group_ids: {
-        Args: Record<PropertyKey, never>
-        Returns: string[]
-      }
+      get_my_group_ids: { Args: never; Returns: string[] }
       group_workouts: {
         Args: { _group_id: string }
         Returns: {
@@ -709,10 +743,12 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["admin", "user"],
     },
   },
 } as const
-
