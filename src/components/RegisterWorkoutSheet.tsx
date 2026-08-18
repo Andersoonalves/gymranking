@@ -92,10 +92,18 @@ export function RegisterWorkoutSheet({
     setPhotoPath(path);
   };
 
+  // O reset do input vem antes do picker, nunca depois de ler o File: no Android
+  // o arquivo da galeria e um content:// que o reset invalida. Zerar aqui ainda
+  // permite reescolher a mesma foto.
+  const openPhotoPicker = () => {
+    if (!photoInputRef.current) return;
+    photoInputRef.current.value = "";
+    photoInputRef.current.click();
+  };
+
   const clearPhoto = () => {
     setPhotoPath(null);
     setPhotoPreview(null);
-    if (photoInputRef.current) photoInputRef.current.value = "";
   };
 
   useEffect(() => {
@@ -421,7 +429,6 @@ export function RegisterWorkoutSheet({
                 onChange={(e) => {
                   const f = e.target.files?.[0];
                   if (f) setCropFile(f);
-                  e.target.value = "";
                 }}
               />
               <ImageCropDialog
@@ -449,7 +456,7 @@ export function RegisterWorkoutSheet({
               ) : (
                 <button
                   type="button"
-                  onClick={() => photoInputRef.current?.click()}
+                  onClick={openPhotoPicker}
                   className="flex items-center gap-2.5 rounded-xl border border-dashed border-border bg-secondary/40 px-3.5 py-3 text-left hover:border-accent"
                 >
                   <Camera className="h-5 w-5 shrink-0 text-accent" />

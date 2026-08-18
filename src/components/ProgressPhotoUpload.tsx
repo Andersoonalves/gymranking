@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Camera, Upload, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import { ImageCropDialog } from "@/components/ImageCropDialog";
 
 type Props = {
@@ -18,13 +19,26 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
     const [previewUrl, setPreviewUrl] = useState<string | null>(null);
     const [cropFile, setCropFile] = useState<File | null>(null);
 
-    // O pai zera uploadedPath depois de salvar; sem isso o preview da foto anterior fica preso.
+    // O pai zera uploadedPath depois de salvar; sem isso o preview da foto
+    // anterior fica preso. E se o componente remontar (o sheet fecha e abre)
+    // com uma foto já enviada, reassina a URL em vez de mostrar <img src="">.
     useEffect(() => {
         if (!uploadedPath) {
             setPreviewUrl(null);
-            if (fileRef.current) fileRef.current.value = "";
+            return;
         }
-    }, [uploadedPath]);
+        if (previewUrl) return;
+        let alive = true;
+        supabase.storage
+            .from("progress-photos")
+            .createSignedUrl(uploadedPath, 3600)
+            .then(({ data }) => {
+                if (alive && data?.signedUrl) setPreviewUrl(data.signedUrl);
+            });
+        return () => {
+            alive = false;
+        };
+    }, [uploadedPath, previewUrl]);
 
     const handleFile = async (file: File) => {
         setCropFile(null);
@@ -34,7 +48,7 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
         const objectUrl = URL.createObjectURL(file);
         setPreviewUrl(objectUrl);
 
-        const ext = file.name.split(".").pop();
+        const ext = file.name.split(".").pop() || "jpg";
         const filePath = `${userId}/${Date.now()}.${ext}`;
 
         // O caminho tem timestamp, então o objeto nunca muda: cache de 1 ano.
@@ -43,7 +57,8 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
             .upload(filePath, file, { upsert: true, cacheControl: "31536000" });
 
         if (error) {
-            console.error("Upload error:", error);
+            // Sem o toast a foto some sozinha e ninguém sabe por quê.
+            toast.error("Erro ao enviar foto", { description: error.message });
             setPreviewUrl(null);
             setUploading(false);
             return;
@@ -59,16 +74,24 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
         setUploading(false);
     };
 
+    // O reset do input vem antes do picker, nunca depois de ler o File: no
+    // Android o arquivo da galeria é um content:// que o reset invalida, e o
+    // recorte abria com a imagem vazia. Zerar aqui ainda permite reescolher a
+    // mesma foto.
+    const openPicker = () => {
+        if (!fileRef.current) return;
+        fileRef.current.value = "";
+        fileRef.current.click();
+    };
+
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) setCropFile(file);
-        e.target.value = "";
     };
 
     const handleClear = () => {
         setPreviewUrl(null);
         onClear();
-        if (fileRef.current) fileRef.current.value = "";
     };
 
     const hasPhoto = !!uploadedPath || !!previewUrl;
@@ -77,11 +100,13 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
         <div className="space-y-2">
             {hasPhoto ? (
                 <div className="relative inline-block">
-                    <img
-                        src={previewUrl ?? ""}
-                        alt="Preview do progresso"
-                        className="h-40 w-40 rounded-xl object-cover border border-border shadow"
-                    />
+                    {previewUrl && (
+                        <img
+                            src={previewUrl}
+                            alt="Preview do progresso"
+                            className="h-40 w-40 rounded-xl object-cover border border-border shadow"
+                        />
+                    )}
                     <button
                         type="button"
                         onClick={handleClear}
@@ -92,7 +117,7 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
                 </div>
             ) : (
                 <div
-                    onClick={() => fileRef.current?.click()}
+                    onClick={openPicker}
                     className={cn(
                         "flex h-40 w-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/40 transition-colors hover:bg-muted/70",
                         uploading && "pointer-events-none opacity-60"
@@ -123,7 +148,7 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
                     variant="outline"
                     size="sm"
                     className="gap-2"
-                    onClick={() => fileRef.current?.click()}
+                    onClick={openPicker}
                     disabled={uploading}
                 >
                     <Upload className="h-4 w-4" />

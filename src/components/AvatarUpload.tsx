@@ -31,7 +31,15 @@ export function AvatarUpload({ userId, currentUrl, displayName, onUploaded }: Av
     }
 
     setCropFile(file);
-    e.target.value = "";
+  };
+
+  // O reset do input vem antes do picker, nunca depois de ler o File: no Android
+  // o arquivo da galeria e um content:// que o reset invalida. Zerar aqui ainda
+  // permite reescolher a mesma foto.
+  const openPicker = () => {
+    if (!inputRef.current) return;
+    inputRef.current.value = "";
+    inputRef.current.click();
   };
 
   const handleFile = async (file: File) => {
@@ -113,7 +121,7 @@ export function AvatarUpload({ userId, currentUrl, displayName, onUploaded }: Av
           size="sm"
           className="gap-2"
           disabled={uploading}
-          onClick={() => inputRef.current?.click()}
+          onClick={openPicker}
         >
           <Camera className="h-4 w-4" />
           {currentUrl ? "Trocar foto" : "Adicionar foto"}
