@@ -90,8 +90,19 @@ export function WorkoutCalendar({
     if (workoutsOn(d).length === 0 && !isAfter(d, today)) onEmptyDaySelect?.(d);
   };
 
+  const total = viewMode === "month" ? monthTotal : yearTotal;
+  const totalPeriod =
+    viewMode === "month" ? format(cursor, "MMMM", { locale: ptBR }) : String(cursor.getFullYear());
+
   return (
     <div className="rounded-[18px] border border-border bg-card p-4">
+      {/* Placar do período: o número é o que interessa, o resto do card é contexto. */}
+      <div className="mb-3 flex items-baseline gap-2">
+        <span className="display-title text-[34px] leading-none tabular-nums text-primary">{total}</span>
+        <span className="text-xs font-semibold text-muted-foreground">
+          {total === 1 ? "treino" : "treinos"} em {totalPeriod}
+        </span>
+      </div>
       <div className="mb-3 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <button
@@ -189,10 +200,7 @@ export function WorkoutCalendar({
               );
             })}
           </div>
-          <div className="mt-3 flex items-center justify-between">
-            <span className="font-mono text-[10px] text-muted-foreground/70">
-              {monthTotal} {monthTotal === 1 ? "treino" : "treinos"} em {format(cursor, "MMMM", { locale: ptBR })}
-            </span>
+          <div className="mt-3 flex items-center justify-end">
             <div className="flex items-center gap-1">
               <span className="font-mono text-[9px] text-muted-foreground/70">menos</span>
               <span className="h-[11px] w-[11px] rounded border border-border bg-transparent" />
@@ -240,9 +248,6 @@ export function WorkoutCalendar({
               );
             })}
           </div>
-          <span className="mt-3 block font-mono text-[10px] text-muted-foreground/70">
-            {yearTotal} {yearTotal === 1 ? "treino" : "treinos"} em {cursor.getFullYear()}
-          </span>
         </>
       )}
 
