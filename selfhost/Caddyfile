@@ -11,6 +11,37 @@
 		format console
 	}
 
+	# ---- CORS ----
+	# O front mora em fitrank.oxehub.com.br e a API aqui: toda chamada do app é
+	# cross-origin. O gateway oficial resolve isso com um filtro CORS no virtual
+	# host inteiro; sem ele, medindo cada serviço: o PostgREST e as Edge
+	# Functions respondem por conta, mas o **GoTrue devolve 204 sem
+	# Access-Control-Allow-Origin** e o storage devolve 404 no preflight — ou
+	# seja, o login quebraria no navegador. Então o CORS é feito aqui, para
+	# todas as rotas, como no Envoy.
+	#
+	# `header` no Caddy é set, não append: onde o upstream já manda o header, o
+	# valor é substituído em vez de duplicado (header duplicado o navegador
+	# recusa). `defer` faz isso rodar depois da resposta do upstream.
+	header {
+		defer
+		Access-Control-Allow-Origin "*"
+		Access-Control-Expose-Headers "*"
+	}
+
+	# Preflight não precisa chegar ao upstream — e não pode, já que metade
+	# deles responde errado. Mesmos valores do filtro do Envoy.
+	@preflight method OPTIONS
+	handle @preflight {
+		header {
+			Access-Control-Allow-Origin "*"
+			Access-Control-Allow-Methods "GET,POST,PUT,PATCH,DELETE,OPTIONS,HEAD"
+			Access-Control-Allow-Headers "*"
+			Access-Control-Max-Age "3600"
+		}
+		respond 204
+	}
+
 	# `handle_path` já remove o prefixo — equivale ao prefix_rewrite: / do Envoy.
 	handle_path /auth/v1/* {
 		reverse_proxy auth:9999
@@ -21,8 +52,9 @@
 	}
 
 	handle_path /storage/v1/* {
-		# Sem isto a URL assinada volta sem o /storage/v1 e não resolve de fora.
-		# Par obrigatório do REQUEST_ALLOW_X_FORWARDED_PATH no compose.
+		# Mesmo header que o gateway oficial injeta nesta rota, já que o
+		# prefixo é removido acima. O /object/sign não depende dele (medido),
+		# mas os endpoints que montam URL absoluta, sim.
 		reverse_proxy storage:5000 {
 			header_up X-Forwarded-Prefix /storage/v1
 		}

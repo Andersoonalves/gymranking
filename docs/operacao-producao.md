@@ -34,6 +34,13 @@ e a apikey não é segredo — ela vive no bundle do front. Quem chega sem ela c
 na role `anon`, que é exatamente o acesso que a anon key concede. **Quem
 protege é a RLS**, então toda tabela nova continua precisando de policy.
 
+O que o gateway fazia e **não** era dispensável é o **CORS**: ele aplicava um
+filtro no virtual host inteiro. Medindo serviço a serviço, o PostgREST e as
+Edge Functions respondem por conta, mas o GoTrue devolve 204 sem
+`Access-Control-Allow-Origin` e o storage devolve 404 no preflight — o login
+quebraria no navegador. Por isso o `Caddyfile` assume o CORS de todas as rotas,
+com os mesmos valores do Envoy.
+
 ## Subida (primeira vez)
 
 Ordem importa: DNS cinza → stack no ar → bloco no proxy → laranja. Ligar o
@@ -52,9 +59,10 @@ proxy antes do certificado existir põe o Cloudflare em loop de redirect.
    cp selfhost/.env.prod.example selfhost/.env
    chmod 600 selfhost/.env                   # preencher o resto
    ```
-   `VAPID_KEYS_JWK` **tem que ser o mesmo do Cloud** — a chave pública está
-   gravada em cada subscription já registrada no navegador do usuário. Par novo
-   cala o push de quem já ativou notificação.
+   `VAPID_KEYS_JWK` é opcional: as funções caem para `public.app_secrets`, que
+   vem no dump. Se preencher, **tem que ser o mesmo valor do Cloud** — a chave
+   pública está gravada em cada subscription já registrada no navegador do
+   usuário, e par novo cala o push de quem já ativou notificação.
 
 4. **Subir**:
    ```bash
@@ -152,6 +160,14 @@ ar e não foi tocado — por isso ele não se apaga até a poeira baixar.
 
 ## Validação (antes do cutover)
 
+A stack já foi levantada inteira em ambiente local, com as migrations do
+projeto aplicadas, e passou em: signup, login com o `iss` correto, RLS negando
+leitura anônima e negando insert com `user_id` de terceiro, RPC respondendo,
+upload no storage com signed URL byte a byte idêntica na volta, edge function
+respondendo `Forbidden: admin only` para usuário comum (o que prova que ela
+alcança o Supabase internamente), e CORS nas quatro rotas. Falta o que só o
+ambiente real mostra:
+
 Apontar um build local para a API nova (`.env.local` com
 `VITE_SUPABASE_URL=https://api-fitrank.oxehub.com.br`) e percorrer:
 
@@ -159,7 +175,7 @@ Apontar um build local para a API nova (`.env.local` com
 - [ ] Listar treinos, grupos e ranking (PostgREST + RLS)
 - [ ] As 3 RPCs: `find_group_by_invite_code`, `join_group_by_invite_code`, `group_workouts`
 - [ ] Foto de treino e de progresso: upload, `createSignedUrl` e remoção
-- [ ] **CORS** — front e API estão em domínios diferentes. Sem o gateway, quem responde ao preflight é cada serviço (PostgREST, GoTrue e storage-api fazem isso por conta). Se algum `OPTIONS` voltar sem `Access-Control-Allow-Origin`, o remendo é um `header` no `selfhost/Caddyfile` **só naquela rota** — duplicar o header em rota que já responde quebra o navegador
+- [ ] **CORS** — resolvido no Caddy e verificado em stack local nas quatro rotas: preflight 204 com `Allow-Origin`/`Allow-Headers`, e resposta real com o header aparecendo **uma vez só** (duplicado o navegador recusa). Reconferir no ambiente real
 - [ ] Push: ativar notificação e disparar `notify-new-workout`
 - [ ] `/admin` com usuário admin, e 403 com usuário comum (`admin-users` confere o papel antes de usar a service role)
 
@@ -202,9 +218,11 @@ testar num banco descartável, como foi feito para os outros dois apps.
   chaves *e* redeployar o front com a anon key nova.
 - **`SUPABASE_PUBLIC_URL` entra no `iss` dos tokens** e na base das URLs
   assinadas do storage. Mudar depois invalida token já emitido.
-- **`X-Forwarded-Prefix` no Caddy** é par obrigatório do
-  `REQUEST_ALLOW_X_FORWARDED_PATH` do storage-api. Sem ele a URL assinada volta
-  sem o `/storage/v1` e não resolve de fora.
+- **`X-Forwarded-Prefix` no Caddy** acompanha o
+  `REQUEST_ALLOW_X_FORWARDED_PATH` do storage-api, como no gateway oficial. O
+  `/object/sign` devolve URL relativa com ou sem ele — e é o certo, porque o
+  supabase-js concatena `${supabaseUrl}/storage/v1` na frente. Tirar o header
+  não quebra a foto, mas afasta do desenho oficial sem motivo.
 - **Migrations não rodam sozinhas.** Diferente do karhub (Prisma no boot), aqui
   o schema veio do dump. Migration nova em `supabase/migrations/` precisa ser
   aplicada no VPS na mão, ou pelo `supabase db push` apontando para lá.

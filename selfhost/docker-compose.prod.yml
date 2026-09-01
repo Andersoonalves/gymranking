@@ -51,7 +51,10 @@ services:
       - db-config:/etc/postgresql-custom
     environment:
       POSTGRES_HOST: /var/run/postgresql
-      POSTGRES_USER: postgres
+      # Sem POSTGRES_USER de propósito: a imagem usa `supabase_admin` como
+      # superuser, e sobrescrever para `postgres` faz o initdb subir um cluster
+      # cru — o migrate.sh da imagem então morre em `role "supabase_admin" does
+      # not exist` e nenhum role do Supabase é criado.
       POSTGRES_DB: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
       PGPASSWORD: ${POSTGRES_PASSWORD}
@@ -154,8 +157,11 @@ services:
       POSTGREST_URL: http://rest:3000
       DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@db:5432/postgres
       STORAGE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
-      # O Caddy tira o prefixo /storage/v1 antes de repassar; sem isto a URL
-      # assinada volta sem o prefixo e não resolve de fora.
+      # Deixa o storage-api confiar no X-Forwarded-Prefix que o Caddy manda,
+      # já que o prefixo /storage/v1 é removido antes de chegar aqui. Paridade
+      # com o gateway oficial. Medido: o /object/sign devolve a URL relativa
+      # (sem o prefixo) com ou sem isto — que é justamente o que o supabase-js
+      # espera, porque ele concatena `${supabaseUrl}/storage/v1` na frente.
       REQUEST_ALLOW_X_FORWARDED_PATH: 'true'
       STORAGE_BACKEND: file
       FILE_STORAGE_BACKEND_PATH: /var/lib/storage
@@ -169,7 +175,10 @@ services:
     volumes:
       - storage:/var/lib/storage
     healthcheck:
-      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:5000/status']
+      # 127.0.0.1 e não localhost: o storage-api escuta só em IPv4, e localhost
+      # resolve primeiro para [::1] — o healthcheck volta "connection refused"
+      # com o serviço no ar.
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://127.0.0.1:5000/status']
       interval: 5s
       timeout: 5s
       retries: 3
@@ -184,9 +193,10 @@ services:
         condition: service_healthy
     volumes:
       # As funções do projeto, como estão no repo — função nova não pede
-      # mudança aqui. O `main` do runtime é montado por cima, num subpath.
+      # mudança aqui. O `main` do runtime fica FORA desta pasta: montar um
+      # volume dentro de outro que é :ro falha ao criar o mountpoint.
       - ../supabase/functions:/home/deno/functions:ro
-      - ./functions/main:/home/deno/functions/main:ro
+      - ./functions/main:/home/deno/main:ro
       - deno-cache:/root/.cache/deno
     environment:
       JWT_SECRET: ${JWT_SECRET}
@@ -199,9 +209,12 @@ services:
       # As funções checam o próprio JWT (admin-users confere o papel admin) e as
       # de cron entram por x-cron-secret, sem Authorization nenhum.
       VERIFY_JWT: 'false'
-      VAPID_KEYS_JWK: ${VAPID_KEYS_JWK:?defina VAPID_KEYS_JWK no .env}
+      # Opcional: as funções caem para public.app_secrets quando não vem por
+      # env, e essa tabela vem no dump. Preencher só para sobrepor o que está
+      # no banco.
+      VAPID_KEYS_JWK: ${VAPID_KEYS_JWK:-}
       TZ: America/Sao_Paulo
-    command: ['start', '--main-service', '/home/deno/functions/main']
+    command: ['start', '--main-service', '/home/deno/main']
 
 volumes:
   pgdata:
