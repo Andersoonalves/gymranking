@@ -3,6 +3,10 @@
 FitRank — app de treinos com grupos e ranking. Vite + React 18 + TS + Tailwind + shadcn/ui,
 backend Supabase. Ver `README.md` para setup e `docs/requisitos-app-treinos.md` para requisitos.
 
+Produção: front no Cloudflare Workers, backend no Supabase Cloud. Há uma stack Supabase
+self-hosted preparada em `selfhost/` para assumir o backend no VPS — ainda **não** cortada.
+Runbook: `docs/operacao-producao.md`.
+
 ## Comandos
 
 ```bash

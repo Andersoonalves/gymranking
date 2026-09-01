@@ -1,0 +1,42 @@
+# Roteia a API do Supabase self-hosted. TLS e o domínio ficam no proxy central
+# (~/proxy no VPS), que entrega aqui em HTTP pela rede `web` — por isso `:80`
+# e não o nome do host.
+#
+# Os prefixos e reescritas são os mesmos do gateway oficial (Envoy, em
+# volumes/api/envoy/lds.template.yaml): cada serviço recebe o path já sem o
+# `/<serviço>/v1`, que é como eles montam as próprias rotas.
+:80 {
+	log {
+		output stdout
+		format console
+	}
+
+	# `handle_path` já remove o prefixo — equivale ao prefix_rewrite: / do Envoy.
+	handle_path /auth/v1/* {
+		reverse_proxy auth:9999
+	}
+
+	handle_path /rest/v1/* {
+		reverse_proxy rest:3000
+	}
+
+	handle_path /storage/v1/* {
+		# Sem isto a URL assinada volta sem o /storage/v1 e não resolve de fora.
+		# Par obrigatório do REQUEST_ALLOW_X_FORWARDED_PATH no compose.
+		reverse_proxy storage:5000 {
+			header_up X-Forwarded-Prefix /storage/v1
+		}
+	}
+
+	# O main-service do edge-runtime lê o nome da função do primeiro segmento
+	# do path, então ele precisa chegar como /<funcao>.
+	handle_path /functions/v1/* {
+		reverse_proxy functions:9000
+	}
+
+	# Qualquer outra coisa não é rota da API: responde 404 em vez de vazar
+	# um erro de proxy.
+	handle {
+		respond "not found" 404
+	}
+}

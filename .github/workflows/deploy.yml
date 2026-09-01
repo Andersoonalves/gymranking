@@ -1,0 +1,31 @@
+name: Deploy
+run-name: Deploy ${{ github.ref_name }}
+
+# Só o backend (Supabase self-hosted) mora no VPS. O front continua saindo
+# pelo Cloudflare Workers, com o deploy próprio dele.
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'selfhost/**'
+      - 'supabase/functions/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch: {}
+
+# Dois pushes seguidos não sobem containers em paralelo; o segundo espera.
+concurrency: deploy-fitrank
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: 64.181.177.88
+          username: ubuntu
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          # A chave no servidor tem command= forçado com exatamente este script;
+          # mudou o comando aqui, tem que mudar lá também.
+          script: cd ~/fitrank && git pull && sudo docker compose -f selfhost/docker-compose.prod.yml up -d
+          command_timeout: 20m

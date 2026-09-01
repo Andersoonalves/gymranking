@@ -1,0 +1,214 @@
+# Supabase self-hosted do FitRank, no VPS compartilhado.
+#
+# Recortado do compose oficial (supabase/supabase/docker) com os serviços que
+# este app usa: banco, auth, PostgREST, storage e edge functions. Ficaram de
+# fora, de propósito:
+#
+#   realtime   — o app não abre nenhum canal (nada de `.channel()` no src/).
+#   imgproxy   — só serve às transformações de imagem; o app usa createSignedUrl
+#                cru, então ENABLE_IMAGE_TRANSFORMATION fica false.
+#   studio/meta— painel de admin. `psql` no container resolve o que precisa.
+#   api-gw     — o gateway (Envoy/Kong) do compose oficial só faz roteamento de
+#                path e checagem da apikey. O Caddy daqui já faz o roteamento, e
+#                a apikey não é segredo (vive no bundle do front): quem chegar
+#                sem ela cai na role `anon`, exatamente o mesmo acesso que a
+#                anon key dá. Quem protege é a RLS, não o gateway.
+#   supavisor  — pooler para conexões externas. Ninguém conecta de fora daqui.
+#
+#   sudo docker compose -f docker-compose.prod.yml up -d
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    container_name: fitrank-caddy
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+    # `web` é a rede do proxy central (~/proxy), que faz o TLS. Este Caddy só
+    # roteia em HTTP na rede interna. Sem `ports`: nada é publicado.
+    networks:
+      - default
+      - web
+    depends_on:
+      auth:
+        condition: service_healthy
+      rest:
+        condition: service_healthy
+      storage:
+        condition: service_healthy
+
+  db:
+    image: supabase/postgres:17.6.1.136
+    restart: unless-stopped
+    container_name: fitrank-db
+    volumes:
+      # Ordem importa: init-scripts roda antes das migrations da imagem.
+      - ./db/webhooks.sql:/docker-entrypoint-initdb.d/init-scripts/98-webhooks.sql:Z
+      - ./db/roles.sql:/docker-entrypoint-initdb.d/init-scripts/99-roles.sql:Z
+      - ./db/jwt.sql:/docker-entrypoint-initdb.d/init-scripts/99-jwt.sql:Z
+      - ./db/_supabase.sql:/docker-entrypoint-initdb.d/migrations/97-_supabase.sql:Z
+      - pgdata:/var/lib/postgresql/data
+      # Volume nomeado: guarda a chave de descriptografia do pgsodium entre restarts.
+      - db-config:/etc/postgresql-custom
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_USER: postgres
+      POSTGRES_DB: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET:?defina JWT_SECRET no .env}
+      JWT_EXP: ${JWT_EXPIRY:-3600}
+      TZ: America/Sao_Paulo
+    # Sem `ports`: o banco só é alcançável pela rede interna do compose.
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'postgres', '-h', 'localhost']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    command:
+      - postgres
+      - -c
+      - config_file=/etc/postgresql/postgresql.conf
+
+  auth:
+    image: supabase/gotrue:v2.189.0
+    restart: unless-stopped
+    container_name: fitrank-auth
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      GOTRUE_API_HOST: 0.0.0.0
+      GOTRUE_API_PORT: 9999
+      API_EXTERNAL_URL: ${SUPABASE_PUBLIC_URL:?defina SUPABASE_PUBLIC_URL no .env}
+      GOTRUE_DB_DRIVER: postgres
+      GOTRUE_DB_DATABASE_URL: postgres://supabase_auth_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      # O front mora noutro domínio que a API; é para cá que o link do e-mail volta.
+      GOTRUE_SITE_URL: ${SITE_URL:?defina SITE_URL no .env}
+      GOTRUE_URI_ALLOW_LIST: ${ADDITIONAL_REDIRECT_URLS:-}
+      GOTRUE_DISABLE_SIGNUP: ${DISABLE_SIGNUP:-false}
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_EXP: ${JWT_EXPIRY:-3600}
+      GOTRUE_JWT_SECRET: ${JWT_SECRET}
+      GOTRUE_JWT_ISSUER: ${SUPABASE_PUBLIC_URL}/auth/v1
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: 'true'
+      GOTRUE_MAILER_AUTOCONFIRM: ${ENABLE_EMAIL_AUTOCONFIRM:-false}
+      GOTRUE_SMTP_ADMIN_EMAIL: ${SMTP_ADMIN_EMAIL:-}
+      GOTRUE_SMTP_HOST: ${SMTP_HOST:-}
+      GOTRUE_SMTP_PORT: ${SMTP_PORT:-587}
+      GOTRUE_SMTP_USER: ${SMTP_USER:-}
+      GOTRUE_SMTP_PASS: ${SMTP_PASS:-}
+      GOTRUE_SMTP_SENDER_NAME: ${SMTP_SENDER_NAME:-FitRank}
+      GOTRUE_MAILER_URLPATHS_INVITE: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_CONFIRMATION: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
+      GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
+      GOTRUE_EXTERNAL_PHONE_ENABLED: 'false'
+      TZ: America/Sao_Paulo
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:9999/health']
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  rest:
+    image: postgrest/postgrest:v14.12
+    restart: unless-stopped
+    container_name: fitrank-rest
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD}@db:5432/postgres
+      PGRST_DB_SCHEMAS: public,storage
+      PGRST_DB_EXTRA_SEARCH_PATH: public,extensions
+      PGRST_DB_ANON_ROLE: anon
+      PGRST_DB_MAX_ROWS: 1000
+      PGRST_JWT_SECRET: ${JWT_SECRET}
+      PGRST_DB_USE_LEGACY_GUCS: 'false'
+      PGRST_APP_SETTINGS_JWT_SECRET: ${JWT_SECRET}
+      PGRST_APP_SETTINGS_JWT_EXP: ${JWT_EXPIRY:-3600}
+      PGRST_ADMIN_SERVER_PORT: 3001
+      PGRST_ADMIN_SERVER_HOST: localhost
+      TZ: America/Sao_Paulo
+    healthcheck:
+      test: ['CMD', 'postgrest', '--ready']
+      interval: 5s
+      timeout: 5s
+      retries: 3
+
+  storage:
+    image: supabase/storage-api:v1.60.4
+    restart: unless-stopped
+    container_name: fitrank-storage
+    depends_on:
+      db:
+        condition: service_healthy
+      rest:
+        condition: service_started
+    environment:
+      ANON_KEY: ${ANON_KEY:?defina ANON_KEY no .env}
+      SERVICE_KEY: ${SERVICE_ROLE_KEY:?defina SERVICE_ROLE_KEY no .env}
+      AUTH_JWT_SECRET: ${JWT_SECRET}
+      POSTGREST_URL: http://rest:3000
+      DATABASE_URL: postgres://supabase_storage_admin:${POSTGRES_PASSWORD}@db:5432/postgres
+      STORAGE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      # O Caddy tira o prefixo /storage/v1 antes de repassar; sem isto a URL
+      # assinada volta sem o prefixo e não resolve de fora.
+      REQUEST_ALLOW_X_FORWARDED_PATH: 'true'
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      GLOBAL_S3_BUCKET: stub
+      # Limite do bucket mais folgado do app (workout_photos_5mb) com margem.
+      FILE_SIZE_LIMIT: 10485760
+      ENABLE_IMAGE_TRANSFORMATION: 'false'
+      TENANT_ID: stub
+      REGION: stub
+      TZ: America/Sao_Paulo
+    volumes:
+      - storage:/var/lib/storage
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:5000/status']
+      interval: 5s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  functions:
+    image: supabase/edge-runtime:v1.74.0
+    restart: unless-stopped
+    container_name: fitrank-functions
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      # As funções do projeto, como estão no repo — função nova não pede
+      # mudança aqui. O `main` do runtime é montado por cima, num subpath.
+      - ../supabase/functions:/home/deno/functions:ro
+      - ./functions/main:/home/deno/functions/main:ro
+      - deno-cache:/root/.cache/deno
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      # Interno: as funções falam com o próprio Caddy, sem sair para a internet.
+      SUPABASE_URL: http://caddy
+      SUPABASE_PUBLIC_URL: ${SUPABASE_PUBLIC_URL}
+      SUPABASE_ANON_KEY: ${ANON_KEY}
+      SUPABASE_SERVICE_ROLE_KEY: ${SERVICE_ROLE_KEY}
+      SUPABASE_DB_URL: postgresql://postgres:${POSTGRES_PASSWORD}@db:5432/postgres
+      # As funções checam o próprio JWT (admin-users confere o papel admin) e as
+      # de cron entram por x-cron-secret, sem Authorization nenhum.
+      VERIFY_JWT: 'false'
+      VAPID_KEYS_JWK: ${VAPID_KEYS_JWK:?defina VAPID_KEYS_JWK no .env}
+      TZ: America/Sao_Paulo
+    command: ['start', '--main-service', '/home/deno/functions/main']
+
+volumes:
+  pgdata:
+  db-config:
+  storage:
+  deno-cache:
+
+networks:
+  web:
+    external: true
