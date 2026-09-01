@@ -1,10 +1,10 @@
 # Operação em produção — backend na VPS
 
-> **Status: stack no ar, sem dados, não cortada.** A API responde em
-> https://api-fitrank.oxehub.com.br com certificado válido, mas o banco está
-> vazio — falta a [migração dos dados](#migração-dos-dados). O app em produção
-> continua apontando para o Supabase Cloud, que não foi tocado. A virada é um
-> commit separado (ver [Cutover](#cutover)).
+> **Status: stack no ar com os dados migrados, não cortada.** A API responde
+> em https://api-fitrank.oxehub.com.br com os 5 usuários, 138 treinos, os 27
+> arquivos do storage e os jobs do pg_cron. O app em produção **continua
+> apontando para o Supabase Cloud**, que não foi tocado. Falta a validação de
+> ponta a ponta e o [cutover](#cutover).
 
 ## Desenho
 
@@ -84,9 +84,44 @@ proxy antes do certificado existir põe o Cloudflare em loop de redirect.
 6. ✅ **Cloudflare laranja**, com a zona em Full (strict). Verificado depois:
    HTTP/2 nas três rotas e preflight CORS com header único.
 
-## Migração dos dados
+## Migração dos dados — FEITA em 01/set/2026
 
 O Cloud continua de pé o tempo todo — nada aqui apaga o banco de produção.
+
+Restaurado: 5 `auth.users` (com identities), 5 profiles, 138 workouts, 2 groups
+com 5 members, 8 training_programs, `app_secrets` com o `cron_secret` e o
+`vapid_keys_jwk`, 3 buckets e 27 objetos com os arquivos conferidos byte a
+byte.
+
+### Quatro armadilhas neste caminho
+
+Nenhuma dá erro visível — todas passam como sucesso e quebram depois:
+
+**1. Colunas de versionamento no storage.** O Cloud roda um storage-api de
+branch (`fix-optimized-search-function`) com `buckets.versioning_status` e
+`objects.archived_at`/`is_delete_marker`/`is_versioned`, que a `v1.60.4` não
+tem. O `COPY` falha, o psql sai do modo de dados e passa a ler as linhas
+seguintes como SQL — `storage.buckets` e `storage.objects` ficam **em zero**
+enquanto o restore parece ter dado certo. A saída é restaurar essas duas
+tabelas à parte, só com a interseção de colunas (`backups/cloud-storage.sql`,
+gerado do dump).
+
+**2. Extended attributes.** Copiar os binários direto no volume não funciona:
+o backend `file` guarda content-type e cache-control em xattr do arquivo, e o
+download depois devolve **HTTP 500 `ENODATA`** ("The extended attribute does
+not exist"). Os arquivos têm que subir **pela API**, que grava binário e xattr
+de uma vez. De quebra, o `tar` do macOS leva junto arquivos `._*` (AppleDouble)
+— use `COPYFILE_DISABLE=1`.
+
+**3. `wget` do BusyBox não tem `--post-file`.** Fazer o upload de dentro do
+container `caddy` (Alpine) sobe arquivos de **4 a 8 bytes** e devolve **200 em
+todos**. Subir com `curl`, de fora.
+
+**4. Arquivo legado maior que o limite do bucket.** Uma foto de progresso de
+1,2 MB é anterior ao limite de 1 MB do bucket e seria descartada em silêncio.
+Elevar o `file_size_limit` só para a carga e **devolver o valor depois**.
+
+### 1. Dump do Cloud
 
 ### 1. Dump do Cloud
 
@@ -136,20 +171,30 @@ npx supabase storage cp -r ss:///progress-photos ./backups/storage/progress-phot
 
 Avatar **não** entra aqui: continua no R2, servido pelo `cdn-fitrank`.
 
-### 4. Jobs do pg_cron
+### 4. Jobs do pg_cron — FEITO
 
 `daily-nudge` e `weekly-summary` são disparadas pelo `pg_cron` via `pg_net`,
 com o segredo em `x-cron-secret`. Esses jobs **não vêm no dump** — o schema
-`cron` fica de fora. Exportar do Cloud e recriar:
+`cron` fica de fora. Os três foram recriados com os mesmos horários:
 
-```sql
--- no Cloud
-select jobname, schedule, command from cron.job;
-```
+| job | schedule | função |
+|---|---|---|
+| `weekly-summary` | `0 3 * * 1` | segunda 03:00 UTC = meia-noite em SP |
+| `streak-reminder` | `0 23 * * *` | 23:00 UTC = 20h BRT |
+| `challenge-results` | `0 12 * * *` | 12:00 UTC = 9h BRT |
 
-Ao recriar no VPS, a URL dentro do `command` muda de `…supabase.co` para
-`https://api-fitrank.oxehub.com.br`. Conferir também `public.app_secrets` e o
-Vault, que guardam o `x-cron-secret`.
+Duas mudanças de propósito em relação ao Cloud:
+
+- **URL interna** `http://caddy/functions/v1/...`. O `pg_net` roda dentro da
+  rede do compose; não precisa sair para a internet, subir TLS e voltar pelo
+  Cloudflare para falar com o container ao lado.
+- **Segredo de `public.app_secrets`, não do Vault.** É a mesma fonte que a
+  função usa para comparar o header. No Cloud o valor vivia duplicado (Vault
+  *e* `app_secrets`) sem nada garantir que fossem iguais.
+
+Verificado com um `net.http_post` de secret propositalmente errado: volta
+`401 {"error":"Unauthorized"}`, o que prova a cadeia inteira (pg_cron → pg_net
+→ Caddy → edge-runtime → função → `app_secrets`) sem disparar push real.
 
 ## Cutover
 
