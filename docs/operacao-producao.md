@@ -1,8 +1,10 @@
 # Operação em produção — backend na VPS
 
-> **Status: preparado, não cortado.** Os arquivos de `selfhost/` sobem uma
-> stack Supabase própria no VPS, mas o app em produção continua apontando para
-> o Supabase Cloud. A virada é um commit separado (ver [Cutover](#cutover)).
+> **Status: stack no ar, sem dados, não cortada.** A API responde em
+> https://api-fitrank.oxehub.com.br com certificado válido, mas o banco está
+> vazio — falta a [migração dos dados](#migração-dos-dados). O app em produção
+> continua apontando para o Supabase Cloud, que não foi tocado. A virada é um
+> commit separado (ver [Cutover](#cutover)).
 
 ## Desenho
 
@@ -41,19 +43,20 @@ Edge Functions respondem por conta, mas o GoTrue devolve 204 sem
 quebraria no navegador. Por isso o `Caddyfile` assume o CORS de todas as rotas,
 com os mesmos valores do Envoy.
 
-## Subida (primeira vez)
+## Subida (primeira vez) — FEITA em 01/set/2026
 
 Ordem importa: DNS cinza → stack no ar → bloco no proxy → laranja. Ligar o
 proxy antes do certificado existir põe o Cloudflare em loop de redirect.
 
-1. **DNS** — no Cloudflare, `api-fitrank` A → `64.181.177.88`, **nuvem cinza**.
-   Um nível só de subdomínio: o certificado universal não cobre
-   sub-subdomínio (mesma pegadinha já anotada no `wrangler.jsonc`).
+1. ✅ **DNS** — `api-fitrank` A → `64.181.177.88`. Um nível só de subdomínio: o
+   certificado universal não cobre sub-subdomínio (mesma pegadinha já anotada
+   no `wrangler.jsonc`).
 
-2. **Clone** — no VPS, `~/fitrank`, com deploy key própria (o padrão das outras
-   duas apps: chave dedicada por repo, não a chave pessoal).
+2. ✅ **Clone** — `~/fitrank` no VPS, deploy key própria `~/.ssh/fitrank_deploy`
+   (alias ssh `github-fitrank`), o padrão das outras duas apps: chave dedicada
+   por repo, não a chave pessoal.
 
-3. **Segredos**:
+3. ✅ **Segredos**:
    ```bash
    node selfhost/gerar-chaves.mjs            # JWT_SECRET + ANON_KEY + SERVICE_ROLE_KEY
    cp selfhost/.env.prod.example selfhost/.env
@@ -64,16 +67,22 @@ proxy antes do certificado existir põe o Cloudflare em loop de redirect.
    pública está gravada em cada subscription já registrada no navegador do
    usuário, e par novo cala o push de quem já ativou notificação.
 
-4. **Subir**:
+4. ✅ **Subir**:
    ```bash
    sudo docker compose -f selfhost/docker-compose.prod.yml up -d
    ```
 
-5. **Proxy central** — bloco em `~/proxy/Caddyfile` apontando
-   `api-fitrank.oxehub.com.br` para `fitrank-caddy`, recarregar, esperar o
-   Let's Encrypt sair.
+5. ✅ **Proxy central** — bloco em `~/proxy/Caddyfile` apontando
+   `api-fitrank.oxehub.com.br` para `fitrank-caddy` (container `proxy-caddy`,
+   backup do arquivo em `~/proxy/Caddyfile.bak`). **Validar antes de recarregar**:
+   config quebrada ali derruba poupeFarma e karhub junto.
+   ```bash
+   sudo docker exec proxy-caddy caddy validate --config /etc/caddy/Caddyfile
+   sudo docker exec proxy-caddy caddy reload   --config /etc/caddy/Caddyfile
+   ```
 
-6. **Cloudflare laranja**, SSL/TLS já está em Full (strict) na zona toda.
+6. ✅ **Cloudflare laranja**, com a zona em Full (strict). Verificado depois:
+   HTTP/2 nas três rotas e preflight CORS com header único.
 
 ## Migração dos dados
 
