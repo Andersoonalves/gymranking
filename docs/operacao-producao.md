@@ -1,10 +1,9 @@
 # Operação em produção — backend na VPS
 
-> **Status: stack no ar com os dados migrados, não cortada.** A API responde
-> em https://api-fitrank.oxehub.com.br com os 5 usuários, 138 treinos, os 27
-> arquivos do storage e os jobs do pg_cron. O app em produção **continua
-> apontando para o Supabase Cloud**, que não foi tocado. Falta a validação de
-> ponta a ponta e o [cutover](#cutover).
+> **Status: CORTADO em 01/set/2026.** O app em produção usa o Supabase
+> self-hosted em https://api-fitrank.oxehub.com.br. O Supabase Cloud continua
+> no ar, intocado, como rollback — **não desligar** antes de alguns dias de uso
+> real. Ver [pendências](#pendências-depois-do-corte).
 
 ## Desenho
 
@@ -211,21 +210,46 @@ Verificado com um `net.http_post` de secret propositalmente errado: volta
 `401 {"error":"Unauthorized"}`, o que prova a cadeia inteira (pg_cron → pg_net
 → Caddy → edge-runtime → função → `app_secrets`) sem disparar push real.
 
-## Cutover
+## Cutover — FEITO (commit `7b19b0f`)
 
-Só depois da validação abaixo passar inteira. É um commit de duas linhas:
+Duas peças mudaram de endereço:
 
-```
-wrangler.jsonc  vars.SUPABASE_URL       → https://api-fitrank.oxehub.com.br
-                vars.SUPABASE_ANON_KEY  → a ANON_KEY gerada
-.env            VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY (mesmos valores)
-```
+| Onde | O quê |
+|---|---|
+| `wrangler.jsonc` | `SUPABASE_URL` e `SUPABASE_ANON_KEY` do Worker |
+| `.env.production` | `VITE_*` do build do front |
 
 O `worker/index.ts` valida o token batendo em `${SUPABASE_URL}/auth/v1/user`,
-então ele passa a validar contra o GoTrue do VPS sem mudança de código.
+então passou a validar contra o GoTrue do VPS sem mudança de código.
 
-**Rollback**: reverter esse commit e redeployar o Worker. O Cloud continua no
+**`.env.production` é versionado de propósito.** Antes, o build lia
+`VITE_SUPABASE_URL` de um `.env` fora do git: o bundle dependia do que houvesse
+na máquina de quem buildasse e, com um `.env.local` apontando para o Supabase
+local, o build de produção saía apontando para `127.0.0.1:54331` sem aviso
+nenhum. No Vite, `.env.production` tem prioridade sobre `.env.local` em
+`vite build`, então isso deixou de ser possível. A anon key ali não é segredo:
+já ia no bundle por desenho, e quem a usa só alcança o que a RLS permitir.
+
+Aplicar: `npm run build && npx wrangler deploy`.
+
+**Rollback**: `git revert 7b19b0f` e redeployar o Worker. O Cloud continua no
 ar e não foi tocado — por isso ele não se apaga até a poeira baixar.
+
+Verificado depois do deploy: o bundle publicado só cita `api-fitrank`, o
+`PUT /api/avatar` sem token volta 401 (o Worker consultou o GoTrue do VPS), e
+uma consulta com token de usuário real, com o `origin` do app, devolve dados.
+
+## Pendências depois do corte
+
+- **Push real nunca foi disparado.** A cadeia está provada até a função (401
+  com secret errado), mas nenhuma notificação de verdade saiu. O primeiro
+  `streak-reminder` às 20h é o teste.
+- **SMTP.** Sem ele o GoTrue não manda confirmação: **cadastro novo trava**.
+  Login de quem já existe funciona. `ENABLE_EMAIL_AUTOCONFIRM=true` destrava ao
+  custo de aceitar e-mail não verificado.
+- **Senha do banco do Cloud** foi usada em terminal durante a migração: trocar
+  em Project Settings > Database > Reset database password.
+- **Desligar o Cloud** só depois de alguns dias de uso real.
 
 ## Validação — 16/16 em 01/set/2026
 
