@@ -307,16 +307,37 @@ Função nova em `supabase/functions/` **não** pede mudança no compose: a past
 inteira é montada no edge-runtime. Mas o edge-runtime só relê no restart —
 `compose up -d` recria o container, então o deploy já cobre.
 
-## Backup
+## Backup — no cron desde 01/set/2026
 
-**Pendente.** Entrar no cron que já roda no VPS (`~/backup-poupefarma.sh`,
-03:00 BRT, R2 `poupefarma-backups`), com duas pastas novas:
+`~/backup-poupefarma.sh` no VPS (03:00 BRT, R2 `poupefarma-backups`, retenção
+30 dias) cobre os três apps. Do fitrank saem duas pastas:
 
-- `fitrank-pg/` — `pg_dump -Fc` do container `fitrank-db`
-- `fitrank-storage/` — tar do volume `storage` (as fotos; o dump não as cobre)
+- `fitrank-pg/` — `pg_dump -Fc` do `fitrank-db`, como `supabase_admin` para
+  levar os schemas `auth` e `storage` junto com o `public`
+- `fitrank-storage/` — tar do volume do storage (as fotos; o dump só tem os
+  ponteiros)
 
-Mesma retenção de 30 dias dos outros. Backup nunca restaurado não é backup:
-testar num banco descartável, como foi feito para os outros dois apps.
+O bloco do fitrank fica **no fim do script, com upload próprio**: com
+`set -e`, um dump que falhasse no meio abortaria tudo e os outros dois apps
+ficariam sem backup do dia.
+
+**Restore testado em 01/set/2026**: dump baixado do R2 e restaurado num banco
+descartável — `auth.users`, profiles, workouts, groups, group_members,
+training_programs, `storage.objects` e `app_secrets` bateram com produção, e o
+tar trouxe os 27 arquivos.
+
+### O backup sozinho não reconstrói tudo
+
+Duas coisas não estão no `pg_dump` e moram no repositório:
+
+| Falta | Arquivo | Por quê |
+|---|---|---|
+| Policies de `storage.objects` | `selfhost/storage-policies.sql` | o `pg_dump` não leva o schema `storage`; sem elas, usuário normal leva 404 em toda foto |
+| Jobs do `pg_cron` | `selfhost/cron.sql` | o schema `cron` fica de fora; o `pg_restore` reclama `schema "cron" does not exist` |
+
+Restaurar do zero, então, é: banco (R2) → arquivos do storage (R2) →
+`storage-policies.sql` → `cron.sql` → `NOTIFY pgrst, 'reload schema'` →
+`node selfhost/validar.mjs`.
 
 ## Pegadinhas
 
