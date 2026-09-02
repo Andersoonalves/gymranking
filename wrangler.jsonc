@@ -12,9 +12,12 @@
     "run_worker_first": ["/api/*"]
   },
   "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "fitrank" }],
+  // SUPABASE_URL/ANON_KEY são usadas pelo worker/index.ts para validar o
+  // token do usuário antes do upload do avatar no R2. Apontam para o
+  // Supabase self-hosted no VPS (docs/operacao-producao.md).
   "vars": {
-    "SUPABASE_URL": "https://swopnxzsmymolasnqloh.supabase.co",
-    "SUPABASE_ANON_KEY": "sb_publishable_jfGbuEE7ts0LXALbpmrYfQ_5He6N0aw",
+    "SUPABASE_URL": "https://api-fitrank.oxehub.com.br",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzg4MjI5NTY4LCJleHAiOjIxMDM1ODk1Njh9.wbr0O_4BugwBjZWyZsVy5JDa0wcOKbpsRAxN-YvWbG0",
     // 1 nível só: o certificado universal (*.oxehub.com.br) não cobre sub-subdomínio.
     "MEDIA_BASE_URL": "https://cdn-fitrank.oxehub.com.br"
   }
