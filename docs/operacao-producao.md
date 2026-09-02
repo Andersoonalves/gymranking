@@ -121,6 +121,21 @@ todos**. Subir com `curl`, de fora.
 1,2 MB é anterior ao limite de 1 MB do bucket e seria descartada em silêncio.
 Elevar o `file_size_limit` só para a carga e **devolver o valor depois**.
 
+**5. As policies de `storage.objects` não vêm no dump.** O `supabase db dump`
+pula o schema `storage` por ser gerenciado, e o banco novo fica com **zero
+policies** ali. É a pior das seis, porque some do radar: com `service_role`
+tudo funciona (ele ignora RLS), então qualquer teste feito com a service key
+passa — mas usuário normal leva **404 em toda foto**. As 11 policies vivem nas
+migrations do projeto; `backups/storage-policies.sql` as extrai.
+
+**6. O PostgREST cacheia o schema no boot.** As tabelas nascem no restore,
+depois dele, então toda rota responde `PGRST205 — Could not find the table in
+the schema cache`. Resolve sem reiniciar:
+
+```sql
+NOTIFY pgrst, 'reload schema';
+```
+
 ### 1. Dump do Cloud
 
 ### 1. Dump do Cloud
@@ -212,17 +227,31 @@ então ele passa a validar contra o GoTrue do VPS sem mudança de código.
 **Rollback**: reverter esse commit e redeployar o Worker. O Cloud continua no
 ar e não foi tocado — por isso ele não se apaga até a poeira baixar.
 
-## Validação (antes do cutover)
+## Validação — 16/16 em 01/set/2026
 
-A stack já foi levantada inteira em ambiente local, com as migrations do
-projeto aplicadas, e passou em: signup, login com o `iss` correto, RLS negando
-leitura anônima e negando insert com `user_id` de terceiro, RPC respondendo,
-upload no storage com signed URL byte a byte idêntica na volta, edge function
-respondendo `Forbidden: admin only` para usuário comum (o que prova que ela
-alcança o Supabase internamente), e CORS nas quatro rotas. Falta o que só o
-ambiente real mostra:
+`selfhost/validar.mjs` exercita a API com os **usuários reais migrados**. Ele
+emite o token a partir do `JWT_SECRET` (mesmo formato do GoTrue), o que permite
+testar a RLS com dados de produção sem a senha de ninguém:
 
-Apontar um build local para a API nova (`.env.local` com
+```bash
+JWT_SECRET=... ANON_KEY=... node selfhost/validar.mjs
+```
+
+Cobre: treinos do próprio usuário e dos colegas de grupo, anônimo barrado,
+grupos, perfis, as RPCs `group_workouts` e `find_group_by_invite_code`,
+progresso, dieta, inscrições de push, foto de progresso que **abre para o dono
+e é negada para outro usuário**, foto de treino que abre para colega de grupo,
+e `admin-users` negando usuário comum e aceitando admin.
+
+Rodar depois de qualquer restore: é ele que pega as armadilhas 5 e 6, que não
+dão erro em teste feito com a service key.
+
+### Ainda não verificado
+
+- **Envio real de push.** Testar dispara notificação para os 5 usuários de
+  verdade; só com o dono ciente. A cadeia até a função está provada (401 com
+  secret errado), falta o envio em si.
+- **A UI no navegador.** Apontar um build local para a API nova (`.env.local` com
 `VITE_SUPABASE_URL=https://api-fitrank.oxehub.com.br`) e percorrer:
 
 - [ ] Login e cadastro (GoTrue + SMTP, ou `ENABLE_EMAIL_AUTOCONFIRM=true` se o SMTP ainda não estiver configurado)
