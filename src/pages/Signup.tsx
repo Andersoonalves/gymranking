@@ -4,6 +4,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { BrandMark } from "@/components/BrandMark";
 import { EcgBackground } from "@/components/EcgBackground";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { AlertCircle, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -178,6 +179,14 @@ export default function Signup() {
               "Criar conta"
             )}
           </button>
+          <div className="flex items-center gap-3">
+            <span className="h-px flex-1 bg-border" />
+            <span className="mono-label text-muted-foreground/70">ou</span>
+            <span className="h-px flex-1 bg-border" />
+          </div>
+
+          <GoogleSignInButton inviteCode={inviteCode.trim().toUpperCase() || undefined} />
+
           <p className="text-center text-[13px] font-medium text-muted-foreground">
             Já tem conta?{" "}
             <Link to="/login" className="font-bold text-primary hover:underline">

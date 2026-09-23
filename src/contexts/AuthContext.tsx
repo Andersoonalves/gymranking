@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session, AuthError } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { PENDING_INVITE_CODE_KEY } from "@/lib/constants";
 
 interface AuthContextType {
   user: User | null;
@@ -8,6 +9,7 @@ interface AuthContextType {
   loading: boolean;
   signUp: (email: string, password: string, displayName: string, pendingInviteCode?: string) => Promise<{ error: AuthError | null }>;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  signInWithGoogle: (pendingInviteCode?: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -26,19 +28,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       setLoading(false);
 
-      // Auto-join pending group on first login
+      // Auto-join pending group on first login. No OAuth o código não cabe no
+      // metadata (a conta nasce no provedor), então vem do localStorage.
       if (session?.user) {
-        const pendingInviteCode = session.user.user_metadata?.pending_invite_code;
+        const storedInviteCode = localStorage.getItem(PENDING_INVITE_CODE_KEY);
+        const pendingInviteCode = session.user.user_metadata?.pending_invite_code ?? storedInviteCode;
         if (pendingInviteCode) {
           try {
             await supabase.rpc("join_group_by_invite_code", { _code: pendingInviteCode });
           } catch {
             // Ignore duplicate or error
           }
+          localStorage.removeItem(PENDING_INVITE_CODE_KEY);
           // Clear the pending_invite_code from metadata
-          await supabase.auth.updateUser({
-            data: { pending_invite_code: null },
-          });
+          if (session.user.user_metadata?.pending_invite_code) {
+            await supabase.auth.updateUser({
+              data: { pending_invite_code: null },
+            });
+          }
         }
       }
     });
@@ -69,12 +76,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
+  const signInWithGoogle = async (pendingInviteCode?: string) => {
+    // O redirect do OAuth recarrega a página: o código de convite só sobrevive
+    // fora do estado do React.
+    if (pendingInviteCode) {
+      localStorage.setItem(PENDING_INVITE_CODE_KEY, pendingInviteCode);
+    }
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: window.location.origin },
+    });
+    if (error) {
+      localStorage.removeItem(PENDING_INVITE_CODE_KEY);
+    }
+    return { error };
+  };
+
   const signOut = async () => {
+    localStorage.removeItem(PENDING_INVITE_CODE_KEY);
     await supabase.auth.signOut();
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, session, loading, signUp, signIn, signInWithGoogle, signOut }}>
       {children}
     </AuthContext.Provider>
   );

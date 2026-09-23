@@ -18,3 +18,6 @@ export const SHOW_TOUR_EVENT = "fitrank:show-tour";
  * `20260804160000_limites_antiabuso.sql`.
  */
 export const NOTES_MAX_LENGTH = 50;
+
+/** Código de convite guardado durante o redirect do OAuth (o estado do React se perde). */
+export const PENDING_INVITE_CODE_KEY = "fitrank-pending-invite-code";

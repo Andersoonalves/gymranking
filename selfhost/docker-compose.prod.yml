@@ -108,6 +108,13 @@ services:
       GOTRUE_MAILER_URLPATHS_RECOVERY: /auth/v1/verify
       GOTRUE_MAILER_URLPATHS_EMAIL_CHANGE: /auth/v1/verify
       GOTRUE_EXTERNAL_PHONE_ENABLED: 'false'
+      # Login com Google. O redirect URI cadastrado no Google Cloud é
+      # ${SUPABASE_PUBLIC_URL}/auth/v1/callback — quem volta para o front é o
+      # GoTrue, usando SITE_URL/URI_ALLOW_LIST.
+      GOTRUE_EXTERNAL_GOOGLE_ENABLED: ${GOOGLE_ENABLED:-false}
+      GOTRUE_EXTERNAL_GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOTRUE_EXTERNAL_GOOGLE_SECRET: ${GOOGLE_SECRET:-}
+      GOTRUE_EXTERNAL_GOOGLE_REDIRECT_URI: ${SUPABASE_PUBLIC_URL}/auth/v1/callback
       TZ: America/Sao_Paulo
     healthcheck:
       test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:9999/health']

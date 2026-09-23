@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { BrandMark } from "@/components/BrandMark";
 import { EcgBackground } from "@/components/EcgBackground";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 import { ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -104,6 +105,14 @@ export default function Login() {
                 </>
               )}
             </button>
+            <div className="flex items-center gap-3">
+              <span className="h-px flex-1 bg-border" />
+              <span className="mono-label text-muted-foreground/70">ou</span>
+              <span className="h-px flex-1 bg-border" />
+            </div>
+
+            <GoogleSignInButton />
+
             <p className="text-center text-[13px] font-medium text-muted-foreground">
               Não tem conta?{" "}
               <Link to="/signup" className="font-bold text-primary hover:underline">
