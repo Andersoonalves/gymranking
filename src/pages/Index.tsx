@@ -134,7 +134,7 @@ export default function Index() {
   const callout = buildCallout(weeklyRanking, userId);
   const streak = useMemo(() => computeStreak(myWorkouts.map((w) => w.workout_date)), [myWorkouts]);
 
-  const { data: exerciseHistory = [] } = useExerciseHistory(userId);
+  const { data: exerciseHistory = [], isSuccess: historyLoaded } = useExerciseHistory(userId);
 
   // Atalho da dieta: só existe para quem já cadastrou plano — sem isso o card
   // viraria propaganda de recurso na tela principal de quem não usa.
@@ -161,21 +161,24 @@ export default function Index() {
 
   // Toast na hora em que uma conquista destrava. Primeira visita semeia em
   // silêncio para não disparar uma rajada de toasts do histórico antigo.
+  // Espera o histórico: enquanto carrega, prCount é 0 e as conquistas de
+  // recorde parecem bloqueadas. Vistos só crescem — um cálculo parcial não
+  // pode apagar o que já foi mostrado.
   useEffect(() => {
-    if (myWorkouts.length === 0) return;
+    if (myWorkouts.length === 0 || !historyLoaded) return;
     const KEY = "fitrank-seen-achievements";
     const unlockedIds = achievements.filter((a) => a.unlocked).map((a) => a.id);
     const stored = localStorage.getItem(KEY);
+    const seen: string[] = stored !== null ? JSON.parse(stored) : [];
     if (stored !== null) {
-      const seen: string[] = JSON.parse(stored);
       for (const a of achievements) {
         if (a.unlocked && !seen.includes(a.id)) {
           toast.success(`🏅 Conquista destravada: ${a.name}`, { description: a.description });
         }
       }
     }
-    localStorage.setItem(KEY, JSON.stringify(unlockedIds));
-  }, [achievements, myWorkouts.length]);
+    localStorage.setItem(KEY, JSON.stringify([...new Set([...seen, ...unlockedIds])]));
+  }, [achievements, myWorkouts.length, historyLoaded]);
 
   // KPIs do desktop: treinos no mês, delta vs. mês anterior e recorde de streak
   const monthCount = useMemo(() => filterWorkoutsByPeriod(myWorkouts, "month").length, [myWorkouts]);
