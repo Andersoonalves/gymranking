@@ -21,12 +21,31 @@ export function useMyProfile(userId: string | undefined) {
         .from("profiles")
         .select("display_name, avatar_url, weekly_goal, primary_color, diet_shared")
         .eq("user_id", userId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
+      // Sem linha = conta criada sem o trigger; o ProtectedShell pede o perfil.
+      if (!data) return null;
       // Sincroniza a cor aqui porque este hook roda em toda tela autenticada
       // (MainLayout, Início, Progresso, Configurações) — sem effect extra.
       syncPrimaryColor(data.primary_color);
       return data;
+    },
+  });
+}
+
+/** Nome e foto de uma vez. Upsert porque a linha pode nem existir ainda. */
+export function useSaveProfile(userId: string | undefined) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (profile: { display_name: string; avatar_url: string }) => {
+      const { error } = await supabase
+        .from("profiles")
+        .upsert({ user_id: userId!, ...profile }, { onConflict: "user_id" });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-profile", userId] });
+      queryClient.invalidateQueries({ queryKey: ["group-profiles"] });
     },
   });
 }
