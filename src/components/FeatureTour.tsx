@@ -231,14 +231,14 @@ export function FeatureTour() {
         className="absolute flex w-[min(340px,calc(100vw-24px))] flex-col gap-3 rounded-3xl border border-border bg-card p-5 shadow-2xl animate-pop-in"
       >
         <div className="flex items-start gap-3">
-          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-primary/10 text-primary">
+          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-primary/10 text-lime">
             <Icon className="h-[18px] w-[18px]" />
           </span>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="mono-label text-primary">
+            <span className="mono-label text-lime">
               Novidade · {step + 1}/{tour.steps.length}
             </span>
-            <span className="text-sm font-extrabold leading-tight text-foreground">{current.title}</span>
+            <span className="text-sm font-semibold leading-tight text-foreground">{current.title}</span>
           </div>
           <button
             type="button"
@@ -273,7 +273,7 @@ export function FeatureTour() {
             <button
               type="button"
               onClick={() => setStep((s) => s - 1)}
-              className="rounded-[11px] border border-border bg-secondary px-3.5 py-2.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary"
+              className="rounded-[11px] border border-border bg-secondary px-3.5 py-2.5 text-xs font-bold text-foreground hover:border-primary hover:text-lime"
             >
               Voltar
             </button>
@@ -289,7 +289,7 @@ export function FeatureTour() {
           <button
             type="button"
             onClick={() => (isLast ? close(tour.cta?.path) : setStep((s) => s + 1))}
-            className="flex flex-1 items-center justify-center gap-1.5 rounded-[13px] bg-primary py-2.5 text-sm font-extrabold text-primary-foreground shadow-hard active-hard"
+            className="flex flex-1 items-center justify-center gap-1.5 rounded-xl bg-primary py-2.5 text-sm font-semibold text-primary-foreground active-hard"
           >
             {isLast ? (tour.cta?.label ?? "Entendi") : "Próximo"}
             {isLast && tour.cta && <ArrowRight className="h-4 w-4" strokeWidth={2.75} />}

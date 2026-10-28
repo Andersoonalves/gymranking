@@ -16,13 +16,13 @@ export function AchievementsSheet({ open, onOpenChange, achievements }: Achievem
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
+        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card/90 p-0 backdrop-blur-[8px] sheet-desktop-modal"
       >
-        <div className="flex flex-col gap-4 px-5 pb-6 pt-3 safe-area-bottom">
+        <div className="flex flex-col gap-4 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3">
           <div className="h-1 w-9 self-center rounded-full bg-border" />
           <div className="flex items-end justify-between">
-            <SheetTitle className="display-title text-[22px] text-foreground">Conquistas</SheetTitle>
-            <span className="font-mono text-xs font-bold text-primary">
+            <SheetTitle className="font-semibold tracking-tight text-[22px] text-foreground">Conquistas</SheetTitle>
+            <span className="tabular-nums text-xs font-bold text-primary">
               {unlockedCount}/{achievements.length}
             </span>
           </div>
@@ -43,7 +43,7 @@ export function AchievementsSheet({ open, onOpenChange, achievements }: Achievem
                 </span>
                 <span className="text-[9px] leading-snug text-muted-foreground/70">{a.description}</span>
                 {a.unlocked ? (
-                  <span className="rounded bg-primary/15 px-1.5 py-0.5 font-mono text-[8px] font-bold tracking-[0.08em] text-primary">
+                  <span className="rounded bg-primary/15 px-1.5 py-0.5 tabular-nums text-[8px] font-bold text-primary">
                     DESTRAVADA
                   </span>
                 ) : (
@@ -51,7 +51,7 @@ export function AchievementsSheet({ open, onOpenChange, achievements }: Achievem
                     <div className="h-1 overflow-hidden rounded-full bg-background/80">
                       <div className="h-full rounded-full bg-muted-foreground/50" style={{ width: `${a.progress * 100}%` }} />
                     </div>
-                    <span className="font-mono text-[8px] text-muted-foreground/60">{a.targetLabel}</span>
+                    <span className="tabular-nums text-[8px] text-muted-foreground/60">{a.targetLabel}</span>
                   </div>
                 )}
               </div>

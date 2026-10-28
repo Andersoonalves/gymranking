@@ -64,24 +64,24 @@ export default function Signup() {
     "rounded-xl border border-border bg-card p-[15px] text-sm font-medium text-foreground outline-none placeholder:text-muted-foreground/60 focus:border-primary";
 
   return (
-    <div className="dark relative min-h-dvh cursor-crosshair overflow-hidden bg-[#0A0907] text-foreground">
+    <div className="dark relative min-h-dvh cursor-crosshair overflow-hidden bg-background text-foreground">
       <EcgBackground />
       <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center gap-5 px-7 py-10 safe-area-top safe-area-bottom">
         {inviteGroup && (
-          <div className="flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-4 animate-rise-in">
-            <div className="flex h-[46px] w-[46px] items-center justify-center rounded-[14px] bg-primary text-lg font-black text-primary-foreground">
+          <div className="flex items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-4 animate-fade-up">
+            <div className="flex h-[46px] w-[46px] items-center justify-center rounded-xl bg-primary text-lg font-bold text-primary-foreground">
               {inviteGroup.charAt(0).toUpperCase()}
             </div>
             <div className="flex flex-1 flex-col gap-0.5">
-              <span className="mono-label text-primary">Convite aceito</span>
-              <span className="text-[15px] font-extrabold leading-tight">Você entra em {inviteGroup}</span>
-              <span className="font-mono text-[11px] text-muted-foreground">CÓDIGO {inviteCode.trim().toUpperCase()}</span>
+              <span className="mono-label text-lime">Convite aceito</span>
+              <span className="text-[15px] font-semibold leading-tight">Você entra em {inviteGroup}</span>
+              <span className="text-[11px] text-muted-foreground">CÓDIGO {inviteCode.trim().toUpperCase()}</span>
             </div>
           </div>
         )}
 
         <div className="flex flex-col gap-2">
-          <BrandMark className="mb-1 h-[46px] w-[46px] rounded-[15px] shadow-[0_0_40px_-8px_hsl(var(--primary)/0.55)]" />
+          <BrandMark className="mb-1 h-[46px] w-[46px] rounded-xl shadow-glow" />
           <h1 className="display-title text-3xl leading-tight">Criar conta</h1>
           <p className="text-[13px] leading-normal text-muted-foreground">
             Leva 20 segundos. Depois disso é só treinar e registrar.
@@ -102,7 +102,7 @@ export default function Signup() {
                   value={inviteCode}
                   onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                   required
-                  className={`${inputClass} font-mono uppercase tracking-[0.2em]`}
+                  className={`${inputClass} uppercase tracking-[0.2em]`}
                 />
                 <span className="text-[11px] text-muted-foreground/70">
                   Peça o código de convite para quem criou o grupo.
@@ -169,7 +169,7 @@ export default function Signup() {
           <button
             type="submit"
             disabled={loading}
-            className="flex w-full items-center justify-center rounded-[14px] bg-primary p-[18px] text-base font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-60"
+            className="flex w-full items-center justify-center rounded-xl bg-primary p-[18px] text-base font-semibold text-primary-foreground active-hard disabled:opacity-60"
           >
             {loading ? (
               <Loader2 className="h-5 w-5 animate-spin" />
@@ -189,7 +189,7 @@ export default function Signup() {
 
           <p className="text-center text-[13px] font-medium text-muted-foreground">
             Já tem conta?{" "}
-            <Link to="/login" className="font-bold text-primary hover:underline">
+            <Link to="/login" className="font-bold text-lime hover:underline">
               Entrar
             </Link>
           </p>

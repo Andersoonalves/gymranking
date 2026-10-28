@@ -95,10 +95,10 @@ export function WorkoutCalendar({
     viewMode === "month" ? format(cursor, "MMMM", { locale: ptBR }) : String(cursor.getFullYear());
 
   return (
-    <div className="rounded-[18px] border border-border bg-card p-4">
+    <div className="card-rim p-4">
       {/* Placar do período: o número é o que interessa, o resto do card é contexto. */}
       <div className="mb-3 flex items-baseline gap-2">
-        <span className="display-title text-[34px] leading-none tabular-nums text-primary">{total}</span>
+        <span className="font-semibold tracking-tight text-[34px] leading-none tabular-nums text-primary">{total}</span>
         <span className="text-xs font-semibold text-muted-foreground">
           {total === 1 ? "treino" : "treinos"} em {totalPeriod}
         </span>
@@ -113,7 +113,7 @@ export function WorkoutCalendar({
           >
             <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="display-title truncate text-[15px] text-foreground">
+          <span className="font-semibold tracking-tight truncate text-[15px] text-foreground">
             {viewMode === "month" ? format(cursor, "MMMM yyyy", { locale: ptBR }) : cursor.getFullYear()}
           </span>
           <button
@@ -146,7 +146,7 @@ export function WorkoutCalendar({
         <>
           <div className="mb-1.5 grid grid-cols-7 gap-1">
             {DOW.map((l) => (
-              <span key={l} className="text-center font-mono text-[9px] font-semibold text-muted-foreground/70">
+              <span key={l} className="text-center tabular-nums text-[9px] font-semibold text-muted-foreground/70">
                 {l}
               </span>
             ))}
@@ -167,7 +167,7 @@ export function WorkoutCalendar({
                       : undefined
                   }
                   className={cn(
-                    "relative flex aspect-square items-center justify-center rounded-lg border font-mono text-xs transition-transform hover:scale-105",
+                    "relative flex aspect-square items-center justify-center rounded-lg border tabular-nums text-xs transition-transform hover:scale-105",
                     hasPhotos ? "border-transparent" : cn("overflow-hidden", heatClass(workoutsOn(d).length, isSameDay(d, today))),
                     selectedDate && isSameDay(d, selectedDate) && "ring-2 ring-ring ring-offset-1 ring-offset-card",
                     isAfter(d, today) && "opacity-40",
@@ -191,7 +191,7 @@ export function WorkoutCalendar({
                                 transform: `translate(${x}%, ${y}%) rotate(${rotate}deg) scale(${scale})`,
                                 zIndex: idx,
                               }}
-                              className="absolute inset-0 h-full w-full rounded-[6px] border border-card object-cover shadow-md"
+                              className="absolute inset-0 h-full w-full rounded-[6px] border border-card object-cover"
                             />
                           );
                         })
@@ -202,12 +202,12 @@ export function WorkoutCalendar({
           </div>
           <div className="mt-3 flex items-center justify-end">
             <div className="flex items-center gap-1">
-              <span className="font-mono text-[9px] text-muted-foreground/70">menos</span>
+              <span className="tabular-nums text-[9px] text-muted-foreground/70">menos</span>
               <span className="h-[11px] w-[11px] rounded border border-border bg-transparent" />
               <span className="h-[11px] w-[11px] rounded bg-primary/25" />
               <span className="h-[11px] w-[11px] rounded bg-primary/55" />
               <span className="h-[11px] w-[11px] rounded bg-primary" />
-              <span className="font-mono text-[9px] text-muted-foreground/70">mais</span>
+              <span className="tabular-nums text-[9px] text-muted-foreground/70">mais</span>
             </div>
           </div>
         </>
@@ -226,7 +226,7 @@ export function WorkoutCalendar({
                   }}
                   className="flex flex-col gap-1.5 rounded-xl border border-border/60 bg-secondary/40 p-2 text-left hover:border-primary"
                 >
-                  <span className="font-mono text-[9px] font-bold tracking-[0.1em] text-muted-foreground">{label}</span>
+                  <span className="tabular-nums text-[9px] font-bold text-muted-foreground">{label}</span>
                   <span className="grid grid-cols-7 gap-[2px]">
                     {monthCells(month).map((d, i) => (
                       <span
@@ -253,7 +253,7 @@ export function WorkoutCalendar({
 
       {selectedDate && viewMode === "month" && selectedWorkouts.length > 0 && (
         <div className="mt-3 flex flex-col gap-1.5 border-t border-border pt-3">
-          <span className="mono-label">Treinos em {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}</span>
+          <span className="text-xs font-medium text-muted-foreground">Treinos em {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}</span>
           {selectedWorkouts.map((w) => (
             <div key={w.id} className="flex items-center gap-2 rounded-xl border border-border/60 bg-secondary/50 px-3 py-2">
               <div className="min-w-0 flex-1">

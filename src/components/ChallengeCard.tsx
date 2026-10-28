@@ -75,27 +75,27 @@ export function ChallengeCard({
             {challenge.emoji}
           </span>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="display-title truncate text-base text-foreground">{challenge.title}</span>
-            <span className="font-mono text-[10px] uppercase text-muted-foreground">
+            <span className="font-semibold tracking-tight truncate text-base text-foreground">{challenge.title}</span>
+            <span className="tabular-nums text-[10px] text-muted-foreground">
               {format(localDay(challenge.starts_at), "dd MMM", { locale: ptBR })} –{" "}
               {format(localDay(challenge.ends_at), "dd MMM", { locale: ptBR })}
               {challenge.target !== null && ` · meta ${challenge.target}`}
             </span>
           </div>
           {status === "ended" ? (
-            <span className="flex items-center gap-1 rounded-lg bg-secondary px-2 py-1.5 font-mono text-[9px] font-bold tracking-[0.1em] text-muted-foreground">
+            <span className="flex items-center gap-1 rounded-lg bg-secondary px-2 py-1.5 tabular-nums text-[9px] font-bold text-muted-foreground">
               <Trophy className="h-3 w-3" />
               ENCERRADO
             </span>
           ) : status === "upcoming" ? (
-            <span className="flex items-center gap-1 rounded-lg bg-secondary px-2 py-1.5 font-mono text-[9px] font-bold tracking-[0.1em] text-muted-foreground">
+            <span className="flex items-center gap-1 rounded-lg bg-secondary px-2 py-1.5 tabular-nums text-[9px] font-bold text-muted-foreground">
               <Hourglass className="h-3 w-3" />
               EM BREVE
             </span>
           ) : (
             <span
               className={cn(
-                "flex items-center gap-1 rounded-lg px-2 py-1.5 font-mono text-[9px] font-bold tracking-[0.1em]",
+                "flex items-center gap-1 rounded-lg px-2 py-1.5 tabular-nums text-[9px] font-bold",
                 lastDay ? "animate-glow-pulse bg-accent text-accent-foreground [animation-duration:1.6s]" : "bg-accent/15 text-accent",
               )}
             >
@@ -130,7 +130,7 @@ export function ChallengeCard({
               const isLeader = status !== "ended" && s.position === 1 && s.count > 0;
               return (
                 <div key={s.user_id} className={cn("flex items-center gap-2.5 rounded-xl px-2 py-1.5", isMe && "bg-primary/5")}>
-                  <span className="w-5 text-center font-mono text-xs font-bold text-muted-foreground">{s.position}</span>
+                  <span className="w-5 text-center tabular-nums text-xs font-bold text-muted-foreground">{s.position}</span>
                   <InitialAvatar name={s.display_name} avatarUrl={s.avatar_url} isSelf={isMe} className="h-7 w-7 rounded-lg text-[11px]" />
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <div className="flex items-baseline justify-between gap-2">
@@ -138,13 +138,13 @@ export function ChallengeCard({
                         {isMe ? "Você" : s.display_name}
                         {(isChampion || isLeader) && <Crown className="h-3.5 w-3.5 shrink-0 fill-primary/30 text-primary" />}
                         {s.hitTarget && (
-                          <span className="flex items-center gap-0.5 rounded bg-primary/15 px-1 py-0.5 font-mono text-[8px] font-bold tracking-[0.08em] text-primary">
+                          <span className="flex items-center gap-0.5 rounded bg-primary/15 px-1 py-0.5 tabular-nums text-[8px] font-bold text-primary">
                             <Check className="h-2.5 w-2.5" strokeWidth={4} />
                             META
                           </span>
                         )}
                       </span>
-                      <span className={cn("font-mono text-xs font-bold tabular-nums", s.position === 1 ? "text-primary" : "text-muted-foreground")}>
+                      <span className={cn("tabular-nums text-xs font-bold", s.position === 1 ? "text-primary" : "text-muted-foreground")}>
                         {s.count}
                         {challenge.target !== null && <span className="text-muted-foreground/50">/{challenge.target}</span>}
                       </span>
@@ -169,7 +169,7 @@ export function ChallengeCard({
               );
             })}
             {scores.length > 5 && (
-              <span className="text-center font-mono text-[10px] text-muted-foreground/60">+{scores.length - 5} participantes</span>
+              <span className="text-center tabular-nums text-[10px] text-muted-foreground/60">+{scores.length - 5} participantes</span>
             )}
           </div>
         )}
@@ -181,9 +181,9 @@ export function ChallengeCard({
               type="button"
               disabled={isJoining}
               onClick={onJoin}
-              className="relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary py-3 text-[13px] font-extrabold text-primary-foreground shadow-hard-sm active-hard disabled:opacity-50"
+              className="relative flex flex-1 items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary py-3 text-[13px] font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
             >
-              <span className="absolute left-0 top-0 h-full w-2/5 animate-sheen bg-gradient-to-r from-transparent via-white/50 to-transparent [animation-duration:3s]" />
+              <span className="absolute left-0 top-0 h-full w-2/5 animate-shine bg-gradient-to-r from-transparent via-white/50 to-transparent [animation-duration:3s]" />
               <Target className="h-4 w-4" />
               Entrar no desafio
             </button>

@@ -92,7 +92,7 @@ export default function Admin() {
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <Loader2 className="h-8 w-8 animate-spin text-lime" />
       </div>
     );
   }
@@ -116,10 +116,10 @@ export default function Admin() {
             <Link to="/"><ArrowLeft className="h-5 w-5" /></Link>
           </Button>
           <div className="flex items-center gap-2">
-            <Shield className="h-5 w-5 text-primary" />
+            <Shield className="h-5 w-5 text-lime" />
             <h1 className="display-title text-[22px]">Admin</h1>
           </div>
-          <div className="ml-auto flex items-center gap-2 font-mono text-xs uppercase text-muted-foreground">
+          <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground">
             <Users className="h-4 w-4" />
             {users.length} usuários
           </div>
@@ -131,7 +131,7 @@ export default function Admin() {
         <Card className="border-border/50">
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Plus className="h-5 w-5 text-primary" />
+              <Plus className="h-5 w-5 text-lime" />
               Criar Novo Usuário
             </CardTitle>
           </CardHeader>

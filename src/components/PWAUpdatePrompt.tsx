@@ -51,7 +51,7 @@ export function PWAUpdatePrompt() {
   if (!needRefresh) return null;
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-border bg-card p-3.5 shadow-2xl animate-rise-in">
+    <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto flex max-w-md items-center gap-3 card-rim p-3.5 shadow-2xl animate-fade-up">
       <RefreshCw className="h-5 w-5 shrink-0 text-accent" />
       <span className="min-w-0 flex-1 text-xs font-semibold leading-snug text-foreground">Nova versão disponível.</span>
       <Button size="sm" onClick={handleUpdate}>

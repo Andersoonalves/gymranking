@@ -33,8 +33,8 @@ import {
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="flex flex-col gap-3 rounded-[18px] border border-border bg-card p-4">
-      <span className="mono-label">{label}</span>
+    <div className="flex flex-col gap-3 card-rim p-4">
+      <span className="text-xs font-medium text-muted-foreground">{label}</span>
       {children}
     </div>
   );
@@ -64,9 +64,9 @@ function GroupNotifyRow({
   const members = Object.entries(profiles).filter(([id]) => id !== userId);
 
   return (
-    <div className="flex flex-col gap-2 rounded-[13px] border border-border/60 bg-secondary/40 p-3">
+    <div className="flex flex-col gap-2 rounded-xl border border-border/60 bg-secondary/40 p-3">
       <div className="flex items-center gap-3">
-        <span className="min-w-0 flex-1 truncate text-sm font-extrabold text-foreground">{groupName}</span>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground">{groupName}</span>
         <Switch
           checked={!groupMuted}
           disabled={disabled}
@@ -286,13 +286,13 @@ export default function Settings() {
   };
 
   const inputClass =
-    "w-full rounded-[11px] border border-border bg-background p-3 text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary";
+    "w-full rounded-xl border border-border bg-background p-3 text-sm font-semibold text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary";
   const weeklyGoal = myProfile?.weekly_goal ?? 4;
 
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-3 px-5 pb-4 pt-7 safe-area-top">
       <div className="flex flex-col gap-1">
-        <h1 className="display-title text-[28px] text-foreground">Configurações</h1>
+        <h1 className="font-semibold tracking-tight text-3xl text-foreground">Configurações</h1>
         <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
       </div>
 
@@ -303,7 +303,7 @@ export default function Settings() {
         )}
         <form onSubmit={handleSaveProfile} className="flex flex-col gap-2.5">
           <label className="flex flex-col gap-1.5">
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">Nome exibido</span>
+            <span className="text-[11px] font-semibold text-muted-foreground">Nome exibido</span>
             <input
               type="text"
               value={displayName}
@@ -316,7 +316,7 @@ export default function Settings() {
           <button
             type="submit"
             disabled={loadingProfile || savingProfile}
-            className="self-start rounded-[10px] border border-border bg-secondary px-3.5 py-2.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+            className="self-start rounded-xl border border-border bg-secondary px-3.5 py-2.5 text-xs font-semibold text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
           >
             {savingProfile ? "Salvando…" : "Salvar perfil"}
           </button>
@@ -334,9 +334,9 @@ export default function Settings() {
               disabled={updateWeeklyGoal.isPending}
               onClick={() => updateWeeklyGoal.mutate(n)}
               className={cn(
-                "flex-1 rounded-[11px] py-2.5 font-mono text-sm",
+                "flex-1 rounded-xl py-2.5 text-sm",
                 weeklyGoal === n
-                  ? "bg-primary font-bold text-primary-foreground"
+                  ? "bg-primary font-semibold text-primary-foreground"
                   : "border border-border bg-secondary/60 font-semibold text-muted-foreground",
               )}
             >
@@ -357,13 +357,13 @@ export default function Settings() {
             disabled={savingPassword}
             minLength={6}
             autoComplete="new-password"
-            className={cn(inputClass, "font-mono")}
+            className={inputClass}
           />
           <span className="text-[11px] text-muted-foreground/70">Mínimo 6 caracteres.</span>
           <button
             type="submit"
             disabled={savingPassword || !newPassword.trim()}
-            className="self-start rounded-[10px] border border-border bg-secondary px-3.5 py-2.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+            className="self-start rounded-xl border border-border bg-secondary px-3.5 py-2.5 text-xs font-semibold text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
           >
             {savingPassword ? "Alterando…" : "Alterar senha"}
           </button>
@@ -374,7 +374,7 @@ export default function Settings() {
       <Section label="Notificações">
         <div className={cn("flex items-center gap-3", !pushSupported && "opacity-50")}>
           <div className="flex flex-1 flex-col gap-0.5">
-            <span className="text-sm font-bold text-foreground">Ativar notificações</span>
+            <span className="text-sm font-semibold text-foreground">Ativar notificações</span>
             <span className="text-[11px] leading-snug text-muted-foreground">
               {pushSupported ? "Avisos quando alguém registrar um treino." : "Indisponível neste dispositivo."}
             </span>
@@ -388,7 +388,7 @@ export default function Settings() {
         </div>
         <div className={cn("flex items-center gap-3", (!pushSupported || !notifications) && "opacity-50")}>
           <div className="flex flex-1 flex-col gap-0.5">
-            <span className="text-sm font-bold text-foreground">Resumo semanal</span>
+            <span className="text-sm font-semibold text-foreground">Resumo semanal</span>
             <span className="text-[11px] leading-snug text-muted-foreground">
               {pushSupported ? "Domingo à noite: como fechou a semana no grupo." : "Indisponível neste dispositivo."}
             </span>
@@ -402,7 +402,7 @@ export default function Settings() {
         </div>
         {groups.length > 0 && (
           <div className={cn("flex flex-col gap-2 border-t border-border/60 pt-3", !notifications && "opacity-50")}>
-            <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+            <span className="text-[11px] font-semibold text-muted-foreground">
               Avisos de treino por grupo
             </span>
             {groups.map((g) => (
@@ -426,7 +426,7 @@ export default function Settings() {
       <Section label="Novidades">
         <div className="flex items-center gap-3">
           <div className="flex flex-1 flex-col gap-0.5">
-            <span className="text-sm font-bold text-foreground">O que mudou no app</span>
+            <span className="text-sm font-semibold text-foreground">O que mudou no app</span>
             <span className="text-[11px] leading-snug text-muted-foreground">
               Rever a apresentação da última novidade.
             </span>
@@ -434,7 +434,7 @@ export default function Settings() {
           <button
             type="button"
             onClick={() => window.dispatchEvent(new Event(SHOW_TOUR_EVENT))}
-            className="flex shrink-0 items-center gap-1.5 rounded-[10px] border border-border bg-secondary px-3 py-2.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary"
+            className="flex shrink-0 items-center gap-1.5 rounded-xl border border-border bg-secondary px-3 py-2.5 text-xs font-semibold text-foreground hover:border-primary hover:text-primary"
           >
             <Sparkles className="h-3.5 w-3.5" />
             Ver novidades
@@ -457,9 +457,9 @@ export default function Settings() {
               type="button"
               onClick={() => setTheme(value)}
               className={cn(
-                "flex-1 rounded-[11px] py-[11px] text-xs",
+                "flex-1 rounded-xl py-[11px] text-xs",
                 theme === value
-                  ? "bg-primary font-extrabold text-primary-foreground"
+                  ? "bg-primary font-semibold text-primary-foreground"
                   : "border border-border bg-secondary/60 font-semibold text-muted-foreground",
               )}
             >
@@ -469,7 +469,7 @@ export default function Settings() {
         </div>
 
         <div className="flex flex-col gap-2 border-t border-border/60 pt-3">
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.12em] text-muted-foreground">
+          <span className="text-[11px] font-semibold text-muted-foreground">
             Cor principal
           </span>
           <div className="flex items-center gap-2">
@@ -482,7 +482,7 @@ export default function Settings() {
                 onClick={() => handleColorChange(hex)}
                 style={{ backgroundColor: hex }}
                 className={cn(
-                  "h-9 flex-1 rounded-[11px] border-2 transition-transform active:scale-95",
+                  "h-9 flex-1 rounded-xl border-2 transition-transform active:scale-95",
                   primaryColor.toLowerCase() === hex.toLowerCase()
                     ? "border-foreground"
                     : "border-transparent",
@@ -490,7 +490,7 @@ export default function Settings() {
               />
             ))}
             <label
-              className="relative h-9 w-9 shrink-0 overflow-hidden rounded-[11px] border border-border bg-secondary/60"
+              className="relative h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-border bg-secondary/60"
               title="Escolher outra cor"
             >
               <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
@@ -505,7 +505,7 @@ export default function Settings() {
               />
             </label>
           </div>
-          <span className="font-mono text-[11px] text-muted-foreground/70">{primaryColor.toUpperCase()}</span>
+          <span className="text-[11px] text-muted-foreground/70">{primaryColor.toUpperCase()}</span>
         </div>
       </Section>
 
@@ -515,11 +515,11 @@ export default function Settings() {
           <p className="text-sm text-muted-foreground">Você não está em nenhum grupo.</p>
         ) : (
           groups.map((g) => (
-            <div key={g.id} className="flex items-center gap-3 rounded-[13px] border border-border/60 bg-secondary/40 p-3">
+            <div key={g.id} className="flex items-center gap-3 rounded-xl border border-border/60 bg-secondary/40 p-3">
               <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                <span className="truncate text-sm font-extrabold text-foreground">{g.name}</span>
+                <span className="truncate text-sm font-semibold text-foreground">{g.name}</span>
                 <div className="flex items-center gap-2">
-                  <span className="rounded-[7px] border border-border bg-background px-2 py-1 font-mono text-[11px] font-bold tracking-[0.1em] text-primary">
+                  <span className="rounded-xl border border-border bg-background px-2 py-1 text-[11px] font-semibold text-primary">
                     {g.invite_code}
                   </span>
                   <button
@@ -540,7 +540,7 @@ export default function Settings() {
               <button
                 type="button"
                 onClick={() => setLeaveGroupId(g.id)}
-                className="shrink-0 text-xs font-bold text-muted-foreground hover:text-destructive"
+                className="shrink-0 text-xs font-semibold text-muted-foreground hover:text-destructive"
               >
                 Sair
               </button>
@@ -553,20 +553,20 @@ export default function Settings() {
       <button
         type="button"
         onClick={signOut}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-transparent p-[15px] text-sm font-bold text-destructive hover:border-destructive hover:bg-destructive/10"
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-transparent p-[15px] text-sm font-semibold text-destructive hover:border-destructive hover:bg-destructive/10"
       >
         <LogOut className="h-[18px] w-[18px]" />
         Sair da conta
       </button>
 
-      <p title={versionTitle()} className="pb-4 text-center font-mono text-[10px] text-muted-foreground/60">
+      <p title={versionTitle()} className="pb-4 text-center text-[11px] text-muted-foreground/60">
         v{APP_VERSION}
       </p>
 
       <AlertDialog open={!!leaveGroupId} onOpenChange={(open) => !open && setLeaveGroupId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="display-title">Sair do grupo?</AlertDialogTitle>
+            <AlertDialogTitle className="font-semibold tracking-tight">Sair do grupo?</AlertDialogTitle>
             <AlertDialogDescription>
               Você deixará de ver o ranking e a atividade deste grupo. Pode entrar de novo depois com o código.
             </AlertDialogDescription>
@@ -575,7 +575,7 @@ export default function Settings() {
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleLeaveGroup}
-              className="bg-destructive text-destructive-foreground shadow-hard-destructive hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Sair
             </AlertDialogAction>

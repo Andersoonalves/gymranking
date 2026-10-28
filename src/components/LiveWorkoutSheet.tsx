@@ -127,19 +127,19 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[96dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-background p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
+        className="max-h-[96dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-background p-0 sheet-desktop-modal"
       >
-        <div className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
+        <div className="flex flex-col gap-3.5 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3">
           <div className="h-1 w-9 self-center rounded-full bg-border" />
 
           <div className="flex items-center gap-3">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <SheetTitle className="display-title text-xl text-foreground">{program.title}</SheetTitle>
-              <span className="font-mono text-[10px] font-semibold tracking-[0.1em] text-muted-foreground">
+              <SheetTitle className="font-semibold tracking-tight text-xl text-foreground">{program.title}</SheetTitle>
+              <span className="tabular-nums text-[10px] font-semibold text-muted-foreground">
                 EM ANDAMENTO · {doneCount} DE {exercises.length}
               </span>
             </div>
-            <span className="rounded-[9px] bg-accent/15 px-3 py-[7px] font-mono text-sm font-bold tabular-nums text-accent">
+            <span className="rounded-[9px] bg-accent/15 px-3 py-[7px] tabular-nums text-sm font-bold text-accent">
               {formatClock(elapsed)}
             </span>
           </div>
@@ -153,8 +153,8 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
             <div className="relative flex items-center gap-4 overflow-hidden rounded-[18px] border border-border bg-gradient-to-br from-secondary to-card p-[18px]">
               <div className="pointer-events-none absolute inset-0 animate-glow-pulse bg-[radial-gradient(140px_80px_at_80%_50%,hsl(var(--accent)/0.2),transparent_70%)] [animation-duration:2.4s]" />
               <div className="relative flex flex-1 flex-col gap-0.5">
-                <span className="mono-label text-accent">Descanso</span>
-                <span className="font-mono text-[40px] font-bold leading-[0.9] tabular-nums text-foreground">{formatClock(rest)}</span>
+                <span className="text-xs font-medium text-muted-foreground text-accent">Descanso</span>
+                <span className="tabular-nums text-[40px] font-bold leading-[0.9] text-foreground">{formatClock(rest)}</span>
               </div>
               <div className="relative flex gap-1.5">
                 <button
@@ -169,7 +169,7 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
                   type="button"
                   aria-label="Pular descanso"
                   onClick={() => setRest(null)}
-                  className="flex h-11 w-11 items-center justify-center rounded-[13px] bg-accent text-accent-foreground shadow-[0_3px_0_hsl(var(--accent)/0.5)] active:translate-y-[1px] active:shadow-[0_2px_0_hsl(var(--accent)/0.5)]"
+                  className="flex h-11 w-11 items-center justify-center rounded-[13px] bg-accent text-accent-foreground transition-transform ease-smooth active:scale-[0.98]"
                 >
                   <SkipForward className="h-[22px] w-[22px]" />
                 </button>
@@ -198,9 +198,9 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
                 );
               })()}
               <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                <span className="mono-label text-primary">Agora</span>
+                <span className="text-xs font-medium text-muted-foreground text-primary">Agora</span>
                 <span className="truncate text-[15px] font-extrabold text-foreground">{current.title}</span>
-                <span className="font-mono text-[11px] text-muted-foreground">
+                <span className="tabular-nums text-[11px] text-muted-foreground">
                   {current.sets}×{current.reps} REPS
                 </span>
               </div>
@@ -213,7 +213,7 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
                 >
                   <Minus className="h-4 w-4" />
                 </button>
-                <span className="min-w-[52px] text-center font-mono text-sm font-bold tabular-nums text-foreground">
+                <span className="min-w-[52px] text-center tabular-nums text-sm font-bold text-foreground">
                   {loadOf(current).toLocaleString("pt-BR")}
                   <span className="ml-0.5 text-[9px] text-muted-foreground">KG</span>
                 </span>
@@ -221,7 +221,7 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
                   type="button"
                   aria-label="Aumentar carga"
                   onClick={() => adjustLoad(current.id, 2.5)}
-                  className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-primary text-primary-foreground shadow-hard-sm active-hard"
+                  className="flex h-9 w-9 items-center justify-center rounded-[10px] bg-primary text-primary-foreground transition-transform active:scale-[0.98]"
                 >
                   <Plus className="h-4 w-4" />
                 </button>
@@ -280,7 +280,7 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
                     >
                       {e.title}
                     </span>
-                    <span className="font-mono text-[10px] text-muted-foreground/70">
+                    <span className="tabular-nums text-[10px] text-muted-foreground/70">
                       {e.sets}×{e.reps} · {loadOf(e).toLocaleString("pt-BR")} KG
                     </span>
                   </span>
@@ -294,9 +294,9 @@ export function LiveWorkoutSheet({ open, onOpenChange, program }: LiveWorkoutShe
               type="button"
               disabled={addWorkout.isPending}
               onClick={finish}
-              className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[14px] bg-primary p-[18px] text-[15px] font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50"
+              className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[14px] bg-primary p-[18px] text-[15px] font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
             >
-              <span className="absolute left-0 top-0 h-full w-2/5 animate-sheen bg-gradient-to-r from-transparent via-white/50 to-transparent [animation-duration:3.4s]" />
+              <span className="absolute left-0 top-0 h-full w-2/5 animate-shine bg-gradient-to-r from-transparent via-white/50 to-transparent [animation-duration:3.4s]" />
               <Flag className="h-5 w-5" />
               {addWorkout.isPending ? "Registrando…" : "Concluir e registrar"}
             </button>

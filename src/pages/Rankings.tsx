@@ -36,7 +36,7 @@ function PodiumColumn({
   const height = champion ? 88 : entry.position === 2 ? 64 : 52;
   return (
     <div
-      className="flex flex-1 flex-col items-center gap-2 animate-rise-in"
+      className="flex flex-1 flex-col items-center gap-2 animate-fade-up"
       style={{ animationDelay: champion ? "0s" : `${entry.position * 0.12}s` }}
     >
       {champion && <Crown className="h-5 w-5 animate-flame fill-primary/30 text-primary [animation-duration:3s]" />}
@@ -58,10 +58,10 @@ function PodiumColumn({
         )}
         style={{ height }}
       >
-        <span className={cn("font-mono font-bold", champion ? "text-3xl text-primary-foreground" : "text-[20px] text-muted-foreground")}>
+        <span className={cn("tabular-nums font-bold", champion ? "text-3xl text-primary-foreground" : "text-[20px] text-muted-foreground")}>
           {entry.position}
         </span>
-        <span className={cn("font-mono text-[9px] font-semibold uppercase", champion ? "text-primary-foreground/70" : "text-muted-foreground/70")}>
+        <span className={cn("tabular-nums text-[9px] font-semibold", champion ? "text-primary-foreground/70" : "text-muted-foreground/70")}>
           {entry.count} {entry.count === 1 ? "treino" : "treinos"}
         </span>
       </div>
@@ -140,7 +140,7 @@ export default function Rankings() {
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-4 px-5 pb-4 pt-7 safe-area-top lg:max-w-5xl lg:gap-5 lg:px-8 lg:pt-7">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="display-title text-[28px] text-foreground">Rankings</h1>
+        <h1 className="font-semibold tracking-tight text-[28px] text-foreground">Rankings</h1>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -222,7 +222,7 @@ export default function Rankings() {
                 </span>
                 <span
                   className={cn(
-                    "font-mono font-bold tabular-nums leading-none",
+                    "tabular-nums font-bold leading-none",
                     champion ? "text-[40px] text-primary" : "text-[30px]",
                     !champion && (isMe ? "text-accent" : "text-foreground/70"),
                   )}
@@ -231,7 +231,7 @@ export default function Rankings() {
                 </span>
                 <span
                   className={cn(
-                    "relative rounded-md px-2.5 py-1 font-mono text-[10px] font-bold tracking-[0.12em]",
+                    "relative rounded-md px-2.5 py-1 tabular-nums text-[10px] font-bold",
                     champion ? "bg-primary/15 text-primary" : isMe ? "bg-accent/15 text-accent" : "bg-secondary text-muted-foreground",
                   )}
                 >
@@ -296,10 +296,10 @@ export default function Rankings() {
       ) : (
         <>
         {/* Tabela desktop: Pos · Atleta · Treinos · Barra · Streak · Último */}
-        <div className="hidden overflow-hidden rounded-[18px] border border-border bg-card lg:block">
+        <div className="hidden overflow-hidden card-rim lg:block">
           <div className="grid grid-cols-[56px_minmax(160px,1fr)_90px_minmax(120px,220px)_80px_110px] items-center gap-4 border-b border-border bg-secondary/50 px-5 py-3">
             {["Pos", "Atleta", "Treinos", "Período", "Streak", "Último"].map((h, i) => (
-              <span key={h} className={cn("mono-label", i === 5 && "text-right")}>
+              <span key={h} className={cn("text-xs font-medium text-muted-foreground", i === 5 && "text-right")}>
                 {h}
               </span>
             ))}
@@ -323,10 +323,10 @@ export default function Rankings() {
                 )}
               >
                 <span className="flex items-baseline gap-1.5">
-                  <span className={cn("font-mono text-[17px] font-bold tabular-nums", isFirst ? "text-primary" : "text-muted-foreground")}>
+                  <span className={cn("tabular-nums text-[17px] font-bold", isFirst ? "text-primary" : "text-muted-foreground")}>
                     {entry.position}
                   </span>
-                  {tied && <span className="font-mono text-[9px] font-semibold text-muted-foreground/70">=</span>}
+                  {tied && <span className="tabular-nums text-[9px] font-semibold text-muted-foreground/70">=</span>}
                 </span>
                 <span className="flex min-w-0 items-center gap-3">
                   <InitialAvatar name={entry.display_name} avatarUrl={entry.avatar_url} isSelf={isMe} className="h-[34px] w-[34px] rounded-[10px] text-[13px]" />
@@ -334,7 +334,7 @@ export default function Rankings() {
                     {isMe ? "Você" : entry.display_name}
                   </span>
                 </span>
-                <span className={cn("font-mono text-[17px] font-bold tabular-nums", isFirst ? "text-primary" : "text-muted-foreground")}>
+                <span className={cn("tabular-nums text-[17px] font-bold", isFirst ? "text-primary" : "text-muted-foreground")}>
                   {entry.count}
                 </span>
                 <span className="block h-2 overflow-hidden rounded-[4px] bg-secondary">
@@ -345,9 +345,9 @@ export default function Rankings() {
                 </span>
                 <span className="flex items-center gap-1.5">
                   <Flame className={cn("h-4 w-4", (stats?.streak ?? 0) > 0 ? "fill-accent/20 text-accent" : "text-muted-foreground/30")} />
-                  <span className="font-mono text-[13px] font-bold tabular-nums text-foreground/80">{stats?.streak ?? 0}</span>
+                  <span className="tabular-nums text-[13px] font-bold text-foreground/80">{stats?.streak ?? 0}</span>
                 </span>
-                <span className="text-right font-mono text-xs text-muted-foreground">
+                <span className="text-right tabular-nums text-xs text-muted-foreground">
                   {stats ? format(stats.last, "dd MMM · HH:mm", { locale: ptBR }) : "—"}
                 </span>
               </button>
@@ -375,10 +375,10 @@ export default function Rankings() {
                 )}
               >
                 <div className="flex min-w-[28px] flex-col items-center">
-                  <span className={cn("font-mono text-[17px] font-bold", isFirst ? "text-primary" : "text-muted-foreground")}>
+                  <span className={cn("tabular-nums text-[17px] font-bold", isFirst ? "text-primary" : "text-muted-foreground")}>
                     {entry.position}
                   </span>
-                  {tied && <span className="font-mono text-[8px] font-semibold tracking-[0.06em] text-muted-foreground">EMP.</span>}
+                  {tied && <span className="tabular-nums text-[8px] font-semibold text-muted-foreground">EMP.</span>}
                 </div>
                 <InitialAvatar name={entry.display_name} avatarUrl={entry.avatar_url} isSelf={isMe} className="h-9 w-9 rounded-[11px] text-sm" />
                 <div className="flex min-w-0 flex-1 flex-col gap-[7px]">
@@ -386,7 +386,7 @@ export default function Rankings() {
                     <span className={cn("truncate text-sm font-extrabold", isMe ? "text-primary" : "text-foreground")}>
                       {isMe ? "Você" : entry.display_name}
                     </span>
-                    <span className={cn("font-mono text-[15px] font-bold tabular-nums", isFirst ? "text-primary" : "text-muted-foreground")}>
+                    <span className={cn("tabular-nums text-[15px] font-bold", isFirst ? "text-primary" : "text-muted-foreground")}>
                       {entry.count}
                     </span>
                   </div>

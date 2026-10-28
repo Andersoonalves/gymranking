@@ -108,21 +108,21 @@ export function ExerciseEditorSheet({
   };
 
   const numberInput =
-    "w-full rounded-[9px] border border-border bg-background px-3 py-2 text-right font-mono text-sm font-bold text-foreground outline-none focus:border-primary";
+    "w-full rounded-[9px] border border-border bg-background px-3 py-2 text-right tabular-nums text-sm font-bold text-foreground outline-none focus:border-primary";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
+        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card/90 p-0 backdrop-blur-[8px] sheet-desktop-modal"
       >
-        <div className="flex flex-col gap-4 px-5 pb-6 pt-3 safe-area-bottom">
+        <div className="flex flex-col gap-4 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3">
           <div className="h-1 w-9 self-center rounded-full bg-border" />
 
           <div className="flex items-center gap-2.5">
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <span className="mono-label truncate">{programTitle}</span>
-              <SheetTitle className="text-xl font-black leading-tight tracking-tight text-foreground">
+              <span className="text-xs font-medium text-muted-foreground truncate">{programTitle}</span>
+              <SheetTitle className="text-xl font-bold leading-tight tracking-tight text-foreground">
                 {exercise.title}
               </SheetTitle>
             </div>
@@ -170,7 +170,7 @@ export function ExerciseEditorSheet({
                       <Play className="h-8 w-8 fill-current" />
                     </span>
                   </span>
-                  <span className="absolute left-3 top-3 rounded-[7px] bg-black/80 px-2 py-1 font-mono text-[9px] font-bold tracking-[0.12em] text-primary">
+                  <span className="absolute left-3 top-3 rounded-[7px] bg-black/80 px-2 py-1 tabular-nums text-[9px] font-bold text-primary">
                     YOUTUBE
                   </span>
                 </button>
@@ -180,7 +180,7 @@ export function ExerciseEditorSheet({
 
           {/* Link do vídeo */}
           <div className="flex flex-col gap-2">
-            <span className="mono-label">Link do vídeo · YouTube</span>
+            <span className="text-xs font-medium text-muted-foreground">Link do vídeo · YouTube</span>
             <div className="flex gap-1.5">
               <div
                 className={cn(
@@ -194,7 +194,7 @@ export function ExerciseEditorSheet({
                   value={videoUrl}
                   onChange={(e) => setVideoUrl(e.target.value)}
                   placeholder="youtu.be/…"
-                  className="min-w-0 flex-1 bg-transparent font-mono text-xs text-foreground outline-none placeholder:text-muted-foreground/50"
+                  className="min-w-0 flex-1 bg-transparent tabular-nums text-xs text-foreground outline-none placeholder:text-muted-foreground/50"
                 />
                 {videoId && <CheckCircle2 className="h-[17px] w-[17px] shrink-0 text-primary" />}
               </div>
@@ -215,20 +215,20 @@ export function ExerciseEditorSheet({
           {/* Séries */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="mono-label">Séries</span>
-              <span className="font-mono text-[10px] tracking-[0.06em] text-muted-foreground/60">REPS · CARGA</span>
+              <span className="text-xs font-medium text-muted-foreground">Séries</span>
+              <span className="tabular-nums text-[10px] text-muted-foreground/60">REPS · CARGA</span>
             </div>
             <div className="grid grid-cols-3 gap-2">
               <label className="flex flex-col gap-1">
-                <span className="font-mono text-[9px] font-semibold uppercase text-muted-foreground/70">Séries</span>
+                <span className="tabular-nums text-[9px] font-semibold text-muted-foreground/70">Séries</span>
                 <input type="number" min="1" inputMode="numeric" value={sets} onChange={(e) => setSets(e.target.value)} className={numberInput} />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="font-mono text-[9px] font-semibold uppercase text-muted-foreground/70">Reps</span>
+                <span className="tabular-nums text-[9px] font-semibold text-muted-foreground/70">Reps</span>
                 <input type="number" min="1" inputMode="numeric" value={reps} onChange={(e) => setReps(e.target.value)} className={numberInput} />
               </label>
               <label className="flex flex-col gap-1">
-                <span className="font-mono text-[9px] font-semibold uppercase text-muted-foreground/70">KG</span>
+                <span className="tabular-nums text-[9px] font-semibold text-muted-foreground/70">KG</span>
                 <input type="number" min="0" step="0.5" inputMode="decimal" value={load} onChange={(e) => setLoad(e.target.value)} className={numberInput} />
               </label>
             </div>
@@ -238,9 +238,9 @@ export function ExerciseEditorSheet({
           {(currentPR || chartData.length >= 2) && (
             <div className="flex flex-col gap-2 rounded-2xl border border-border bg-background/60 p-3.5">
               <div className="flex items-center justify-between">
-                <span className="mono-label">Evolução de carga</span>
+                <span className="text-xs font-medium text-muted-foreground">Evolução de carga</span>
                 {currentPR && (
-                  <span className="flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 font-mono text-[10px] font-bold text-primary">
+                  <span className="flex items-center gap-1 rounded-lg bg-primary/15 px-2 py-1 tabular-nums text-[10px] font-bold text-primary">
                     <Trophy className="h-3 w-3" />
                     PR {currentPR.load_kg} KG
                   </span>
@@ -259,13 +259,13 @@ export function ExerciseEditorSheet({
                       dataKey="date"
                       tickLine={false}
                       axisLine={false}
-                      tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))", fontFamily: "IBM Plex Mono" }}
+                      tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))", fontFamily: "Inter" }}
                     />
                     <YAxis
                       domain={["dataMin - 5", "dataMax + 5"]}
                       tickLine={false}
                       axisLine={false}
-                      tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))", fontFamily: "IBM Plex Mono" }}
+                      tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))", fontFamily: "Inter" }}
                     />
                     <Tooltip
                       contentStyle={{
@@ -273,7 +273,7 @@ export function ExerciseEditorSheet({
                         border: "1px solid hsl(var(--border))",
                         borderRadius: "10px",
                         fontSize: "12px",
-                        fontFamily: "IBM Plex Mono",
+                        fontFamily: "Inter", fontVariantNumeric: "tabular-nums",
                         color: "hsl(var(--popover-foreground))",
                       }}
                       formatter={(value: number) => [`${value} kg`, "Carga"]}
@@ -297,7 +297,7 @@ export function ExerciseEditorSheet({
 
           {/* Anotações */}
           <div className="flex flex-col gap-2">
-            <label htmlFor="exercise-notes" className="mono-label">
+            <label htmlFor="exercise-notes" className="text-xs font-medium text-muted-foreground">
               Anotações de execução
             </label>
             <textarea
@@ -322,7 +322,7 @@ export function ExerciseEditorSheet({
               type="button"
               disabled={isSaving}
               onClick={handleSave}
-              className="flex-[2] rounded-[13px] bg-primary p-4 text-sm font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50"
+              className="flex-[2] rounded-[13px] bg-primary p-4 text-sm font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
             >
               {isSaving ? "Salvando…" : "Salvar exercício"}
             </button>

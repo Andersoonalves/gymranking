@@ -189,7 +189,7 @@ export default function Treinos() {
   return (
     <div className="mx-auto flex max-w-lg flex-col gap-3.5 px-5 pb-4 pt-7 safe-area-top lg:max-w-6xl lg:px-8 lg:pt-7">
       <div className="flex flex-col gap-1">
-        <h1 className="display-title text-[28px] text-foreground">Meus treinos</h1>
+        <h1 className="font-semibold tracking-tight text-[28px] text-foreground">Meus treinos</h1>
         <p className="text-xs text-muted-foreground">Monte seus treinos ou importe um template pronto.</p>
       </div>
 
@@ -209,14 +209,14 @@ export default function Treinos() {
           type="button"
           aria-label="Criar treino"
           onClick={() => setCreating((v) => !v)}
-          className="flex w-11 items-center justify-center rounded-[11px] bg-primary text-primary-foreground shadow-hard-sm active-hard"
+          className="flex w-11 items-center justify-center rounded-[11px] bg-primary text-primary-foreground transition-transform active:scale-[0.98]"
         >
           <Plus className="h-[22px] w-[22px]" />
         </button>
       </div>
 
       {creating && (
-        <div className="flex gap-2 animate-rise-in">
+        <div className="flex gap-2 animate-fade-up">
           <input
             type="text"
             autoFocus
@@ -230,7 +230,7 @@ export default function Treinos() {
             type="button"
             disabled={createProgram.isPending || !newTitle.trim()}
             onClick={handleCreateProgram}
-            className="rounded-[11px] bg-primary px-4 text-sm font-extrabold text-primary-foreground shadow-hard-sm active-hard disabled:opacity-50"
+            className="rounded-[11px] bg-primary px-4 text-sm font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
           >
             Criar
           </button>
@@ -280,7 +280,7 @@ export default function Treinos() {
               <button
                 type="button"
                 onClick={() => setTemplateSheetOpen(true)}
-                className="rounded-[11px] bg-primary px-4 py-3 text-xs font-extrabold text-primary-foreground shadow-hard-sm active-hard"
+                className="rounded-[11px] bg-primary px-4 py-3 text-xs font-extrabold text-primary-foreground transition-transform active:scale-[0.98]"
               >
                 Ver templates
               </button>
@@ -296,7 +296,7 @@ export default function Treinos() {
             return (
               <div
                 key={program.id}
-                className={cn("overflow-hidden rounded-[18px] border bg-card", isOpen ? "border-border" : "border-border/60")}
+                className={cn("overflow-hidden card-rim", !isOpen && "opacity-90")}
               >
                 <button
                   type="button"
@@ -305,15 +305,15 @@ export default function Treinos() {
                 >
                   <span
                     className={cn(
-                      "flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] font-mono text-base font-black",
+                      "flex h-[38px] w-[38px] shrink-0 items-center justify-center rounded-[11px] tabular-nums text-base font-bold",
                       isOpen ? "bg-primary text-primary-foreground" : "border border-border bg-secondary text-secondary-foreground",
                     )}
                   >
                     {letter}
                   </span>
                   <span className="flex min-w-0 flex-1 flex-col gap-1">
-                    <span className="display-title truncate text-base text-foreground">{program.title}</span>
-                    <span className="truncate font-mono text-[11px] uppercase text-muted-foreground">
+                    <span className="font-semibold tracking-tight truncate text-base text-foreground">{program.title}</span>
+                    <span className="truncate tabular-nums text-[11px] text-muted-foreground">
                       {exercises.length} {exercises.length === 1 ? "exercício" : "exercícios"}
                     </span>
                   </span>
@@ -336,7 +336,7 @@ export default function Treinos() {
                             onClick={() => setEditing({ exercise: e, program })}
                             className="flex items-center gap-3 border-t border-border/50 px-4 py-[11px] text-left hover:bg-secondary/40"
                           >
-                            <span className="min-w-[18px] font-mono text-[11px] font-semibold text-muted-foreground/50">
+                            <span className="min-w-[18px] tabular-nums text-[11px] font-semibold text-muted-foreground/50">
                               {String(idx + 1).padStart(2, "0")}
                             </span>
                             <span
@@ -349,7 +349,7 @@ export default function Treinos() {
                             </span>
                             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                               <span className="truncate text-[13px] font-bold text-foreground">{e.title}</span>
-                              <span className="font-mono text-[11px] text-muted-foreground">
+                              <span className="tabular-nums text-[11px] text-muted-foreground">
                                 {e.sets}×{e.reps} · {e.load_kg} KG
                               </span>
                             </span>
@@ -372,7 +372,7 @@ export default function Treinos() {
                         type="button"
                         disabled={exercises.length === 0}
                         onClick={() => setLiveProgram(program)}
-                        className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-primary py-[11px] text-xs font-extrabold text-primary-foreground shadow-hard-sm active-hard disabled:opacity-50"
+                        className="flex flex-1 items-center justify-center gap-1.5 rounded-[10px] bg-primary py-[11px] text-xs font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
                       >
                         <Play className="h-[17px] w-[17px] fill-current" />
                         Iniciar treino
@@ -399,7 +399,7 @@ export default function Treinos() {
         <div className="hidden lg:grid lg:grid-cols-[248px_minmax(0,1fr)_300px] lg:items-start lg:gap-5">
           {/* Coluna 1 — Suas fichas */}
           <div className="flex flex-col gap-3">
-            <span className="mono-label px-1">Suas fichas</span>
+            <span className="text-xs font-medium text-muted-foreground px-1">Suas fichas</span>
             <div className="flex flex-col gap-2">
               {visiblePrograms.map((program) => {
                 const exercises = program.training_exercises ?? [];
@@ -419,12 +419,12 @@ export default function Treinos() {
                   >
                     <span className="flex items-center justify-between gap-2">
                       <span className="truncate text-[15px] font-extrabold text-foreground">{program.title}</span>
-                      <span className={cn("font-mono text-[11px] font-bold", isSelected ? "text-primary" : "text-muted-foreground")}>
+                      <span className={cn("tabular-nums text-[11px] font-bold", isSelected ? "text-primary" : "text-muted-foreground")}>
                         {exercises.length} EX
                       </span>
                     </span>
                     {groupsLabel && (
-                      <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.1em] text-muted-foreground">
+                      <span className="tabular-nums text-[10px] font-semibold text-muted-foreground">
                         {groupsLabel}
                       </span>
                     )}
@@ -441,13 +441,13 @@ export default function Treinos() {
               Criar ficha
             </button>
             {volumeByGroup.length > 0 && (
-              <div className="flex flex-col gap-3 rounded-[14px] border border-border bg-card p-3.5">
-                <span className="mono-label">Volume por grupo</span>
+              <div className="flex flex-col gap-3 card-rim p-3.5">
+                <span className="text-xs font-medium text-muted-foreground">Volume por grupo</span>
                 {volumeByGroup.map(([g, sets]) => (
                   <div key={g} className="flex flex-col gap-1.5">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className="truncate text-[11px] font-semibold text-foreground/80">{g}</span>
-                      <span className="font-mono text-[11px] font-bold tabular-nums text-muted-foreground">{sets}</span>
+                      <span className="tabular-nums text-[11px] font-bold text-muted-foreground">{sets}</span>
                     </div>
                     <div className="h-1 overflow-hidden rounded-sm bg-secondary">
                       <div
@@ -466,7 +466,7 @@ export default function Treinos() {
             <div className="flex min-w-0 flex-col gap-4">
               <div className="flex items-start gap-3">
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
-                  <h2 className="display-title truncate text-[26px] text-foreground">{selectedProgram.title}</h2>
+                  <h2 className="font-semibold tracking-tight truncate text-[26px] text-foreground">{selectedProgram.title}</h2>
                   <span className="text-[13px] text-muted-foreground">
                     {selectedExercises.length} {selectedExercises.length === 1 ? "exercício" : "exercícios"} · {totalSets}{" "}
                     séries
@@ -486,7 +486,7 @@ export default function Treinos() {
                   type="button"
                   disabled={selectedExercises.length === 0}
                   onClick={() => setLiveProgram(selectedProgram)}
-                  className="flex h-10 items-center gap-2 rounded-[11px] bg-primary px-4 text-[13px] font-extrabold text-primary-foreground shadow-hard-sm active-hard disabled:opacity-50"
+                  className="flex h-10 items-center gap-2 rounded-[11px] bg-primary px-4 text-[13px] font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
                 >
                   <Play className="h-[17px] w-[17px] fill-current" />
                   Iniciar treino
@@ -494,30 +494,30 @@ export default function Treinos() {
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="flex flex-col gap-1.5 rounded-[14px] border border-border bg-card p-3.5">
-                  <span className="mono-label">Carga total</span>
-                  <span className="font-mono text-2xl font-bold tabular-nums text-foreground">
+                <div className="flex flex-col gap-1.5 card-rim p-3.5">
+                  <span className="text-xs font-medium text-muted-foreground">Carga total</span>
+                  <span className="tabular-nums text-2xl font-bold text-foreground">
                     {totalLoad.toLocaleString("pt-BR")} <span className="text-[13px] text-muted-foreground">kg</span>
                   </span>
                 </div>
-                <div className="flex flex-col gap-1.5 rounded-[14px] border border-border bg-card p-3.5">
-                  <span className="mono-label">Séries</span>
-                  <span className="font-mono text-2xl font-bold tabular-nums text-foreground">{totalSets}</span>
+                <div className="flex flex-col gap-1.5 card-rim p-3.5">
+                  <span className="text-xs font-medium text-muted-foreground">Séries</span>
+                  <span className="tabular-nums text-2xl font-bold text-foreground">{totalSets}</span>
                 </div>
-                <div className="flex flex-col gap-1.5 rounded-[14px] border border-border bg-card p-3.5">
-                  <span className="mono-label">Com vídeo</span>
-                  <span className="font-mono text-2xl font-bold tabular-nums text-primary">
+                <div className="flex flex-col gap-1.5 card-rim p-3.5">
+                  <span className="text-xs font-medium text-muted-foreground">Com vídeo</span>
+                  <span className="tabular-nums text-2xl font-bold text-primary">
                     {selectedExercises.filter((e) => e.video_url && extractYouTubeId(e.video_url)).length}
                   </span>
                 </div>
               </div>
 
-              <div className="overflow-hidden rounded-[16px] border border-border bg-card">
+              <div className="overflow-hidden card-rim">
                 <div className="grid grid-cols-[36px_minmax(0,1fr)_120px_70px] items-center gap-3.5 border-b border-border bg-secondary/50 px-4 py-2.5">
-                  <span className="mono-label">#</span>
-                  <span className="mono-label">Exercício</span>
-                  <span className="mono-label">Séries · carga</span>
-                  <span className="mono-label">Execução</span>
+                  <span className="text-xs font-medium text-muted-foreground">#</span>
+                  <span className="text-xs font-medium text-muted-foreground">Exercício</span>
+                  <span className="text-xs font-medium text-muted-foreground">Séries · carga</span>
+                  <span className="text-xs font-medium text-muted-foreground">Execução</span>
                 </div>
                 {selectedExercises.map((e, idx) => {
                   const hasVideo = e.video_url && extractYouTubeId(e.video_url);
@@ -528,14 +528,14 @@ export default function Treinos() {
                       onClick={() => setEditing({ exercise: e, program: selectedProgram })}
                       className="grid w-full grid-cols-[36px_minmax(0,1fr)_120px_70px] items-center gap-3.5 border-b border-border/50 px-4 py-3 text-left last:border-b-0 hover:bg-secondary/40"
                     >
-                      <span className="font-mono text-[13px] font-bold tabular-nums text-muted-foreground/60">{idx + 1}</span>
+                      <span className="tabular-nums text-[13px] font-bold text-muted-foreground/60">{idx + 1}</span>
                       <span className="truncate text-sm font-bold text-foreground">{e.title}</span>
-                      <span className="font-mono text-[13px] font-semibold tabular-nums text-foreground/80">
+                      <span className="tabular-nums text-[13px] font-semibold text-foreground/80">
                         {e.sets}×{e.reps} · {e.load_kg} kg
                       </span>
                       <span
                         className={cn(
-                          "font-mono text-[9px] font-bold tracking-[0.12em]",
+                          "tabular-nums text-[9px] font-bold",
                           hasVideo ? "text-primary" : "text-muted-foreground/50",
                         )}
                       >
@@ -547,7 +547,7 @@ export default function Treinos() {
                 <button
                   type="button"
                   onClick={() => setPickerFor(selectedProgram)}
-                  className="flex w-full items-center justify-center gap-1.5 py-3 font-mono text-xs font-bold uppercase tracking-[0.12em] text-muted-foreground hover:text-primary"
+                  className="flex w-full items-center justify-center gap-1.5 py-3 tabular-nums text-xs font-bold text-muted-foreground hover:text-primary"
                 >
                   <Plus className="h-4 w-4" />
                   Adicionar exercício
@@ -559,10 +559,10 @@ export default function Treinos() {
           )}
 
           {/* Coluna 3 — Biblioteca de exercícios */}
-          <div className="flex flex-col gap-3 rounded-[18px] border border-border bg-card p-4">
+          <div className="flex flex-col gap-3 card-rim p-4">
             <div className="flex items-center justify-between">
-              <span className="display-title text-sm text-foreground">Biblioteca</span>
-              <span className="font-mono text-[11px] text-muted-foreground">
+              <span className="font-semibold tracking-tight text-sm text-foreground">Biblioteca</span>
+              <span className="tabular-nums text-[11px] text-muted-foreground">
                 {EXERCISES_BY_MUSCLE_GROUP[libGroup]?.length ?? 0}
               </span>
             </div>
@@ -595,7 +595,7 @@ export default function Treinos() {
                 >
                   <span className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="truncate text-[13px] font-bold text-foreground">{ex.pt}</span>
-                    <span className="truncate font-mono text-[10px] uppercase text-muted-foreground/70">{ex.en}</span>
+                    <span className="truncate tabular-nums text-[10px] text-muted-foreground/70">{ex.en}</span>
                   </span>
                   <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground/60 group-hover:border-primary group-hover:text-primary">
                     <Plus className="h-4 w-4" />
@@ -611,7 +611,7 @@ export default function Treinos() {
       <button
         type="button"
         onClick={() => setTemplateSheetOpen(true)}
-        className="flex items-center gap-3 rounded-2xl border border-dashed border-border bg-gradient-to-br from-secondary/60 to-card p-[15px] text-left hover:border-accent"
+        className="flex items-center gap-3 rounded-2xl border border-dashed border-border bg-gradient-to-br from-secondary/60 to-card transition-colors p-[15px] text-left hover:border-accent"
       >
         <Zap className="h-6 w-6 shrink-0 fill-accent/20 text-accent" />
         <span className="flex min-w-0 flex-1 flex-col gap-0.5">
@@ -631,7 +631,7 @@ export default function Treinos() {
       >
         <SheetContent
           side="bottom"
-          className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
+          className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card/90 p-0 backdrop-blur-[8px] sheet-desktop-modal"
         >
           <div className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
             <div className="h-1 w-9 self-center rounded-full bg-border" />
@@ -647,7 +647,7 @@ export default function Treinos() {
                 </button>
               )}
               <div className="flex flex-col gap-0.5">
-                <SheetTitle className="display-title text-xl text-foreground">
+                <SheetTitle className="font-semibold tracking-tight text-xl text-foreground">
                   {selectedTemplate ? selectedTemplate.name : "Templates de treino"}
                 </SheetTitle>
                 <SheetDescription className="text-xs text-muted-foreground">
@@ -666,7 +666,7 @@ export default function Treinos() {
                         {day.exercises.map((ex, j) => (
                           <li key={j} className="flex justify-between text-xs text-muted-foreground">
                             <span className="truncate">{ex.title}</span>
-                            <span className="ml-2 shrink-0 font-mono">
+                            <span className="ml-2 shrink-0 tabular-nums">
                               {ex.sets}×{ex.reps}
                             </span>
                           </li>
@@ -679,7 +679,7 @@ export default function Treinos() {
                   type="button"
                   disabled={importTemplate.isPending}
                   onClick={() => handleImportTemplate(selectedTemplate)}
-                  className="w-full rounded-[14px] bg-primary p-4 text-sm font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50"
+                  className="w-full rounded-[14px] bg-primary p-4 text-sm font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
                 >
                   {importTemplate.isPending ? "Importando…" : `Importar ${selectedTemplate.days.length} treinos`}
                 </button>
@@ -698,7 +698,7 @@ export default function Treinos() {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-extrabold text-foreground">{template.name}</p>
                         <p className="mt-0.5 line-clamp-2 text-xs text-muted-foreground">{template.description}</p>
-                        <p className="mt-1.5 font-mono text-[10px] uppercase text-muted-foreground/70">
+                        <p className="mt-1.5 tabular-nums text-[10px] text-muted-foreground/70">
                           {template.days.length} dias · {totalExercises} exercícios
                         </p>
                       </div>
@@ -747,7 +747,7 @@ export default function Treinos() {
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="display-title">Excluir {deleteTarget?.title}?</AlertDialogTitle>
+            <AlertDialogTitle className="font-semibold tracking-tight">Excluir {deleteTarget?.title}?</AlertDialogTitle>
             <AlertDialogDescription>
               {deleteTarget?.count
                 ? `Os ${deleteTarget.count} exercícios e os vídeos vinculados vão junto. Isso não pode ser desfeito.`
@@ -761,7 +761,7 @@ export default function Treinos() {
                 e.preventDefault();
                 handleDeleteProgram();
               }}
-              className="bg-destructive text-destructive-foreground shadow-hard-destructive hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteProgram.isPending ? "Excluindo…" : "Excluir"}
             </AlertDialogAction>

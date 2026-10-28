@@ -59,14 +59,14 @@ export function PhotoLightbox({
       }}
     >
       <div className="flex items-center justify-between px-5 pb-2 pt-4 safe-area-top" onClick={(e) => e.stopPropagation()}>
-        <span className="font-mono text-[11px] font-semibold tracking-[0.1em] text-muted-foreground">
+        <span className="text-[11px] font-semibold text-muted-foreground">
           {index + 1} / {photos.length}
         </span>
         <button
           type="button"
           aria-label="Fechar"
           onClick={onClose}
-          className="flex h-9 w-9 items-center justify-center rounded-[10px] border border-border bg-secondary text-foreground"
+          className="flex h-9 w-9 items-center justify-center rounded-xl border border-border bg-secondary text-foreground"
         >
           <X className="h-[18px] w-[18px]" />
         </button>
@@ -104,8 +104,8 @@ export function PhotoLightbox({
 
       <div className="flex flex-col items-center gap-2 px-5 pb-6 pt-3 safe-area-bottom" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-baseline gap-2">
-          <span className="font-mono text-xl font-bold text-foreground">{photo.title}</span>
-          {photo.subtitle && <span className="font-mono text-xs font-semibold text-muted-foreground">{photo.subtitle}</span>}
+          <span className="text-xl font-semibold text-foreground">{photo.title}</span>
+          {photo.subtitle && <span className="text-xs font-semibold text-muted-foreground">{photo.subtitle}</span>}
         </div>
         <div className="flex items-center gap-1">
           {photos.map((p, i) => (

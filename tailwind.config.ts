@@ -47,6 +47,12 @@ export default {
   				DEFAULT: 'hsl(var(--card))',
   				foreground: 'hsl(var(--card-foreground))'
   			},
+  			'primary-text': 'hsl(var(--primary-text))',
+  			amber: 'hsl(var(--amber))',
+  			success: 'hsl(var(--success))',
+  			warning: 'hsl(var(--warning))',
+  			info: 'hsl(var(--info))',
+  			track: 'hsl(var(--track))',
   			sidebar: {
   				DEFAULT: 'hsl(var(--sidebar-background))',
   				foreground: 'hsl(var(--sidebar-foreground))',
@@ -61,7 +67,22 @@ export default {
   		borderRadius: {
   			lg: 'var(--radius)',
   			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			sm: 'calc(var(--radius) - 4px)',
+  			xl: '0.75rem',
+  			'2xl': '1rem',
+  			'3xl': '1.5rem'
+  		},
+  		transitionTimingFunction: {
+  			smooth: 'cubic-bezier(0.4, 0, 0.2, 1)',
+  			'out-expo': 'cubic-bezier(0.2, 0.8, 0.2, 1)',
+  			collapse: 'cubic-bezier(0.87, 0, 0.13, 1)'
+  		},
+  		backgroundImage: {
+  			'card-surface': 'var(--card-gradient)',
+  			'card-rim': 'var(--card-rim)',
+  			'panel-glass': 'var(--panel-glass)',
+  			'cta-gradient': 'var(--cta-gradient)',
+  			'stat-bar': 'var(--stat-bar-gradient)'
   		},
   		keyframes: {
   			'accordion-down': {
@@ -78,12 +99,6 @@ export default {
   				},
   				to: {
   					height: '0'
-  				}
-  			},
-  			'rise-in': {
-  				from: {
-  					opacity: '0',
-  					transform: 'translateY(14px)'
   				}
   			},
   			'bar-in': {
@@ -107,19 +122,25 @@ export default {
   					opacity: '0.8'
   				}
   			},
-  			sheen: {
-  				'0%': {
-  					transform: 'translateX(-120%)'
-  				},
-  				'60%, 100%': {
-  					transform: 'translateX(220%)'
-  				}
-  			},
   			'pop-in': {
   				from: {
   					opacity: '0',
   					transform: 'scale(0.9)'
   				}
+  			},
+  			'fade-up': {
+  				from: {
+  					opacity: '0',
+  					transform: 'translateY(12px)'
+  				}
+  			},
+  			shine: {
+  				'0%': { transform: 'translateX(-120%)' },
+  				'60%, 100%': { transform: 'translateX(220%)' }
+  			},
+  			'pulse-soft': {
+  				'0%, 100%': { opacity: '1' },
+  				'50%': { opacity: '0.5' }
   			},
   			'ring-draw': {
   				from: {
@@ -128,47 +149,21 @@ export default {
   			}
   		},
   		animation: {
-  			'accordion-down': 'accordion-down 0.2s ease-out',
-  			'accordion-up': 'accordion-up 0.2s ease-out',
-  			'rise-in': 'rise-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both',
+  			'accordion-down': 'accordion-down 0.3s cubic-bezier(0.87, 0, 0.13, 1)',
+  			'accordion-up': 'accordion-up 0.3s cubic-bezier(0.87, 0, 0.13, 1)',
+  			'fade-up': 'fade-up 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both',
   			'bar-in': 'bar-in 0.9s cubic-bezier(0.2, 0.8, 0.2, 1) both',
   			flame: 'flame 2.2s ease-in-out infinite',
   			'glow-pulse': 'glow-pulse 3.4s ease-in-out infinite',
-  			sheen: 'sheen 3s ease-in-out infinite',
+  			shine: 'shine 3s ease-in-out infinite',
+  			'pulse-soft': 'pulse-soft 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
   			'pop-in': 'pop-in 0.4s both',
   			'ring-draw': 'ring-draw 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both'
   		},
   		fontFamily: {
-  			sans: [
-  				'Archivo',
-  				'ui-sans-serif',
-  				'system-ui',
-  				'-apple-system',
-  				'BlinkMacSystemFont',
-  				'Segoe UI',
-  				'Roboto',
-  				'Helvetica Neue',
-  				'Arial',
-  				'Noto Sans',
-  				'sans-serif'
-  			],
-  			serif: [
-  				'Archivo',
-  				'ui-serif',
-  				'Georgia',
-  				'serif'
-  			],
-  			mono: [
-  				'IBM Plex Mono',
-  				'ui-monospace',
-  				'SFMono-Regular',
-  				'Menlo',
-  				'Monaco',
-  				'Consolas',
-  				'Liberation Mono',
-  				'Courier New',
-  				'monospace'
-  			]
+  			sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji'],
+  			serif: ['Inter', 'ui-serif', 'Georgia', 'serif'],
+  			mono: ['ui-monospace', 'SFMono-Regular', 'Menlo', 'Monaco', 'Consolas', 'monospace']
   		},
   		boxShadow: {
   			'2xs': 'var(--shadow-2xs)',
@@ -177,7 +172,8 @@ export default {
   			md: 'var(--shadow-md)',
   			lg: 'var(--shadow-lg)',
   			xl: 'var(--shadow-xl)',
-  			'2xl': 'var(--shadow-2xl)'
+  			'2xl': 'var(--shadow-2xl)',
+  			glow: '0 0 24px -4px var(--accent-glow)'
   		}
   	}
   },

@@ -29,15 +29,15 @@ export default function Login() {
   };
 
   return (
-    <div className="dark relative min-h-dvh cursor-crosshair overflow-hidden bg-[#0A0907] text-foreground">
+    <div className="dark relative min-h-dvh cursor-crosshair overflow-hidden bg-background text-foreground">
       <EcgBackground />
 
       <div className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center gap-6 px-7 py-12 safe-area-bottom">
-        <div className="flex flex-col gap-3.5 animate-rise-in">
-          <BrandMark className="h-[52px] w-[52px] rounded-[17px] shadow-[0_0_44px_-6px_hsl(var(--primary)/0.6)]" />
+        <div className="flex flex-col gap-3.5 animate-fade-up">
+          <BrandMark className="h-[52px] w-[52px] rounded-2xl shadow-glow" />
           <div className="flex flex-col gap-2">
             <h1 className="display-title text-5xl leading-[0.9] tracking-[-0.055em]">
-              Fit<span className="text-primary">rank</span>
+              Fit<span className="text-lime">rank</span>
             </h1>
             <p className="max-w-[290px] text-[15px] leading-normal text-muted-foreground">
               Entre para acompanhar seus treinos. Alguém do seu grupo já treinou hoje.
@@ -46,7 +46,7 @@ export default function Login() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-          <div className="flex flex-col gap-3 animate-rise-in [animation-delay:0.12s]">
+          <div className="flex flex-col gap-3 animate-fade-up [animation-delay:0.12s]">
             <div className="flex flex-col gap-1.5">
               <label htmlFor="email" className="mono-label">
                 Email
@@ -59,7 +59,7 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="rounded-[13px] border border-border bg-card/80 p-4 text-sm font-medium text-foreground outline-none backdrop-blur-md placeholder:text-muted-foreground/60 focus:border-primary focus:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.45)]"
+                className="rounded-xl border border-border bg-card/80 p-4 text-sm font-medium text-foreground outline-none backdrop-blur-md placeholder:text-muted-foreground/60 focus:border-primary focus:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.45)]"
               />
             </div>
             <div className="flex flex-col gap-1.5">
@@ -75,12 +75,12 @@ export default function Login() {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   autoComplete="current-password"
-                  className="w-full rounded-[13px] border border-border bg-card/80 p-4 pr-12 font-mono text-sm font-semibold tracking-[0.24em] text-foreground outline-none backdrop-blur-md placeholder:text-muted-foreground/60 focus:border-primary focus:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.45)]"
+                  className="w-full rounded-xl border border-border bg-card/80 p-4 pr-12 text-sm font-semibold tracking-[0.24em] text-foreground outline-none backdrop-blur-md placeholder:text-muted-foreground/60 focus:border-primary focus:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.45)]"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((v) => !v)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-lime"
                   aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
                 >
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
@@ -89,13 +89,13 @@ export default function Login() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-4 animate-rise-in [animation-delay:0.22s]">
+          <div className="flex flex-col gap-4 animate-fade-up [animation-delay:0.22s]">
             <button
               type="submit"
               disabled={loading}
-              className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[15px] bg-primary p-[19px] text-base font-black text-primary-foreground shadow-[0_4px_0_hsl(var(--primary-edge)),0_18px_40px_-12px_hsl(var(--primary)/0.5)] transition-[transform,box-shadow] active:translate-y-[2px] active:shadow-[0_2px_0_hsl(var(--primary-edge)),0_14px_30px_-12px_hsl(var(--primary)/0.5)] disabled:opacity-60"
+              className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-xl bg-primary p-[19px] text-base font-bold text-primary-foreground transition-transform duration-150 ease-smooth active:scale-[0.98] disabled:opacity-60"
             >
-              <span className="absolute left-0 top-0 h-full w-[38%] animate-sheen bg-gradient-to-r from-transparent via-white/60 to-transparent" />
+              <span className="absolute left-0 top-0 h-full w-[38%] animate-shine bg-gradient-to-r from-transparent via-white/60 to-transparent" />
               {loading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
@@ -115,7 +115,7 @@ export default function Login() {
 
             <p className="text-center text-[13px] font-medium text-muted-foreground">
               Não tem conta?{" "}
-              <Link to="/signup" className="font-bold text-primary hover:underline">
+              <Link to="/signup" className="font-bold text-lime hover:underline">
                 Criar conta
               </Link>
             </p>

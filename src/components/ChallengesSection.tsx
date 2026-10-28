@@ -57,12 +57,12 @@ export function ChallengesSection({ groupId, userId, workouts, profilesMap }: Ch
   return (
     <div className="flex flex-col gap-2.5">
       <div className="flex items-center justify-between">
-        <span className="mono-label">Desafios</span>
+        <span className="text-xs font-medium text-muted-foreground">Desafios</span>
         {running.length > 0 && (
           <button
             type="button"
             onClick={() => setCreateOpen(true)}
-            className="flex items-center gap-1 font-mono text-[11px] font-bold uppercase tracking-[0.08em] text-primary"
+            className="flex items-center gap-1 tabular-nums text-[11px] font-bold text-primary"
           >
             <Plus className="h-3.5 w-3.5" />
             Novo
@@ -86,7 +86,7 @@ export function ChallengesSection({ groupId, userId, workouts, profilesMap }: Ch
         <button
           type="button"
           onClick={() => setCreateOpen(true)}
-          className="flex items-center gap-3 rounded-2xl border border-dashed border-accent/40 bg-gradient-to-br from-secondary/60 to-card p-4 text-left hover:border-accent"
+          className="flex items-center gap-3 rounded-2xl border border-dashed border-border bg-gradient-to-br from-secondary/60 to-card transition-colors p-4 text-left hover:border-accent"
         >
           <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[13px] bg-accent/15">
             <Swords className="h-5 w-5 text-accent" />
@@ -106,7 +106,7 @@ export function ChallengesSection({ groupId, userId, workouts, profilesMap }: Ch
           <button
             type="button"
             onClick={() => setShowEnded((v) => !v)}
-            className="flex items-center justify-center gap-1.5 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground/60 hover:text-muted-foreground"
+            className="flex items-center justify-center gap-1.5 py-1 tabular-nums text-[10px] font-bold text-muted-foreground/60 hover:text-muted-foreground"
           >
             Encerrados ({ended.length})
             <ChevronDown className={cn("h-3.5 w-3.5 transition-transform", showEnded && "rotate-180")} />
@@ -136,7 +136,7 @@ export function ChallengesSection({ groupId, userId, workouts, profilesMap }: Ch
       <AlertDialog open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="display-title">Excluir {deleteTarget?.title}?</AlertDialogTitle>
+            <AlertDialogTitle className="font-semibold tracking-tight">Excluir {deleteTarget?.title}?</AlertDialogTitle>
             <AlertDialogDescription>O desafio e o placar dele somem para todo o grupo. Isso não pode ser desfeito.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -153,7 +153,7 @@ export function ChallengesSection({ groupId, userId, workouts, profilesMap }: Ch
                   onError: () => toast.error("Erro ao excluir desafio"),
                 });
               }}
-              className="bg-destructive text-destructive-foreground shadow-hard-destructive hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteChallenge.isPending ? "Excluindo…" : "Excluir"}
             </AlertDialogAction>

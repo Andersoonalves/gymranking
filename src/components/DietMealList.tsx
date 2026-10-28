@@ -16,7 +16,7 @@ function ItemList({ items, done }: { items: DietItem[]; done: boolean }) {
             )}
           />
           <span className="min-w-0 flex-1 text-muted-foreground">{item.name}</span>
-          {item.qty && <span className="shrink-0 font-mono text-[11px] text-muted-foreground/70">{item.qty}</span>}
+          {item.qty && <span className="shrink-0 text-[11px] text-muted-foreground/70">{item.qty}</span>}
         </li>
       ))}
     </ul>
@@ -41,7 +41,7 @@ export function DietMealList({ meals, doneIds, onToggle, className }: DietMealLi
         const mark = (
           <span
             className={cn(
-              "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-[8px] border-2",
+              "mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border-2",
               done ? "border-primary bg-primary text-primary-foreground" : "border-border text-transparent",
               onToggle && !done && "transition-colors hover:border-primary",
             )}
@@ -53,7 +53,7 @@ export function DietMealList({ meals, doneIds, onToggle, className }: DietMealLi
           <div
             key={meal.id}
             className={cn(
-              "flex items-start gap-3 rounded-[18px] border p-4 transition-colors",
+              "flex items-start gap-3 rounded-2xl border p-4 transition-colors",
               done ? "border-primary/50 bg-primary/5" : "border-border bg-card",
             )}
           >
@@ -71,16 +71,16 @@ export function DietMealList({ meals, doneIds, onToggle, className }: DietMealLi
             )}
             <div className="flex min-w-0 flex-1 flex-col gap-1.5">
               <div className="flex items-center gap-2">
-                <span className={cn("truncate text-sm font-extrabold", done ? "text-primary" : "text-foreground")}>
+                <span className={cn("truncate text-sm font-semibold", done ? "text-primary" : "text-foreground")}>
                   {meal.name}
                 </span>
                 {meal.time_of_day && (
-                  <span className="shrink-0 font-mono text-[11px] font-semibold text-muted-foreground">
+                  <span className="shrink-0 text-[11px] font-semibold text-muted-foreground">
                     {meal.time_of_day.slice(0, 5)}
                   </span>
                 )}
                 {meal.kcal !== null && (
-                  <span className="ml-auto shrink-0 font-mono text-[10px] text-muted-foreground/70">
+                  <span className="ml-auto shrink-0 text-[11px] text-muted-foreground/70">
                     {meal.kcal.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} kcal
                   </span>
                 )}

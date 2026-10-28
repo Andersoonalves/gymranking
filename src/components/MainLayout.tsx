@@ -145,14 +145,14 @@ export function MainLayout({ children }: MainLayoutProps) {
     >
       <div className="flex min-h-dvh flex-col bg-background lg:pl-[248px]">
         {/* Sidebar fixa — só desktop; no mobile a navegação é a barra inferior */}
-        <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col gap-6 border-r border-border bg-card px-4 py-6 lg:flex">
+        <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col gap-6 border-r border-sidebar-border bg-sidebar px-4 py-6 lg:flex">
           <div className="flex items-center gap-2.5 px-1.5">
             <BrandMark className="h-[30px] w-[30px] shrink-0" />
             <div className="flex min-w-0 flex-col gap-1">
               <span className="display-title text-2xl leading-none text-foreground">
-                Fit<span className="text-primary">rank</span>
+                Fit<span className="text-lime">rank</span>
               </span>
-              <span className="truncate font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              <span className="truncate text-[10px] font-semibold tracking-wide text-muted-foreground">
                 {format(new Date(), "EEEE · dd MMM", { locale: ptBR })}
               </span>
             </div>
@@ -164,9 +164,9 @@ export function MainLayout({ children }: MainLayoutProps) {
               <button
                 type="button"
                 onClick={() => setGroupMenuOpen((v) => !v)}
-                className="flex h-11 w-full items-center gap-2.5 rounded-[11px] border border-border bg-secondary/60 px-3 text-[13px] font-bold text-foreground hover:border-primary"
+                className="flex h-11 w-full items-center gap-2.5 rounded-xl border border-border bg-secondary px-3 text-[13px] font-semibold text-foreground hover:border-primary"
               >
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] bg-gradient-to-br from-accent to-primary font-sans text-[11px] font-extrabold text-background">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[7px] bg-primary font-sans text-[11px] font-semibold text-primary-foreground">
                   {activeGroup.name.charAt(0).toUpperCase()}
                 </span>
                 <span className="min-w-0 flex-1 truncate text-left">{activeGroup.name}</span>
@@ -175,7 +175,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               {groupMenuOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setGroupMenuOpen(false)} />
-                  <div className="absolute left-0 right-0 top-full z-40 mt-1.5 flex flex-col gap-0.5 rounded-2xl border border-border bg-popover p-1.5 shadow-2xl animate-pop-in">
+                  <div className="absolute left-0 right-0 top-full z-40 mt-1.5 flex flex-col gap-0.5 glass rounded-2xl bg-popover p-1.5 shadow-lg animate-pop-in">
                     {groups.map((g) => (
                       <button
                         key={g.id}
@@ -187,7 +187,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                         className={cn(
                           "flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm",
                           g.id === activeGroup.id
-                            ? "bg-primary/10 font-bold text-primary"
+                            ? "bg-accent font-semibold text-lime"
                             : "font-semibold text-foreground hover:bg-secondary",
                         )}
                       >
@@ -236,10 +236,8 @@ export function MainLayout({ children }: MainLayoutProps) {
                     data-tour-id={item.path === "/dieta" ? "nav-dieta" : undefined}
                     onClick={() => navigate(item.path)}
                     className={cn(
-                      "flex h-[42px] items-center gap-3 rounded-[11px] px-3 text-[13px]",
-                      isActive
-                        ? "bg-primary/10 font-extrabold text-primary"
-                        : "font-semibold text-muted-foreground hover:bg-secondary hover:text-foreground",
+                      "nav-item h-12 px-3 text-sm",
+                      isActive && "nav-item-active",
                     )}
                   >
                     <Icon className="h-5 w-5" strokeWidth={isActive ? 2.5 : 2} />
@@ -255,7 +253,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             <button
               type="button"
               onClick={() => window.dispatchEvent(new Event(NEW_WEIGHT_EVENT))}
-              className="flex h-12 items-center justify-center gap-2 rounded-[13px] bg-primary text-sm font-extrabold text-primary-foreground shadow-hard active-hard"
+              className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground active-hard"
             >
               <Scale className="h-[21px] w-[21px]" strokeWidth={2.5} />
               Registrar peso
@@ -265,7 +263,7 @@ export function MainLayout({ children }: MainLayoutProps) {
               type="button"
               onClick={() => setRegisterOpen(true)}
               data-tour-id="registrar-treino"
-              className="flex h-12 items-center justify-center gap-2 rounded-[13px] bg-primary text-sm font-extrabold text-primary-foreground shadow-hard active-hard"
+              className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-semibold text-primary-foreground active-hard"
             >
               <Plus className="h-[22px] w-[22px]" strokeWidth={2.75} />
               Registrar treino
@@ -278,7 +276,7 @@ export function MainLayout({ children }: MainLayoutProps) {
           {location.pathname === "/rankings" ? (
             <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-secondary/60 p-3.5">
               <span className="mono-label">Fecha em</span>
-              <span className="font-mono text-[26px] font-bold leading-none tabular-nums text-primary">
+              <span className="text-[26px] font-bold leading-none tabular-nums text-lime">
                 {formatPeriodCountdown("week")}
               </span>
               <span className="text-[11px] leading-snug text-muted-foreground">O ranking zera domingo às 23:59.</span>
@@ -286,13 +284,13 @@ export function MainLayout({ children }: MainLayoutProps) {
           ) : location.pathname === "/treinos" ? (
             <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-secondary/60 p-3.5">
               <span className="mono-label">Biblioteca</span>
-              <span className="font-mono text-[26px] font-bold leading-none tabular-nums text-foreground">{LIBRARY_SIZE}</span>
+              <span className="text-[26px] font-bold leading-none tabular-nums text-foreground">{LIBRARY_SIZE}</span>
               <span className="text-[11px] leading-snug text-muted-foreground">exercícios prontos para montar sua ficha.</span>
             </div>
           ) : location.pathname === "/progresso" && weighIns.length > 0 ? (
             <div className="flex flex-col gap-1.5 rounded-xl border border-border bg-secondary/60 p-3.5">
               <span className="mono-label">Desde {format(new Date(weightSince!.recorded_at), "MMMM", { locale: ptBR })}</span>
-              <span className="font-mono text-[26px] font-bold leading-none tabular-nums text-primary">
+              <span className="text-[26px] font-bold leading-none tabular-nums text-lime">
                 {weightDelta > 0 ? "+" : weightDelta < 0 ? "−" : "±"}
                 {Math.abs(weightDelta).toLocaleString("pt-BR", { minimumFractionDigits: 1, maximumFractionDigits: 1 })} kg
               </span>
@@ -316,7 +314,7 @@ export function MainLayout({ children }: MainLayoutProps) {
                 <span className="truncate text-xs font-bold text-foreground">
                   {myProfile?.display_name || user?.email || "Você"}
                 </span>
-                <span className="font-mono text-[10px] text-muted-foreground">
+                <span className="text-[10px] text-muted-foreground">
                   {myWeekEntry && myWeekEntry.count > 0
                     ? `${myWeekEntry.position}º · ${myWeekEntry.count} ${myWeekEntry.count === 1 ? "treino" : "treinos"}`
                     : "sem treino na semana"}
@@ -343,7 +341,7 @@ export function MainLayout({ children }: MainLayoutProps) {
             }}
             // Centralizado na área de conteúdo: no desktop desloca metade da
             // sidebar (248px) para não ficar torto em relação ao que se lê.
-            className="fixed bottom-[104px] left-1/2 z-40 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-[13px] border border-border bg-card/90 text-foreground shadow-lg backdrop-blur-sm animate-pop-in hover:border-primary hover:text-primary safe-area-bottom lg:left-[calc(50%+124px)]"
+            className="fixed bottom-[104px] left-1/2 z-40 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-xl border border-border bg-card/90 text-foreground shadow-lg backdrop-blur-sm animate-pop-in hover:border-primary hover:text-lime safe-area-bottom lg:left-[calc(50%+124px)]"
           >
             <ArrowUp className="h-5 w-5" />
           </button>
@@ -358,13 +356,13 @@ export function MainLayout({ children }: MainLayoutProps) {
           data-tour-id="registrar-treino"
           onClick={() => setRegisterOpen(true)}
           style={{ bottom: "calc(96px + env(safe-area-inset-bottom, 0px))" }}
-          className="fixed right-5 z-40 flex h-[60px] w-[60px] items-center justify-center rounded-[19px] bg-primary text-primary-foreground shadow-[0_5px_0_hsl(var(--primary-edge)),0_16px_32px_-8px_hsl(var(--primary)/0.4)] transition-[transform,box-shadow] active:translate-y-[2px] active:shadow-[0_3px_0_hsl(var(--primary-edge)),0_12px_24px_-8px_hsl(var(--primary)/0.4)] lg:hidden"
+          className="fixed right-5 z-40 flex h-[60px] w-[60px] items-center justify-center rounded-2xl bg-primary text-primary-foreground transition-transform duration-150 ease-smooth active:scale-[0.98] lg:hidden"
         >
           <Plus className="h-7 w-7" strokeWidth={2.75} />
         </button>
 
-        <nav className="pointer-events-none fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-background from-[60%] to-transparent safe-area-bottom lg:hidden">
-          <div className="pointer-events-auto mx-auto grid max-w-lg grid-cols-5 items-end gap-0.5 px-3 pb-3 pt-2">
+        <nav className="pointer-events-none fixed bottom-0 left-0 right-0 z-40 safe-area-bottom lg:hidden">
+          <div className="glass pointer-events-auto mx-auto mb-3 grid max-w-lg grid-cols-5 items-end gap-0.5 rounded-2xl px-2 pb-1 pt-1">
             {navItems.map((item) => {
               const isActive = location.pathname === item.path;
               const Icon = item.icon;
@@ -376,8 +374,8 @@ export function MainLayout({ children }: MainLayoutProps) {
                   data-tour-id={item.path === "/dieta" ? "nav-dieta" : undefined}
                   onClick={() => navigate(item.path)}
                   className={cn(
-                    "flex min-h-[48px] flex-col items-center justify-end gap-1 py-1.5 text-[9px] transition-colors",
-                    isActive ? "font-bold text-primary" : "font-semibold text-muted-foreground hover:text-foreground",
+                    "nav-item min-h-[48px] flex-col justify-end gap-1 py-1.5 text-[10px]",
+                    isActive && "nav-item-active",
                   )}
                 >
                   <Icon className="h-[22px] w-[22px]" strokeWidth={isActive ? 2.5 : 2} />

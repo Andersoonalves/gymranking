@@ -38,7 +38,7 @@ export function GoogleSignInButton({ inviteCode }: { inviteCode?: string }) {
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="flex w-full items-center justify-center gap-3 rounded-[14px] border border-border bg-card/80 p-4 text-sm font-bold text-foreground backdrop-blur-md transition-colors hover:border-primary/60 disabled:opacity-60"
+      className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card/80 p-4 text-sm font-bold text-foreground backdrop-blur-md transition-colors hover:border-primary/60 disabled:opacity-60"
     >
       {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : <GoogleLogo />}
       Continuar com Google

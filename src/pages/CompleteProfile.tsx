@@ -42,7 +42,7 @@ export default function CompleteProfile() {
   if (!userId) return null;
 
   return (
-    <div className="dark relative min-h-dvh overflow-hidden bg-[#0A0907] text-foreground">
+    <div className="dark relative min-h-dvh overflow-hidden bg-background text-foreground">
       <EcgBackground />
 
       <form
@@ -50,7 +50,7 @@ export default function CompleteProfile() {
         className="relative mx-auto flex min-h-dvh w-full max-w-lg flex-col justify-center gap-6 px-7 py-12 safe-area-bottom"
       >
         <div className="flex flex-col gap-3.5">
-          <BrandMark className="h-[52px] w-[52px] rounded-[17px] shadow-[0_0_44px_-6px_hsl(var(--primary)/0.6)]" />
+          <BrandMark className="h-[52px] w-[52px] rounded-2xl shadow-glow" />
           <div className="flex flex-col gap-2">
             <h1 className="display-title text-4xl leading-[0.95] tracking-[-0.05em]">Complete seu perfil</h1>
             <p className="max-w-[320px] text-[15px] leading-normal text-muted-foreground">
@@ -73,14 +73,14 @@ export default function CompleteProfile() {
             onChange={(e) => setDisplayName(e.target.value)}
             maxLength={40}
             autoComplete="name"
-            className="rounded-[13px] border border-border bg-card/80 p-4 text-sm font-medium text-foreground outline-none backdrop-blur-md placeholder:text-muted-foreground/60 focus:border-primary focus:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.45)]"
+            className="rounded-xl border border-border bg-card/80 p-4 text-sm font-medium text-foreground outline-none backdrop-blur-md placeholder:text-muted-foreground/60 focus:border-primary focus:shadow-[0_0_30px_-10px_hsl(var(--primary)/0.45)]"
           />
         </div>
 
         <button
           type="submit"
           disabled={!ready || saveProfile.isPending}
-          className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-primary p-4 text-sm font-bold text-primary-foreground transition-opacity disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary p-4 text-sm font-bold text-primary-foreground transition-opacity disabled:opacity-50"
         >
           {saveProfile.isPending ? <Loader2 className="h-5 w-5 animate-spin" /> : "Continuar"}
         </button>

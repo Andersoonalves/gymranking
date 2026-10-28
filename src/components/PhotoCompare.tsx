@@ -127,20 +127,20 @@ export function PhotoCompare({ open, onOpenChange, photos }: PhotoCompareProps) 
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[96dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-background p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
+        className="max-h-[96dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-background p-0 backdrop-blur-sm sheet-desktop-modal"
       >
         <div className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
           <div className="h-1 w-9 self-center rounded-full bg-border" />
 
           <div className="flex flex-col gap-0.5">
-            <SheetTitle className="display-title text-[21px] text-foreground">Fotos</SheetTitle>
-            <span className="font-mono text-[11px] uppercase text-muted-foreground">
+            <SheetTitle className="font-semibold tracking-tight text-[21px] text-foreground">Fotos</SheetTitle>
+            <span className="text-[11px] text-muted-foreground">
               {photos.length} {photos.length === 1 ? "registro" : "registros"} · {first.date} – {last.date} · {totalDelta}
             </span>
           </div>
 
           {/* Modos */}
-          <div className="flex gap-1 rounded-[11px] border border-border/60 bg-background p-[3px]">
+          <div className="flex gap-1 rounded-xl border border-border/60 bg-background p-[3px]">
             {(
               [
                 ["side", "Lado a lado"],
@@ -154,7 +154,7 @@ export function PhotoCompare({ open, onOpenChange, photos }: PhotoCompareProps) 
                 onClick={() => setMode(value)}
                 className={cn(
                   "flex-1 rounded-lg py-[9px] text-[11px]",
-                  mode === value ? "bg-primary font-bold text-primary-foreground" : "font-semibold text-muted-foreground",
+                  mode === value ? "bg-primary font-semibold text-primary-foreground" : "font-semibold text-muted-foreground",
                 )}
               >
                 {label}
@@ -166,33 +166,33 @@ export function PhotoCompare({ open, onOpenChange, photos }: PhotoCompareProps) 
             <div className="flex flex-col gap-2.5">
               <div className="flex gap-2">
                 <div className="flex flex-1 flex-col gap-1.5">
-                  <div className="relative aspect-[3/4] overflow-hidden rounded-[13px] border border-border">
+                  <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-border">
                     <Photo photo={first} className="h-full w-full" />
-                    <span className="absolute bottom-2 left-2 rounded-[7px] bg-background/80 px-2 py-1 font-mono text-[10px] font-bold text-muted-foreground">
+                    <span className="absolute bottom-2 left-2 rounded-md bg-background/80 px-2 py-1 text-[11px] font-semibold text-muted-foreground">
                       ANTES
                     </span>
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="font-mono text-[15px] font-bold text-foreground">{kgLabel(first.kg)}</span>
-                    <span className="font-mono text-[10px] text-muted-foreground/70">kg · {first.date}</span>
+                    <span className="text-[15px] font-semibold text-foreground">{kgLabel(first.kg)}</span>
+                    <span className="text-[11px] text-muted-foreground/70">kg · {first.date}</span>
                   </div>
                 </div>
                 <div className="flex flex-1 flex-col gap-1.5">
-                  <div className="relative aspect-[3/4] overflow-hidden rounded-[13px] border border-primary/40">
+                  <div className="relative aspect-[3/4] overflow-hidden rounded-xl border border-primary/40">
                     <Photo photo={last} className="h-full w-full" />
-                    <span className="absolute bottom-2 left-2 rounded-[7px] bg-primary px-2 py-1 font-mono text-[10px] font-bold text-primary-foreground">
+                    <span className="absolute bottom-2 left-2 rounded-md bg-primary px-2 py-1 text-[11px] font-semibold text-primary-foreground">
                       DEPOIS
                     </span>
                   </div>
                   <div className="flex items-baseline gap-1.5">
-                    <span className="font-mono text-[15px] font-bold text-primary">{kgLabel(last.kg)}</span>
-                    <span className="font-mono text-[10px] text-muted-foreground/70">kg · {last.date}</span>
+                    <span className="text-[15px] font-semibold text-primary">{kgLabel(last.kg)}</span>
+                    <span className="text-[11px] text-muted-foreground/70">kg · {last.date}</span>
                   </div>
                 </div>
               </div>
-              <div className="flex items-center justify-center gap-2 rounded-[11px] bg-primary/10 px-3 py-2.5">
+              <div className="flex items-center justify-center gap-2 rounded-md bg-primary/10 px-3 py-2.5">
                 <DeltaIcon className="h-[17px] w-[17px] text-primary" />
-                <span className="text-xs font-bold text-primary">{totalDelta} entre os registros</span>
+                <span className="text-xs font-semibold text-primary">{totalDelta} entre os registros</span>
               </div>
             </div>
           )}
@@ -202,16 +202,16 @@ export function PhotoCompare({ open, onOpenChange, photos }: PhotoCompareProps) 
               <div
                 ref={overlayRef}
                 onPointerDown={dragReveal}
-                className="relative aspect-[4/5] cursor-ew-resize touch-none select-none overflow-hidden rounded-[15px] border border-border"
+                className="relative aspect-[4/5] cursor-ew-resize touch-none select-none overflow-hidden rounded-xl border border-border"
               >
                 <Photo photo={last} className="absolute inset-0 h-full w-full" />
-                <span className="absolute right-2.5 top-2.5 rounded-lg bg-background/80 px-2 py-1 font-mono text-[10px] font-bold text-primary">
+                <span className="absolute right-2.5 top-2.5 rounded-lg bg-background/80 px-2 py-1 text-[11px] font-semibold text-primary">
                   {last.date} · {kgLabel(last.kg)}
                 </span>
                 <div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - reveal}% 0 0)` }}>
                   <Photo photo={first} className="h-full w-full" />
                 </div>
-                <span className="absolute left-2.5 top-2.5 rounded-lg bg-background/80 px-2 py-1 font-mono text-[10px] font-bold text-muted-foreground">
+                <span className="absolute left-2.5 top-2.5 rounded-lg bg-background/80 px-2 py-1 text-[11px] font-semibold text-muted-foreground">
                   {first.date} · {kgLabel(first.kg)}
                 </span>
                 <div
@@ -231,18 +231,18 @@ export function PhotoCompare({ open, onOpenChange, photos }: PhotoCompareProps) 
 
           {mode === "timeline" && (
             <div className="flex flex-col gap-2.5">
-              <div className="relative aspect-[4/5] overflow-hidden rounded-[15px] border border-border">
+              <div className="relative aspect-[4/5] overflow-hidden rounded-xl border border-border">
                 <Photo photo={current} className="h-full w-full" />
                 <div className="absolute inset-x-0 bottom-0 flex items-end justify-between bg-gradient-to-t from-background/90 to-transparent p-3.5">
                   <div className="flex flex-col gap-0.5">
-                    <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">{current?.date}</span>
+                    <span className="text-[11px] text-muted-foreground">{current?.date}</span>
                     <div className="flex items-baseline gap-1.5">
-                      <span className="font-mono text-[27px] font-bold text-foreground">{current ? kgLabel(current.kg) : "—"}</span>
-                      <span className="font-mono text-xs font-semibold text-muted-foreground/70">kg</span>
+                      <span className="text-[27px] font-semibold text-foreground">{current ? kgLabel(current.kg) : "—"}</span>
+                      <span className="text-xs font-semibold text-muted-foreground/70">kg</span>
                     </div>
                   </div>
                   {current && (
-                    <span className="rounded-lg bg-primary/15 px-2 py-1 font-mono text-xs font-bold text-primary">
+                    <span className="rounded-lg bg-primary/15 px-2 py-1 text-xs font-semibold text-primary">
                       {deltaLabel(first.kg, current.kg)}
                     </span>
                   )}
@@ -268,7 +268,7 @@ export function PhotoCompare({ open, onOpenChange, photos }: PhotoCompareProps) 
               <button
                 type="button"
                 onClick={() => setPlaying((v) => !v)}
-                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary p-[13px] text-[13px] font-extrabold text-primary-foreground shadow-hard-sm active-hard"
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary p-[13px] text-[13px] font-semibold text-primary-foreground transition-all duration-150 ease-smooth hover:brightness-110 active:scale-[0.98]"
               >
                 {playing ? <Pause className="h-[19px] w-[19px] fill-current" /> : <Play className="h-[19px] w-[19px] fill-current" />}
                 {playing ? "Pausar" : "Ver evolução"}
@@ -278,7 +278,7 @@ export function PhotoCompare({ open, onOpenChange, photos }: PhotoCompareProps) 
 
           {/* Grade de todas as fotos */}
           <div className="flex flex-col gap-2">
-            <span className="mono-label">Todas as fotos</span>
+            <span className="text-xs font-medium text-muted-foreground">Todas as fotos</span>
             <div className="grid grid-cols-4 gap-1.5">
               {photos.map((p, i) => (
                 <button
@@ -289,10 +289,10 @@ export function PhotoCompare({ open, onOpenChange, photos }: PhotoCompareProps) 
                     setIdx(i);
                     setPlaying(false);
                   }}
-                  className="relative flex aspect-[3/4] flex-col justify-end overflow-hidden rounded-[11px] border border-border p-1.5 text-left hover:border-primary"
+                  className="relative flex aspect-[3/4] flex-col justify-end overflow-hidden rounded-xl border border-border p-1.5 text-left hover:border-primary"
                 >
                   <Photo photo={p} className="absolute inset-0 h-full w-full" />
-                  <span className="relative rounded bg-background/70 px-1 py-0.5 font-mono text-[9px] font-semibold text-foreground">
+                  <span className="relative rounded bg-background/70 px-1 py-0.5 text-[11px] font-semibold text-foreground">
                     {p.date} · {kgLabel(p.kg)}
                   </span>
                 </button>

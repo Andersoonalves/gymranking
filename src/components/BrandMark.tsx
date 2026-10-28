@@ -10,7 +10,7 @@
 export function BrandMark({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 64 64" fill="none" aria-hidden="true" className={className}>
-      <rect width="64" height="64" rx="14" fill="#0E0D0B" />
+      <rect width="64" height="64" rx="14" fill="#050506" />
       <g transform="translate(-9.14 8.55) scale(0.4114)">
         <g fill="#F5F1E8">
           <rect x="46" y="68" width="108" height="11" rx="5.5" />

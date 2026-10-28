@@ -13,10 +13,10 @@ export function PageLoader() {
     <div className="mx-auto flex min-h-dvh w-full max-w-lg flex-col bg-background safe-area-top">
       <div className="flex items-center justify-between px-5 pb-4 pt-6">
         <span className="display-title text-2xl text-foreground">
-          Fit<span className="text-primary">rank</span>
+          Fit<span className="text-lime">rank</span>
         </span>
         <div className="relative h-10 w-10 overflow-hidden rounded-[10px] bg-secondary">
-          <span className="absolute inset-y-0 left-0 w-3/5 animate-sheen bg-gradient-to-r from-transparent via-foreground/5 to-transparent" />
+          <span className="absolute inset-y-0 left-0 w-3/5 animate-shine bg-gradient-to-r from-transparent via-foreground/5 to-transparent" />
         </div>
       </div>
       <div className="flex flex-col gap-3 px-5">
@@ -27,7 +27,7 @@ export function PageLoader() {
             style={{ height: b.h, borderRadius: b.r }}
           >
             <span
-              className="absolute inset-y-0 left-0 w-[45%] animate-sheen bg-gradient-to-r from-transparent via-foreground/5 to-transparent"
+              className="absolute inset-y-0 left-0 w-[45%] animate-shine bg-gradient-to-r from-transparent via-foreground/5 to-transparent"
               style={{ animationDelay: `${i * 0.12}s` }}
             />
           </div>

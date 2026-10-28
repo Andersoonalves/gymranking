@@ -219,7 +219,7 @@ export default function Progresso() {
   };
 
   const inputClass =
-    "w-full rounded-[11px] border border-border bg-background p-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary";
+    "w-full rounded-xl border border-border bg-background p-3 text-sm text-foreground outline-none placeholder:text-muted-foreground/50 focus:border-primary";
 
   return (
     // Desktop: grid de 2 colunas (gráfico + histórico | fotos + ações), mesma
@@ -227,14 +227,14 @@ export default function Progresso() {
     <div className="mx-auto flex max-w-lg flex-col gap-3.5 px-5 pb-4 pt-7 safe-area-top lg:grid lg:max-w-5xl lg:grid-cols-[minmax(0,1fr)_360px] lg:items-start lg:gap-5 lg:px-8 lg:pt-7">
       <div className="flex items-end justify-between gap-3 lg:col-span-2">
         <div className="flex flex-col gap-1">
-          <h1 className="display-title text-[28px] text-foreground">Progresso</h1>
+          <h1 className="font-semibold tracking-tight text-3xl text-foreground">Progresso</h1>
           <p className="text-xs text-muted-foreground">Acompanhe sua evolução de peso e fotos. Só você vê.</p>
         </div>
         {entries.length > 0 && (
           <button
             type="button"
             onClick={exportCSV}
-            className="hidden h-9 items-center gap-2 rounded-[10px] border border-border bg-card px-3.5 text-xs font-bold text-foreground hover:border-primary hover:text-primary lg:flex"
+            className="hidden h-9 items-center gap-2 rounded-xl border border-border bg-card px-3.5 text-xs font-semibold text-foreground hover:border-primary hover:text-primary lg:flex"
           >
             <Download className="h-4 w-4" />
             Exportar CSV
@@ -245,17 +245,17 @@ export default function Progresso() {
       <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-3.5">
       {/* Peso atual + gráfico */}
       {entries.length > 0 && (
-        <div className="order-1 rounded-[18px] border border-border bg-card p-4 lg:p-5">
+        <div className="order-1 animate-fade-up card-rim p-4 lg:p-5">
           <div className="mb-3.5 flex items-end justify-between gap-2">
             <div className="flex flex-col gap-1">
-              <span className="mono-label">Peso atual</span>
+              <span className="text-xs font-medium text-muted-foreground">Peso atual</span>
               <div className="flex items-baseline gap-1.5">
-                <span className="font-mono text-[34px] font-bold leading-none tabular-nums text-foreground">
+                <span className="text-[34px] font-semibold leading-none tabular-nums text-foreground">
                   {latest ? kgLabel(latest.weight_kg) : "—"}
                 </span>
-                <span className="font-mono text-[13px] font-semibold text-muted-foreground">kg</span>
+                <span className="text-[13px] font-semibold text-muted-foreground">kg</span>
                 {latest && rangeFirst && rangeFirst.id !== latest.id && (
-                  <span className="rounded-[7px] bg-primary/15 px-2 py-1 font-mono text-[11px] font-bold text-primary">
+                  <span className="rounded-md bg-primary/15 px-2 py-1 text-[11px] font-semibold text-primary">
                     {deltaLabel(rangeFirst.weight_kg, latest.weight_kg)}
                   </span>
                 )}
@@ -265,8 +265,8 @@ export default function Progresso() {
               <>
                 <div className="hidden w-px self-stretch bg-border lg:block" />
                 <div className="hidden flex-col gap-1 lg:flex">
-                  <span className="mono-label">Média 30d</span>
-                  <span className="font-mono text-[26px] font-bold leading-none tabular-nums text-foreground/80">{kgLabel(avg30d)}</span>
+                  <span className="text-xs font-medium text-muted-foreground">Média 30d</span>
+                  <span className="text-[26px] font-semibold leading-none tabular-nums text-foreground/80">{kgLabel(avg30d)}</span>
                   <span className="text-[11px] text-muted-foreground">
                     {latest && avg30d > latest.weight_kg
                       ? "tendência de queda"
@@ -291,8 +291,8 @@ export default function Progresso() {
                   type="button"
                   onClick={() => setRange(value)}
                   className={cn(
-                    "rounded-md px-2.5 py-[5px] text-[10px]",
-                    range === value ? "bg-primary font-bold text-primary-foreground" : "font-semibold text-muted-foreground",
+                    "rounded-md px-2.5 py-[5px] text-xs",
+                    range === value ? "bg-primary font-semibold text-primary-foreground" : "font-semibold text-muted-foreground",
                   )}
                 >
                   {label}
@@ -310,18 +310,18 @@ export default function Progresso() {
                     <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.5} />
+                <CartesianGrid vertical={false} strokeDasharray="2 4" stroke="hsl(var(--border))" strokeOpacity={0.5} />
                 <XAxis
                   dataKey="date"
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))", fontFamily: "IBM Plex Mono" }}
+                  tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
                 />
                 <YAxis
                   domain={[minWeight, maxWeight]}
                   tickLine={false}
                   axisLine={false}
-                  tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))", fontFamily: "IBM Plex Mono" }}
+                  tick={{ fontSize: 9, fill: "hsl(var(--muted-foreground))" }}
                   tickFormatter={(v: number) => `${v}`}
                 />
                 <Tooltip
@@ -330,7 +330,7 @@ export default function Progresso() {
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "10px",
                     fontSize: "12px",
-                    fontFamily: "IBM Plex Mono",
+                    fontFamily: "Inter", fontVariantNumeric: "tabular-nums",
                     color: "hsl(var(--popover-foreground))",
                   }}
                   formatter={(value: number) => [`${kgLabel(value)} kg`, "Peso"]}
@@ -355,16 +355,16 @@ export default function Progresso() {
       )}
 
       {/* Um ano de treinos — heatmap (desktop) */}
-      <div className="order-2 hidden flex-col gap-3.5 rounded-[18px] border border-border bg-card p-5 lg:flex">
+      <div className="order-2 animate-fade-up hidden flex-col gap-3.5 card-rim p-5 lg:flex">
         <div className="flex items-center justify-between">
-          <span className="display-title text-sm text-foreground">Um ano de treinos</span>
+          <span className="font-semibold tracking-tight text-sm text-foreground">Um ano de treinos</span>
           <div className="flex items-center gap-1.5">
-            <span className="font-mono text-[10px] uppercase text-muted-foreground/70">menos</span>
+            <span className="text-[11px] text-muted-foreground/70">menos</span>
             <span className="h-[11px] w-[11px] rounded-[3px] bg-secondary" />
             <span className="h-[11px] w-[11px] rounded-[3px] bg-primary/30" />
             <span className="h-[11px] w-[11px] rounded-[3px] bg-primary/60" />
             <span className="h-[11px] w-[11px] rounded-[3px] bg-primary" />
-            <span className="font-mono text-[10px] uppercase text-muted-foreground/70">mais</span>
+            <span className="text-[11px] text-muted-foreground/70">mais</span>
           </div>
         </div>
         <div className="grid grid-flow-col grid-rows-[repeat(7,minmax(0,1fr))] gap-[3px]">
@@ -381,33 +381,33 @@ export default function Progresso() {
         </div>
         <div className="flex items-center gap-6 pt-1">
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-xl font-bold tabular-nums text-foreground">{yearCount}</span>
-            <span className="mono-label">treinos no ano</span>
+            <span className="text-xl font-semibold tabular-nums text-foreground">{yearCount}</span>
+            <span className="text-xs font-medium text-muted-foreground">treinos no ano</span>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-xl font-bold tabular-nums text-foreground">{maxStreak}</span>
-            <span className="mono-label">maior streak</span>
+            <span className="text-xl font-semibold tabular-nums text-foreground">{maxStreak}</span>
+            <span className="text-xs font-medium text-muted-foreground">maior streak</span>
           </div>
           <div className="flex flex-col gap-1">
-            <span className="font-mono text-xl font-bold tabular-nums text-primary">{weeksOnGoalPct}%</span>
-            <span className="mono-label">semanas na meta</span>
+            <span className="text-xl font-semibold tabular-nums text-primary">{weeksOnGoalPct}%</span>
+            <span className="text-xs font-medium text-muted-foreground">semanas na meta</span>
           </div>
         </div>
       </div>
 
       {/* Histórico */}
       {entries.length > 0 && (
-        <div className="order-4 flex flex-col gap-2">
-          <span className="mono-label">Histórico</span>
+        <div className="order-4 animate-fade-up flex flex-col gap-2">
+          <span className="text-xs font-medium text-muted-foreground">Histórico</span>
 
           {/* Tabela desktop: Data · Peso · Δ · Nota · Foto */}
-          <div className="hidden overflow-hidden rounded-[18px] border border-border bg-card lg:block">
+          <div className="hidden overflow-hidden card-rim lg:block">
             <div className="grid grid-cols-[110px_90px_90px_1fr_80px] items-center gap-3.5 border-b border-border bg-secondary/50 px-5 py-3">
-              <span className="mono-label">Data</span>
-              <span className="mono-label">Peso</span>
-              <span className="mono-label">Δ</span>
-              <span className="mono-label">Nota</span>
-              <span className="mono-label text-right">Foto</span>
+              <span className="text-xs font-medium text-muted-foreground">Data</span>
+              <span className="text-xs font-medium text-muted-foreground">Peso</span>
+              <span className="text-xs font-medium text-muted-foreground">Δ</span>
+              <span className="text-xs font-medium text-muted-foreground">Nota</span>
+              <span className="text-xs font-medium text-muted-foreground text-right">Foto</span>
             </div>
             {[...entries].reverse().map((entry, i, arr) => {
               const prev = arr[i + 1];
@@ -417,11 +417,11 @@ export default function Progresso() {
                   key={entry.id}
                   className="group grid grid-cols-[110px_90px_90px_1fr_80px] items-center gap-3.5 border-b border-border/50 px-5 py-3 last:border-b-0 hover:bg-secondary/40"
                 >
-                  <span className="font-mono text-xs font-semibold text-muted-foreground">
+                  <span className="text-xs font-semibold text-muted-foreground">
                     {format(parseISO(entry.recorded_at), "dd MMM yyyy", { locale: ptBR })}
                   </span>
-                  <span className="font-mono text-[15px] font-bold tabular-nums text-foreground">{kgLabel(entry.weight_kg)}</span>
-                  <span className="font-mono text-[13px] font-bold tabular-nums text-primary">
+                  <span className="text-[15px] font-semibold tabular-nums text-foreground">{kgLabel(entry.weight_kg)}</span>
+                  <span className="text-[13px] font-semibold tabular-nums text-primary">
                     {prev ? deltaLabel(prev.weight_kg, entry.weight_kg) : "—"}
                   </span>
                   <span className="truncate text-xs text-muted-foreground">{entry.notes ?? ""}</span>
@@ -464,7 +464,7 @@ export default function Progresso() {
             const prev = arr[i + 1];
             const photoUrl = signedUrls[entry.id];
             return (
-              <div key={entry.id} className="flex items-center gap-3 rounded-[14px] border border-border/60 bg-card p-3 hover:border-border">
+              <div key={entry.id} className="flex items-center gap-3 card-rim p-3 hover:border-border">
                 {entry.photo_url && (
                   <button
                     type="button"
@@ -486,12 +486,12 @@ export default function Progresso() {
                 )}
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <div className="flex items-baseline gap-2">
-                    <span className="font-mono text-[17px] font-bold text-foreground">{kgLabel(entry.weight_kg)}</span>
-                    <span className="font-mono text-[11px] font-semibold text-muted-foreground">kg</span>
+                    <span className="text-[17px] font-semibold text-foreground">{kgLabel(entry.weight_kg)}</span>
+                    <span className="text-[11px] font-semibold text-muted-foreground">kg</span>
                     {prev && (
-                      <span className="font-mono text-[11px] font-bold text-primary">{deltaLabel(prev.weight_kg, entry.weight_kg)}</span>
+                      <span className="text-[11px] font-semibold text-primary">{deltaLabel(prev.weight_kg, entry.weight_kg)}</span>
                     )}
-                    <span className="ml-auto font-mono text-[10px] text-muted-foreground/70">
+                    <span className="ml-auto text-[11px] text-muted-foreground/70">
                       {format(parseISO(entry.recorded_at), "dd MMM yyyy", { locale: ptBR })}
                     </span>
                   </div>
@@ -526,10 +526,10 @@ export default function Progresso() {
       <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-3.5">
       {/* Antes · depois (desktop) */}
       {photos.length >= 2 && (
-        <div className="order-2 hidden overflow-hidden rounded-[18px] border border-border bg-card lg:flex lg:flex-col">
+        <div className="order-2 animate-fade-up hidden overflow-hidden card-rim lg:flex lg:flex-col">
           <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
-            <span className="display-title text-sm text-foreground">Antes · depois</span>
-            <span className="font-mono text-[10px] font-bold tracking-[0.12em] text-primary">
+            <span className="font-semibold tracking-tight text-sm text-foreground">Antes · depois</span>
+            <span className="text-[11px] font-semibold text-primary">
               {deltaLabel(photos[0].kg, photos[photos.length - 1].kg).toUpperCase()}
             </span>
           </div>
@@ -545,7 +545,7 @@ export default function Progresso() {
                 )}
                 <span
                   className={cn(
-                    "relative self-start rounded bg-background/70 px-1.5 py-0.5 font-mono text-[10px] font-bold",
+                    "relative self-start rounded bg-background/70 px-1.5 py-0.5 text-[11px] font-semibold",
                     i === 1 ? "text-primary" : "text-muted-foreground",
                   )}
                 >
@@ -557,7 +557,7 @@ export default function Progresso() {
           <button
             type="button"
             onClick={() => setCompareOpen(true)}
-            className="flex items-center justify-center gap-1.5 border-t border-border bg-secondary/50 py-3 font-mono text-xs font-bold uppercase tracking-[0.12em] text-primary hover:bg-secondary"
+            className="flex items-center justify-center gap-1.5 border-t border-border bg-secondary/50 py-3 text-xs font-semibold text-primary hover:bg-secondary"
           >
             <GitCompareArrows className="h-4 w-4" />
             Comparar fotos
@@ -567,10 +567,10 @@ export default function Progresso() {
 
       {/* Fotos de progresso (mobile) */}
       {photos.length > 0 && (
-        <div className="order-2 flex flex-col gap-3 rounded-[18px] border border-border bg-card p-4 lg:hidden">
+        <div className="order-2 animate-fade-up flex flex-col gap-3 card-rim p-4 lg:hidden">
           <div className="flex items-center justify-between">
-            <span className="text-[15px] font-extrabold text-foreground">Fotos de progresso</span>
-            <span className="font-mono text-[11px] text-muted-foreground/70">{photos.length}</span>
+            <span className="text-[15px] font-semibold text-foreground">Fotos de progresso</span>
+            <span className="text-[11px] text-muted-foreground/70">{photos.length}</span>
           </div>
           <div className={cn("grid gap-1.5", photos.length > 3 ? "grid-cols-[1fr_1fr_1fr_46px]" : "grid-cols-3")}>
             {photos.slice(-3).map((p, i, arr) => {
@@ -579,7 +579,7 @@ export default function Progresso() {
                 <div
                   key={p.id}
                   className={cn(
-                    "relative flex flex-col justify-end overflow-hidden rounded-[11px] border p-1.5",
+                    "relative flex flex-col justify-end overflow-hidden rounded-xl border p-1.5",
                     isLast ? "border-primary/40" : "border-border",
                   )}
                 >
@@ -593,7 +593,7 @@ export default function Progresso() {
                   <div className="aspect-[3/4]" />
                   <span
                     className={cn(
-                      "relative self-start rounded bg-background/70 px-1 py-0.5 font-mono text-[9px] font-semibold",
+                      "relative self-start rounded bg-background/70 px-1 py-0.5 text-[11px] font-semibold",
                       isLast ? "text-primary" : "text-muted-foreground",
                     )}
                   >
@@ -603,15 +603,15 @@ export default function Progresso() {
               );
             })}
             {photos.length > 3 && (
-              <div className="flex items-center justify-center rounded-[11px] border border-border bg-secondary">
-                <span className="font-mono text-[13px] font-bold text-muted-foreground">+{photos.length - 3}</span>
+              <div className="flex items-center justify-center rounded-xl border border-border bg-secondary">
+                <span className="text-[13px] font-semibold text-muted-foreground">+{photos.length - 3}</span>
               </div>
             )}
           </div>
           <button
             type="button"
             onClick={() => setCompareOpen(true)}
-            className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-secondary py-[13px] text-[13px] font-bold text-foreground hover:border-primary hover:text-primary"
+            className="flex w-full items-center justify-center gap-2 rounded-xl border border-border bg-secondary py-[13px] text-[13px] font-semibold text-foreground hover:border-primary hover:text-primary"
           >
             <GitCompareArrows className="h-[18px] w-[18px]" />
             Comparar fotos
@@ -623,7 +623,7 @@ export default function Progresso() {
       <button
         type="button"
         onClick={() => setFormOpen(true)}
-        className="order-3 flex w-full items-center justify-center gap-2 rounded-[14px] bg-primary p-[16px] text-sm font-extrabold text-primary-foreground shadow-hard active-hard"
+        className="order-3 animate-fade-up flex w-full items-center justify-center gap-2 rounded-xl bg-primary p-[16px] text-sm font-semibold text-primary-foreground transition-all duration-150 ease-smooth hover:brightness-110 active:scale-[0.98]"
       >
         <Plus className="h-5 w-5" />
         Novo registro
@@ -631,18 +631,18 @@ export default function Progresso() {
 
       {/* Recordes pessoais (desktop) */}
       {personalBests.length > 0 && (
-        <div className="order-4 hidden flex-col gap-3 rounded-[18px] border border-border bg-card p-4 lg:flex">
-          <span className="display-title text-sm text-foreground">Recordes pessoais</span>
+        <div className="order-4 animate-fade-up hidden flex-col gap-3 card-rim p-4 lg:flex">
+          <span className="font-semibold tracking-tight text-sm text-foreground">Recordes pessoais</span>
           <div className="flex flex-col gap-2">
             {personalBests.map(([title, pr]) => (
               <div key={title} className="flex items-center gap-3 rounded-xl border border-border/60 bg-secondary/40 px-3 py-2.5">
                 <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="truncate text-[13px] font-bold text-foreground">{title}</span>
-                  <span className="font-mono text-[10px] text-muted-foreground">
+                  <span className="truncate text-[13px] font-semibold text-foreground">{title}</span>
+                  <span className="text-[11px] text-muted-foreground">
                     {format(parseISO(pr.date), "dd MMM", { locale: ptBR })} · 1×{pr.reps}
                   </span>
                 </div>
-                <span className="font-mono text-lg font-bold tabular-nums text-primary">{pr.load.toLocaleString("pt-BR")}</span>
+                <span className="text-lg font-semibold tabular-nums text-primary">{pr.load.toLocaleString("pt-BR")}</span>
               </div>
             ))}
           </div>
@@ -650,7 +650,7 @@ export default function Progresso() {
       )}
 
       {/* Privacidade */}
-      <div className="order-5 flex items-center gap-2.5 rounded-[14px] border border-border/60 bg-card px-3.5 py-3">
+      <div className="order-5 animate-fade-up flex items-center gap-2.5 card-rim px-3.5 py-3">
         <Lock className="h-[19px] w-[19px] shrink-0 text-muted-foreground" />
         <span className="flex-1 text-[11px] leading-relaxed text-muted-foreground">
           Seus registros e fotos são privados. Ninguém do grupo vê — nem aparecem no feed.
@@ -662,14 +662,14 @@ export default function Progresso() {
       <Sheet open={formOpen} onOpenChange={setFormOpen}>
         <SheetContent
           side="bottom"
-          className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
+          className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 backdrop-blur-sm sheet-desktop-modal"
         >
           <form onSubmit={handleSubmit} className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
             <div className="h-1 w-9 self-center rounded-full bg-border" />
-            <SheetTitle className="display-title text-[22px] text-foreground">Novo registro</SheetTitle>
+            <SheetTitle className="font-semibold tracking-tight text-[22px] text-foreground">Novo registro</SheetTitle>
             <div className="flex gap-2">
               <label className="flex flex-1 flex-col gap-1.5">
-                <span className="mono-label">Peso (kg)</span>
+                <span className="text-xs font-medium text-muted-foreground">Peso (kg)</span>
                 <input
                   type="text"
                   inputMode="decimal"
@@ -677,17 +677,17 @@ export default function Progresso() {
                   value={weightInput}
                   onChange={(e) => setWeightInput(e.target.value)}
                   required
-                  className={cn(inputClass, "font-mono font-semibold")}
+                  className={cn(inputClass, "font-semibold")}
                 />
               </label>
               <label className="flex flex-1 flex-col gap-1.5">
-                <span className="mono-label">Data</span>
+                <span className="text-xs font-medium text-muted-foreground">Data</span>
                 <input
                   type="date"
                   value={dateInput}
                   onChange={(e) => setDateInput(e.target.value)}
                   required
-                  className={cn(inputClass, "font-mono")}
+                  className={inputClass}
                 />
               </label>
             </div>
@@ -702,7 +702,7 @@ export default function Progresso() {
               />
               <span
                 className={cn(
-                  "self-end font-mono text-[10px] tabular-nums",
+                  "self-end text-[11px] tabular-nums",
                   notes.length >= NOTES_MAX_LENGTH ? "text-accent" : "text-muted-foreground/60",
                 )}
               >
@@ -710,7 +710,7 @@ export default function Progresso() {
               </span>
             </div>
             <div className="flex flex-col gap-1.5">
-              <span className="mono-label">Foto de progresso · opcional</span>
+              <span className="text-xs font-medium text-muted-foreground">Foto de progresso · opcional</span>
               {userId && (
                 <ProgressPhotoUpload
                   userId={userId}
@@ -723,7 +723,7 @@ export default function Progresso() {
             <button
               type="submit"
               disabled={saving}
-              className="w-full rounded-[14px] bg-primary p-[16px] text-sm font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50"
+              className="w-full rounded-xl bg-primary p-[16px] text-sm font-semibold text-primary-foreground transition-all duration-150 ease-smooth hover:brightness-110 active:scale-[0.98] disabled:opacity-50"
             >
               {saving ? "Salvando…" : "Salvar registro"}
             </button>
@@ -745,14 +745,14 @@ export default function Progresso() {
       <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="display-title">Remover registro?</AlertDialogTitle>
+            <AlertDialogTitle className="font-semibold tracking-tight">Remover registro?</AlertDialogTitle>
             <AlertDialogDescription>Este registro de peso e foto será excluído permanentemente.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-destructive text-destructive-foreground shadow-hard-destructive hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Remover
             </AlertDialogAction>

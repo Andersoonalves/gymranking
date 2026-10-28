@@ -1,133 +1,169 @@
-@import url("https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Design system "Placar" — energia de transmissão esportiva.
-   Escuro é o tema padrão; numerais em IBM Plex Mono, títulos Archivo 900 caixa alta. */
+/* Design system Kinora — lima #9ae600, Inter, cards com rim em gradiente + vidro.
+   Escuro é o tema padrão. Sem sombra dura. Tokens em docs/design/tokens.css. */
 @layer base {
+  /* Tokens extraídos de fitness.aniq-ui.com (Kinora) — valores HSL sem `hsl()`, formato shadcn.
+     Colar dentro de `@layer base` em src/index.css, substituindo os blocos :root e .dark atuais.
+     Fonte: CSS renderizado (:root / .dark) do site. Hex original entre comentários. */
+
   :root {
-    --background: 42 38% 94%;
-    --foreground: 34 19% 7%;
+    --background: 200 18% 97%;
+    --foreground: 0 0% 4%;
 
     --card: 0 0% 100%;
-    --card-foreground: 34 19% 7%;
-
+    --card-foreground: 0 0% 4%;
     --popover: 0 0% 100%;
-    --popover-foreground: 34 19% 7%;
+    --popover-foreground: 0 0% 4%;
 
-    --primary: 76 100% 35%;
-    --primary-foreground: 0 0% 100%;
-    /* aresta da sombra dura dos botões primários */
-    --primary-edge: 76 100% 25%;
+    --primary: 80 100% 45%;
+    --primary-foreground: 73 90% 4%;
+    --primary-edge: 80 100% 36%;
+    --primary-text: 83 97% 24%;
 
-    --secondary: 43 31% 86%;
-    --secondary-foreground: 34 19% 7%;
+    --secondary: 195 13% 94%;
+    --secondary-foreground: 0 0% 4%;
+    --muted: 200 13% 95%;
+    --muted-foreground: 192 2% 40%;
 
-    --muted: 43 36% 90%;
-    --muted-foreground: 37 11% 39%;
+    --accent: 80 60% 90%;
+    --accent-foreground: 83 97% 24%;
 
-    --accent: 21 100% 44%;
-    --accent-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --destructive-edge: 0 70% 45%;
 
-    --destructive: 0 72% 50%;
-    --destructive-foreground: 0 85% 97%;
-    --destructive-edge: 0 52% 40%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 80 100% 45%;
 
-    --border: 42 30% 83%;
-    --input: 42 30% 83%;
-    --ring: 76 100% 35%;
+    --radius: 0.625rem;
 
-    --radius: 0.75rem;
+    --chart-1: 80 100% 45%;
+    --chart-2: 45 100% 43%;
+    --chart-3: 217 91% 60%;
+    --chart-4: 142 71% 45%;
+    --chart-5: 0 0% 60%;
 
-    --chart-1: 76 100% 35%;
-    --chart-2: 21 100% 44%;
-    --chart-3: 222 64% 60%;
-    --chart-4: 37 11% 39%;
-    --chart-5: 41 10% 45%;
+    --sidebar-background: 195 13% 94%;
+    --sidebar-foreground: 0 0% 4%;
+    --sidebar-primary: 80 100% 45%;
+    --sidebar-primary-foreground: 73 90% 4%;
+    --sidebar-accent: 0 0% 100%;
+    --sidebar-accent-foreground: 83 97% 24%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 80 100% 45%;
+    --sidebar: 195 13% 94%;
 
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 34 19% 7%;
-    --sidebar-primary: 76 100% 35%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 43 31% 86%;
-    --sidebar-accent-foreground: 34 19% 7%;
-    --sidebar-border: 42 30% 83%;
-    --sidebar-ring: 76 100% 35%;
-    --sidebar: 0 0% 100%;
 
-    --font-sans: 'Archivo', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif;
-    --font-serif: 'Archivo', ui-serif, Georgia, serif;
-    --font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+    --amber: 45 100% 43%;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --info: 217 91% 60%;
+    --surface-hover: 200 13% 95%;
+    --track: 120 9% 91%;
 
-    --shadow-2xs: 0 1px 2px 0px hsl(36 14% 5% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(36 14% 5% / 0.06);
-    --shadow-sm: 0 2px 6px -1px hsl(36 14% 5% / 0.08);
-    --shadow: 0 2px 8px -2px hsl(36 14% 5% / 0.10);
-    --shadow-md: 0 4px 12px -2px hsl(36 14% 5% / 0.12);
-    --shadow-lg: 0 8px 24px -6px hsl(36 14% 5% / 0.16);
-    --shadow-xl: 0 16px 40px -12px hsl(36 14% 5% / 0.22);
-    --shadow-2xl: 0 40px 70px -30px hsl(36 14% 5% / 0.35);
-    --tracking-normal: 0em;
+    --card-gradient: linear-gradient(180deg, #fff 0%, #fafbfa 100%);
+    --card-rim: linear-gradient(140deg, #00000016 0%, #0000000e 22%, #00000008 52%, #0000000a 82%, #0000000f 100%);
+    --card-edge-glow: none;
+    --panel-glass: linear-gradient(180deg, #fafbfbb8 0%, #f3f5f6c7 100%);
+    --cta-gradient: linear-gradient(180deg, #70b10f 0%, #5b9c0a 100%);
+    --stat-bar-gradient: linear-gradient(180deg, #9ae600 0%, #cdf380 55%, #9ae60029 100%);
+    --accent-glow: transparent;
+
+    --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+
+    --ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --ease-spring-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+    --ease-collapse: cubic-bezier(0.87, 0, 0.13, 1);
+
+    --shadow-2xs: 0 1px 2px 0 hsl(0 0% 0% / 0.04);
+    --shadow-xs: 0 1px 3px 0 hsl(0 0% 0% / 0.05);
+    --shadow-sm: 0 2px 6px -1px hsl(0 0% 0% / 0.06);
+    --shadow: 0 2px 8px -2px hsl(0 0% 0% / 0.08);
+    --shadow-md: 0 4px 12px -2px hsl(0 0% 0% / 0.08);
+    --shadow-lg: 0 8px 24px -6px hsl(0 0% 0% / 0.10);
+    --shadow-xl: 0 16px 40px -12px hsl(0 0% 0% / 0.14);
+    --shadow-2xl: 0 40px 70px -30px hsl(0 0% 0% / 0.2);
     --spacing: 0.25rem;
   }
 
   .dark {
-    --background: 36 14% 5%;
-    --foreground: 42 39% 94%;
+    --background: 240 9% 2%;
+    --foreground: 0 0% 96%;
 
-    --card: 40 11% 9%;
-    --card-foreground: 42 39% 94%;
+    --card: 200 10% 6%;
+    --card-foreground: 0 0% 96%;
+    --popover: 200 8% 8%;
+    --popover-foreground: 0 0% 96%;
 
-    --popover: 36 17% 12%;
-    --popover-foreground: 42 39% 94%;
+    --primary: 80 100% 45%;
+    --primary-foreground: 73 90% 4%;
+    --primary-edge: 80 100% 36%;
+    --primary-text: 80 100% 45%;
 
-    --primary: 75 85% 63%;
-    --primary-foreground: 36 14% 5%;
-    --primary-edge: 75 62% 45%;
+    --secondary: 220 5% 12%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 56%;
 
-    --secondary: 36 17% 12%;
-    --secondary-foreground: 42 39% 94%;
+    --accent: 80 40% 12%;
+    --accent-foreground: 80 100% 45%;
 
-    --muted: 36 17% 12%;
-    --muted-foreground: 37 9% 57%;
-
-    --accent: 18 100% 59%;
-    --accent-foreground: 36 14% 5%;
-
-    --destructive: 0 100% 68%;
+    --destructive: 0 91% 71%;
     --destructive-foreground: 0 37% 8%;
-    --destructive-edge: 0 50% 48%;
+    --destructive-edge: 0 60% 45%;
 
-    --border: 38 15% 17%;
-    --input: 38 15% 17%;
-    --ring: 75 85% 63%;
+    --border: 240 2% 14%;
+    --input: 0 0% 28%;
+    --ring: 80 100% 45%;
 
-    --chart-1: 75 85% 63%;
-    --chart-2: 18 100% 59%;
-    --chart-3: 222 64% 70%;
-    --chart-4: 41 21% 76%;
-    --chart-5: 41 10% 45%;
+    --chart-1: 80 100% 45%;
+    --chart-2: 41 98% 49%;
+    --chart-3: 213 94% 68%;
+    --chart-4: 160 60% 52%;
+    --chart-5: 0 0% 69%;
 
-    --sidebar-background: 40 11% 9%;
-    --sidebar-foreground: 42 39% 94%;
-    --sidebar-primary: 75 85% 63%;
-    --sidebar-primary-foreground: 36 14% 5%;
-    --sidebar-accent: 36 17% 12%;
-    --sidebar-accent-foreground: 42 39% 94%;
-    --sidebar-border: 38 15% 17%;
-    --sidebar-ring: 75 85% 63%;
-    --sidebar: 40 11% 9%;
+    --sidebar-background: 0 0% 0%;
+    --sidebar-foreground: 0 0% 96%;
+    --sidebar-primary: 80 100% 45%;
+    --sidebar-primary-foreground: 73 90% 4%;
+    --sidebar-accent: 220 5% 12%;
+    --sidebar-accent-foreground: 80 100% 45%;
+    --sidebar-border: 240 2% 14%;
+    --sidebar-ring: 80 100% 45%;
+    --sidebar: 0 0% 0%;
 
-    --shadow-2xs: 0 1px 2px 0px hsl(0 0% 0% / 0.2);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-    --shadow-sm: 0 2px 6px -1px hsl(0 0% 0% / 0.3);
-    --shadow: 0 2px 8px -2px hsl(0 0% 0% / 0.35);
-    --shadow-md: 0 4px 12px -2px hsl(0 0% 0% / 0.4);
-    --shadow-lg: 0 8px 24px -6px hsl(0 0% 0% / 0.5);
-    --shadow-xl: 0 16px 40px -12px hsl(0 0% 0% / 0.6);
-    --shadow-2xl: 0 40px 70px -30px hsl(0 0% 0% / 0.6);
+    --amber: 41 98% 49%;
+    --success: 160 60% 52%;
+    --warning: 43 96% 56%;
+    --info: 213 94% 68%;
+    --surface-hover: 220 5% 12%;
+    --track: 240 3% 14%;
+
+    --card-gradient: linear-gradient(180deg, #08090a 0%, #010102 40%, #000 100%);
+    --card-rim: linear-gradient(140deg, #fff6 0%, #ffffff42 12%, #ffffff2e 26%, #ffffff24 42%, #ffffff1f 58%, #ffffff1f 72%, #ffffff24 84%, #ffffff2b 100%);
+    --card-sheen: linear-gradient(128deg, #ffffff24 0%, #ffffff12 12%, #ffffff08 28%, #ffffff03 38%, transparent 50%);
+    --card-edge-glow: inset 0 0 46px #c8cdd20d, inset 0 0 13px #c8cdd20a;
+    --panel-glass: linear-gradient(180deg, #0a0c0d4d 0%, #05060757 100%);
+    --cta-gradient: linear-gradient(180deg, #adff00 0%, #9ae600 100%);
+    --stat-bar-gradient: linear-gradient(180deg, #9ae600 0%, #4c7a02 55%, #9ae60024 100%);
+    --accent-glow: #9ae60073;
+
+    --shadow-2xs: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-xs: 0 1px 3px 0 hsl(0 0% 0% / 0.35);
+    --shadow-sm: 0 2px 6px -1px hsl(0 0% 0% / 0.4);
+    --shadow: 0 2px 8px -2px hsl(0 0% 0% / 0.45);
+    --shadow-md: 0 4px 12px -2px hsl(0 0% 0% / 0.5);
+    --shadow-lg: 0 8px 24px -6px hsl(0 0% 0% / 0.6);
+    --shadow-xl: 0 16px 40px -12px hsl(0 0% 0% / 0.7);
+    --shadow-2xl: 0 40px 70px -30px hsl(0 0% 0% / 0.7);
   }
 }
 
@@ -143,7 +179,82 @@
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Archivo', sans-serif;
+    @apply font-sans tracking-tight;
+  }
+}
+
+@layer components {
+  /* Card com borda em gradiente (rim) + superfície em gradiente. */
+  .card-rim {
+    position: relative;
+    border: 1px solid transparent;
+    border-radius: 1rem;
+    background-image: var(--card-sheen, linear-gradient(transparent, transparent)), var(--card-gradient), var(--card-rim);
+    background-origin: padding-box, padding-box, border-box;
+    background-clip: padding-box, padding-box, border-box;
+    box-shadow: var(--card-edge-glow);
+    color: hsl(var(--card-foreground));
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Glare radial nos cantos, só no escuro. */
+  .dark .card-rim::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    pointer-events: none;
+    background:
+      radial-gradient(48% 52% at 100% 0, #c8cdd21f, transparent 72%),
+      radial-gradient(40% 44% at 100% 100%, #c8cdd212, transparent 72%);
+  }
+
+  /* Painel de vidro: translúcido + blur 8px + borda sutil. */
+  .glass {
+    background-image: var(--panel-glass);
+    background-color: hsl(var(--card) / 0.6);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+    border: 1px solid hsl(var(--border));
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid transparent;
+    color: hsl(var(--muted-foreground));
+    font-weight: 500;
+    transition: background-color 0.15s cubic-bezier(0.4, 0, 0.2, 1), color 0.15s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .nav-item:hover {
+    background-color: hsl(var(--secondary));
+    color: hsl(var(--foreground));
+  }
+
+  .nav-item-active,
+  .nav-item-active:hover {
+    border-radius: 0.75rem;
+    border: 1px solid hsl(var(--primary) / 0.4);
+    background-image: linear-gradient(135deg, hsl(var(--primary) / 0.16), hsl(var(--primary) / 0.04));
+    background-color: hsl(var(--card));
+    color: hsl(var(--primary-text));
+  }
+
+  .dark .nav-item-active {
+    box-shadow: 0 0 24px -8px var(--accent-glow);
+  }
+
+  /* Lima legível: escuro no claro, #9ae600 no escuro. */
+  .text-lime {
+    color: hsl(var(--primary-text));
+  }
+
+  /* Alias: cartão antigo "Placar" aponta para o estilo novo. */
+  .k-card {
+    @apply card-rim;
   }
 }
 
@@ -165,35 +276,32 @@
     display: none;
   }
 
-  /* Título de placar: Archivo 900 caixa alta, tracking apertado */
+  /* Aliases dos utilitários "Placar" ainda usados por outros blocos:
+     título sóbrio, rótulo sem mono, sem sombra dura. */
   .display-title {
-    @apply font-sans font-black uppercase tracking-tight;
+    @apply font-sans font-semibold tracking-tight;
   }
 
-  /* Rótulo mono: IBM Plex Mono, caixa alta, espaçado */
   .mono-label {
-    @apply font-mono text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground;
+    @apply text-xs font-medium tracking-wide text-muted-foreground;
   }
 
-  /* Sombra dura — assinatura dos botões primários */
-  .shadow-hard {
-    box-shadow: 0 4px 0 hsl(var(--primary-edge));
-  }
-
-  .shadow-hard-sm {
-    box-shadow: 0 3px 0 hsl(var(--primary-edge));
+  .shadow-hard,
+  .shadow-hard-sm,
+  .shadow-hard-destructive {
+    box-shadow: none;
   }
 
   .active-hard {
-    @apply transition-[transform,box-shadow] active:translate-y-[2px];
+    @apply transition-transform duration-150 ease-smooth active:scale-[0.98];
   }
+}
 
-  .active-hard:active {
-    box-shadow: 0 2px 0 hsl(var(--primary-edge));
-  }
-
-  .shadow-hard-destructive {
-    box-shadow: 0 3px 0 hsl(var(--destructive-edge));
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 

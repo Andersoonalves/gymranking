@@ -143,9 +143,9 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
         onPointerDownOutside={(e) => {
           if (openPhotos) e.preventDefault();
         }}
-        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
+        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card/90 p-0 backdrop-blur-[8px] sheet-desktop-modal"
       >
-        <div className="flex flex-col gap-4 px-5 pb-6 pt-3 safe-area-bottom">
+        <div className="flex flex-col gap-4 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3">
           <div className="h-1 w-9 self-center rounded-full bg-border" />
 
           <div className="flex items-center gap-3.5">
@@ -156,15 +156,15 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
               className="h-14 w-14 rounded-2xl text-xl"
             />
             <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <SheetTitle className="display-title truncate text-[22px] text-foreground">
+              <SheetTitle className="font-semibold tracking-tight truncate text-[22px] text-foreground">
                 {isMe ? "Você" : member.display_name}
               </SheetTitle>
-              <span className="font-mono text-[10px] uppercase tracking-[0.1em] text-muted-foreground">
+              <span className="tabular-nums text-[10px] text-muted-foreground">
                 {stats.total} {stats.total === 1 ? "treino" : "treinos"} neste grupo
               </span>
             </div>
             {stats.streak > 0 && (
-              <span className="flex items-center gap-1 rounded-xl bg-accent/15 px-2.5 py-2 font-mono text-sm font-bold text-accent">
+              <span className="flex items-center gap-1 rounded-xl bg-accent/15 px-2.5 py-2 tabular-nums text-sm font-bold text-accent">
                 <Flame className="h-4 w-4 fill-accent/20" />
                 {stats.streak}
               </span>
@@ -181,8 +181,8 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
               ] as const
             ).map(([value, label]) => (
               <div key={label} className="flex flex-col items-center gap-1 rounded-2xl border border-border bg-secondary/40 py-3.5">
-                <span className="font-mono text-2xl font-bold tabular-nums text-foreground">{value}</span>
-                <span className="text-center text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">{label}</span>
+                <span className="tabular-nums text-2xl font-bold text-foreground">{value}</span>
+                <span className="text-center text-[9px] font-semibold text-muted-foreground">{label}</span>
               </div>
             ))}
           </div>
@@ -219,8 +219,8 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
               <TabsContent value="dieta" className="mt-0">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-center justify-between">
-                    <span className="mono-label">Hoje</span>
-                    <span className="font-mono text-[11px] font-bold text-muted-foreground">
+                    <span className="text-xs font-medium text-muted-foreground">Hoje</span>
+                    <span className="tabular-nums text-[11px] font-bold text-muted-foreground">
                       {diet.week.goodDays}/{diet.week.days} dias na meta nesta semana
                     </span>
                   </div>
@@ -228,7 +228,7 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
                   <div className="flex items-center gap-3 rounded-2xl border border-border bg-secondary/40 p-3.5">
                     <span
                       className={cn(
-                        "font-mono text-2xl font-bold leading-none tabular-nums",
+                        "tabular-nums text-2xl font-bold leading-none",
                         diet.today.total > 0 && diet.today.ratio >= DIET_ADHERENCE_GOAL ? "text-primary" : "text-foreground",
                       )}
                     >
@@ -251,7 +251,7 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
                       </span>
                     </div>
                     {diet.streak > 0 && (
-                      <span className="flex shrink-0 items-center gap-1 rounded-xl bg-primary/10 px-2.5 py-2 font-mono text-sm font-bold text-primary">
+                      <span className="flex shrink-0 items-center gap-1 rounded-xl bg-primary/10 px-2.5 py-2 tabular-nums text-sm font-bold text-primary">
                         <Flame className="h-4 w-4" />
                         {diet.streak}
                       </span>
@@ -269,8 +269,8 @@ export function MemberProfileSheet({ open, onOpenChange, member, workouts, myUse
           {/* Conquistas */}
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <span className="mono-label">Conquistas</span>
-              <span className="font-mono text-[11px] font-bold text-primary">
+              <span className="text-xs font-medium text-muted-foreground">Conquistas</span>
+              <span className="tabular-nums text-[11px] font-bold text-primary">
                 {unlocked.length}/{achievements.length}
               </span>
             </div>

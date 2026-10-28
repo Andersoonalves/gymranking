@@ -86,7 +86,7 @@ function GoalRing({ done, goal }: { done: number; goal: number }) {
           transform="rotate(-90 50 50)"
         />
       </svg>
-      <span className="font-mono text-[9px] font-semibold tracking-[0.1em] text-muted-foreground">
+      <span className="text-[9px] font-semibold tracking-wide text-muted-foreground">
         {done}/{goal} SEM
       </span>
     </div>
@@ -300,7 +300,7 @@ export default function Index() {
 
         <div className="relative flex flex-col gap-6">
           <div className="flex flex-col gap-3">
-            <span className="flex h-14 w-14 items-center justify-center rounded-[18px] bg-primary/15 text-primary">
+            <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/15 text-lime">
               <Users className="h-7 w-7" />
             </span>
             <h1 className="display-title text-[32px] leading-[1.05]">
@@ -316,14 +316,14 @@ export default function Index() {
             <button
               type="button"
               onClick={() => setCreateOpen(true)}
-              className="flex w-full items-center justify-center gap-2 rounded-[14px] bg-primary p-[18px] text-[15px] font-extrabold text-primary-foreground shadow-hard active-hard"
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-primary p-[18px] text-[15px] font-semibold text-primary-foreground active-hard"
             >
               <Plus className="h-5 w-5" />
               Criar um grupo
             </button>
             <div className="flex items-center gap-3">
               <span className="h-px flex-1 bg-border" />
-              <span className="font-mono text-[10px] font-semibold tracking-[0.14em] text-muted-foreground/60">OU</span>
+              <span className="text-[10px] font-semibold tracking-wide text-muted-foreground/60">OU</span>
               <span className="h-px flex-1 bg-border" />
             </div>
             <div className="flex flex-col gap-2">
@@ -336,14 +336,14 @@ export default function Index() {
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
                 placeholder="A1B2C3D4"
-                className="w-full rounded-xl border border-border bg-card p-4 text-center font-mono text-xl font-bold uppercase tracking-[0.35em] text-foreground outline-none placeholder:text-muted-foreground/30 focus:border-primary"
+                className="w-full rounded-xl border border-border bg-card p-4 text-center text-xl font-bold uppercase tracking-[0.35em] text-foreground outline-none placeholder:text-muted-foreground/30 focus:border-primary"
               />
             </div>
             <button
               type="button"
               onClick={handleJoin}
               disabled={joinGroup.isPending || !inviteCode.trim()}
-              className="w-full rounded-[14px] border border-border bg-secondary p-4 text-sm font-bold text-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+              className="w-full rounded-xl border border-border bg-secondary p-4 text-sm font-bold text-foreground transition-colors hover:border-primary hover:text-lime disabled:opacity-50"
             >
               {joinGroup.isPending ? "Entrando…" : "Entrar no grupo"}
             </button>
@@ -355,7 +355,7 @@ export default function Index() {
 
           <div className="flex items-center justify-center gap-4">
             {isAdmin && (
-              <Link to="/admin" className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-primary">
+              <Link to="/admin" className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-lime">
                 <Shield className="h-3.5 w-3.5" />
                 Admin
               </Link>
@@ -386,10 +386,10 @@ export default function Index() {
       <div className="flex items-center justify-between lg:col-span-2">
         <div className="flex flex-col gap-0.5">
           <span className="display-title text-[26px] leading-none text-foreground lg:hidden">
-            Fit<span className="text-primary">rank</span>
+            Fit<span className="text-lime">rank</span>
           </span>
           <h1 className="display-title hidden text-[26px] leading-none text-foreground lg:block">Início</h1>
-          <span className="font-mono text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground lg:hidden">
+          <span className="text-[10px] font-semibold tracking-wide text-muted-foreground lg:hidden">
             {format(new Date(), "EEEE · dd MMM", { locale: ptBR })}
           </span>
         </div>
@@ -398,7 +398,7 @@ export default function Index() {
             <Link
               to="/admin"
               aria-label="Painel admin"
-              className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-border bg-card text-muted-foreground hover:text-primary"
+              className="flex h-[38px] w-[38px] items-center justify-center rounded-[10px] border border-border bg-card text-muted-foreground hover:text-lime"
             >
               <Shield className="h-4 w-4" />
             </Link>
@@ -425,7 +425,7 @@ export default function Index() {
                       className={cn(
                         "flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm",
                         g.id === selectedGroup?.id
-                          ? "bg-primary/10 font-bold text-primary"
+                          ? "bg-primary/10 font-bold text-lime"
                           : "font-semibold text-foreground hover:bg-secondary",
                       )}
                     >
@@ -474,19 +474,19 @@ export default function Index() {
       <button
         type="button"
         onClick={() => setAchievementsOpen(true)}
-        className="relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-[18px] text-left animate-rise-in"
+        className="relative flex w-full items-center gap-4 overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-[18px] text-left animate-fade-up"
       >
         <div className="pointer-events-none absolute inset-0 animate-glow-pulse bg-[radial-gradient(120px_80px_at_12%_50%,hsl(var(--accent)/0.22),transparent_70%)]" />
         <div className="relative flex items-baseline gap-1.5">
           <Flame className="h-[30px] w-[30px] animate-flame self-center fill-accent/20 text-accent" />
-          <span className="font-mono text-[46px] font-bold leading-[0.85] tabular-nums text-foreground">{streak}</span>
+          <span className="text-[46px] font-bold leading-[0.85] tabular-nums text-foreground">{streak}</span>
         </div>
         <div className="relative flex flex-1 flex-col gap-1">
-          <span className="text-sm font-extrabold text-foreground">{streak === 1 ? "dia seguido" : "dias seguidos"}</span>
+          <span className="text-sm font-semibold text-foreground">{streak === 1 ? "dia seguido" : "dias seguidos"}</span>
           <span className="text-xs leading-snug text-muted-foreground">
             {trainedToday ? "Treino de hoje já está no placar." : "Treine hoje para manter a sequência."}
           </span>
-          <span className="self-start rounded-md bg-background/60 px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-[0.08em] text-muted-foreground">
+          <span className="self-start rounded-md bg-background/60 px-1.5 py-0.5 text-[9px] font-bold tracking-wide text-muted-foreground">
             🏅 {unlockedCount}/{achievements.length} CONQUISTAS
           </span>
         </div>
@@ -497,17 +497,17 @@ export default function Index() {
 
       {/* KPIs: Este mês + Recorde */}
       <div className="hidden lg:grid lg:grid-cols-2 lg:gap-4">
-        <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
+        <div className="flex flex-col gap-2 card-rim p-4">
           <span className="mono-label">Este mês</span>
-          <span className="font-mono text-[34px] font-bold leading-none tabular-nums text-foreground">{monthCount}</span>
-          <span className={cn("text-[11px] font-semibold", monthDelta >= 0 ? "text-primary" : "text-muted-foreground")}>
+          <span className="text-[34px] font-bold leading-none tabular-nums text-foreground">{monthCount}</span>
+          <span className={cn("text-[11px] font-semibold", monthDelta >= 0 ? "text-lime" : "text-muted-foreground")}>
             {monthDelta >= 0 ? "+" : ""}
             {monthDelta} vs. {format(subMonths(new Date(), 1), "MMMM", { locale: ptBR }).slice(0, 3)}
           </span>
         </div>
-        <div className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
+        <div className="flex flex-col gap-2 card-rim p-4">
           <span className="mono-label">Recorde</span>
-          <span className="font-mono text-[34px] font-bold leading-none tabular-nums text-foreground">{recordStreak}</span>
+          <span className="text-[34px] font-bold leading-none tabular-nums text-foreground">{recordStreak}</span>
           <span className="text-[11px] font-semibold text-muted-foreground">dias seguidos</span>
         </div>
       </div>
@@ -517,15 +517,15 @@ export default function Index() {
       {activeChallenge && (
         <Link
           to="/rankings"
-          className="order-2 relative flex items-center gap-3 overflow-hidden rounded-2xl border border-accent/40 bg-gradient-to-r from-secondary to-card p-3.5 animate-rise-in"
+          className="order-2 relative flex items-center gap-3 overflow-hidden rounded-2xl border border-accent/40 bg-gradient-to-r from-secondary to-card p-3.5 animate-fade-up"
         >
           <span className="pointer-events-none absolute inset-0 animate-glow-pulse bg-[radial-gradient(160px_80px_at_90%_50%,hsl(var(--accent)/0.16),transparent_70%)] [animation-duration:4s]" />
           <span className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background/60 text-xl">
             {activeChallenge.emoji}
           </span>
           <span className="relative flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="truncate text-[13px] font-extrabold text-foreground">{activeChallenge.title}</span>
-            <span className="font-mono text-[10px] uppercase text-muted-foreground">
+            <span className="truncate text-[13px] font-semibold text-foreground">{activeChallenge.title}</span>
+            <span className="text-[10px] text-muted-foreground">
               {myChallengeScore
                 ? `${myChallengeScore.position}º · ${myChallengeScore.count} ${myChallengeScore.count === 1 ? "treino" : "treinos"}`
                 : "Você está fora — entre e dispute"}
@@ -533,7 +533,7 @@ export default function Index() {
           </span>
           <span
             className={cn(
-              "relative shrink-0 rounded-lg px-2 py-1.5 font-mono text-[9px] font-bold tracking-[0.1em]",
+              "relative shrink-0 rounded-lg px-2 py-1.5 text-[9px] font-bold tracking-wide",
               daysLeft(activeChallenge) === 1
                 ? "animate-glow-pulse bg-accent text-accent-foreground [animation-duration:1.6s]"
                 : "bg-accent/15 text-accent",
@@ -548,19 +548,19 @@ export default function Index() {
       {diet && (
         <Link
           to="/dieta"
-          className="order-2 flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 hover:border-primary"
+          className="order-2 flex items-center gap-3 card-rim p-3.5 hover:border-primary"
         >
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-muted-foreground">
             <UtensilsCrossed className="h-5 w-5" />
           </span>
           <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="truncate text-[13px] font-extrabold text-foreground">Dieta</span>
-            <span className="font-mono text-[10px] uppercase text-muted-foreground">
+            <span className="truncate text-[13px] font-semibold text-foreground">Dieta</span>
+            <span className="text-[10px] text-muted-foreground">
               {diet.today ? `${diet.today.done}/${diet.today.total} refeições hoje` : "nada previsto hoje"}
             </span>
           </span>
           {diet.today && (
-            <span className="shrink-0 font-mono text-sm font-bold tabular-nums text-primary">
+            <span className="shrink-0 text-sm font-bold tabular-nums text-lime">
               {Math.round(diet.today.ratio * 100)}%
             </span>
           )}
@@ -576,12 +576,12 @@ export default function Index() {
           const future = d > today;
           return (
             <div key={i} className="flex flex-col items-center gap-1.5">
-              <span className="font-mono text-[9px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              <span className="text-[9px] font-semibold tracking-wide text-muted-foreground">
                 {format(d, "EEEEEE", { locale: ptBR })}
               </span>
               <div
                 className={cn(
-                  "flex aspect-square w-full items-center justify-center rounded-[10px] border font-mono text-[13px] font-bold animate-pop-in",
+                  "flex aspect-square w-full items-center justify-center rounded-[10px] border text-[13px] font-bold animate-pop-in",
                   done
                     ? "border-transparent bg-primary text-primary-foreground"
                     : isToday
@@ -606,7 +606,7 @@ export default function Index() {
           onDeleteWorkout={(w) => setWorkoutToDelete(w)}
           isDeleting={deleteWorkout.isPending}
         />
-        <div className="hidden flex-col gap-3.5 rounded-[18px] border border-border bg-card p-4 lg:flex">
+        <div className="hidden flex-col gap-3.5 card-rim p-4 lg:flex">
           <span className="mono-label">Divisão do mês</span>
           {monthSplit.length === 0 ? (
             <span className="text-xs text-muted-foreground">Nenhum treino este mês ainda.</span>
@@ -616,7 +616,7 @@ export default function Index() {
                 <div key={type} className="flex flex-col gap-1.5">
                   <div className="flex items-baseline justify-between gap-2">
                     <span className="truncate text-xs font-semibold text-foreground/80">{type}</span>
-                    <span className="font-mono text-xs font-bold tabular-nums text-muted-foreground">{count}</span>
+                    <span className="text-xs font-bold tabular-nums text-muted-foreground">{count}</span>
                   </div>
                   <div className="h-1 overflow-hidden rounded-sm bg-secondary">
                     <div
@@ -635,11 +635,11 @@ export default function Index() {
       {/* Coluna direita (desktop): ranking, atividade e convite */}
       <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
       {/* Ranking da semana */}
-      <div className="order-4 overflow-hidden rounded-[18px] border border-border bg-card">
+      <div className="order-4 overflow-hidden card-rim">
         <div className="flex flex-col gap-1.5 bg-gradient-to-b from-secondary/60 to-transparent px-4 pb-3 pt-4">
           <div className="flex items-center justify-between">
             <span className="display-title text-[17px] text-foreground">Ranking da semana</span>
-            <span className="rounded-md bg-primary/15 px-2 py-1 font-mono text-[9px] font-bold tracking-[0.12em] text-primary">
+            <span className="rounded-md bg-primary/15 px-2 py-1 text-[9px] font-bold tracking-wide text-lime">
               SEG–DOM
             </span>
           </div>
@@ -678,7 +678,7 @@ export default function Index() {
                 >
                   <span
                     className={cn(
-                      "flex h-[26px] min-w-[26px] items-center justify-center rounded-[7px] font-mono text-[13px] font-bold",
+                      "flex h-[26px] min-w-[26px] items-center justify-center rounded-[7px] text-[13px] font-bold",
                       isFirst ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground",
                     )}
                   >
@@ -692,10 +692,10 @@ export default function Index() {
                   />
                   <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                     <div className="flex items-baseline justify-between gap-2">
-                      <span className={cn("truncate text-sm font-bold", isMe ? "text-primary" : "text-foreground")}>
+                      <span className={cn("truncate text-sm font-bold", isMe ? "text-lime" : "text-foreground")}>
                         {isMe ? "Você" : entry.display_name}
                       </span>
-                      <span className={cn("font-mono text-[13px] font-bold tabular-nums", isFirst ? "text-primary" : "text-muted-foreground")}>
+                      <span className={cn("text-[13px] font-bold tabular-nums", isFirst ? "text-lime" : "text-muted-foreground")}>
                         {entry.count}
                       </span>
                     </div>
@@ -713,7 +713,7 @@ export default function Index() {
         )}
         <Link
           to="/rankings"
-          className="flex w-full items-center justify-center gap-1.5 border-t border-border bg-secondary/50 py-[13px] font-mono text-xs font-bold uppercase tracking-[0.12em] text-primary hover:bg-secondary"
+          className="flex w-full items-center justify-center gap-1.5 border-t border-border bg-secondary/50 py-[13px] text-xs font-bold tracking-wide text-lime hover:bg-secondary"
         >
           Ranking completo <ArrowRight className="h-4 w-4" />
         </Link>
@@ -730,7 +730,7 @@ export default function Index() {
             <TabsTrigger
               key={value}
               value={value}
-              className="rounded-[9px] py-[9px] text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:font-extrabold data-[state=active]:text-primary-foreground"
+              className="rounded-[9px] py-[9px] text-xs font-semibold data-[state=active]:bg-primary data-[state=active]:font-semibold data-[state=active]:text-primary-foreground"
             >
               {label}
             </TabsTrigger>
@@ -747,7 +747,7 @@ export default function Index() {
                 const like = likesMap[w.id];
                 const isMine = w.user_id === userId;
                 return (
-                  <div key={w.id} className="flex gap-3 rounded-[14px] border border-border/60 bg-card p-[13px] hover:border-border">
+                  <div key={w.id} className="flex gap-3 rounded-xl border border-border/60 bg-card p-[13px] hover:border-border">
                     <InitialAvatar
                       name={profile?.display_name ?? "?"}
                       avatarUrl={profile?.avatar_url}
@@ -756,10 +756,10 @@ export default function Index() {
                     />
                     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                       <div className="flex items-baseline justify-between gap-2">
-                        <span className="truncate text-[13px] font-extrabold text-foreground">
+                        <span className="truncate text-[13px] font-semibold text-foreground">
                           {isMine ? "Você" : (profile?.display_name ?? "Alguém")}
                         </span>
-                        <span className="shrink-0 font-mono text-[10px] uppercase text-muted-foreground/70">
+                        <span className="shrink-0 text-[10px] text-muted-foreground/70">
                           {formatDistanceToNowStrict(new Date(w.workout_date), { locale: ptBR, addSuffix: true })}
                         </span>
                       </div>
@@ -798,7 +798,7 @@ export default function Index() {
                           disabled={toggleLike.isPending}
                           onClick={() => toggleLike.mutate({ workout_id: w.id, liked: !!like?.likedByMe })}
                           className={cn(
-                            "flex items-center gap-1 rounded-lg border px-2 py-[5px] font-mono text-[11px] font-bold transition-colors",
+                            "flex items-center gap-1 rounded-lg border px-2 py-[5px] text-[11px] font-bold transition-colors",
                             like?.likedByMe
                               ? "border-accent/40 bg-accent/15 text-accent"
                               : "border-border text-muted-foreground hover:border-accent hover:text-accent",
@@ -818,18 +818,18 @@ export default function Index() {
                     type="button"
                     onClick={() => setFeedPage((p) => Math.max(1, p - 1))}
                     disabled={feedPage <= 1}
-                    className="rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground hover:text-primary disabled:opacity-40"
+                    className="rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground hover:text-lime disabled:opacity-40"
                   >
                     Anterior
                   </button>
-                  <span className="font-mono text-[11px] text-muted-foreground">
+                  <span className="text-[11px] text-muted-foreground">
                     {feedPage}/{feedTotalPages}
                   </span>
                   <button
                     type="button"
                     onClick={() => setFeedPage((p) => Math.min(feedTotalPages, p + 1))}
                     disabled={feedPage >= feedTotalPages}
-                    className="rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground hover:text-primary disabled:opacity-40"
+                    className="rounded-lg px-3 py-2 text-xs font-bold text-muted-foreground hover:text-lime disabled:opacity-40"
                   >
                     Próxima
                   </button>
@@ -849,10 +849,10 @@ export default function Index() {
           ) : (
             <div className="flex flex-col gap-2">
               {myWorkouts.slice(0, 20).map((w) => (
-                <div key={w.id} className="flex items-center gap-3 rounded-[14px] border border-border/60 bg-card p-3">
+                <div key={w.id} className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3">
                   <div className="flex min-w-0 flex-1 flex-col gap-1">
                     <span className="truncate text-sm font-bold text-foreground">{w.workout_type}</span>
-                    <span className="font-mono text-[10px] uppercase text-muted-foreground">
+                    <span className="text-[10px] text-muted-foreground">
                       {format(new Date(w.workout_date), "dd/MM 'às' HH:mm", { locale: ptBR })}
                     </span>
                   </div>
@@ -871,7 +871,7 @@ export default function Index() {
                 <button
                   type="button"
                   onClick={() => exportWorkoutsToJSON(myWorkouts, displayName)}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary py-3 text-xs font-bold text-foreground hover:border-primary hover:text-primary"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary py-3 text-xs font-bold text-foreground hover:border-primary hover:text-lime"
                 >
                   <Download className="h-3.5 w-3.5" />
                   Exportar
@@ -881,7 +881,7 @@ export default function Index() {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={importWorkouts.isPending}
-                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary py-3 text-xs font-bold text-foreground hover:border-primary hover:text-primary disabled:opacity-50"
+                  className="flex flex-1 items-center justify-center gap-1.5 rounded-xl border border-border bg-secondary py-3 text-xs font-bold text-foreground hover:border-primary hover:text-lime disabled:opacity-50"
                 >
                   <Upload className="h-3.5 w-3.5" />
                   {importWorkouts.isPending ? "Importando…" : "Importar"}
@@ -901,7 +901,7 @@ export default function Index() {
                   key={uid}
                   type="button"
                   onClick={() => setProfileMember({ user_id: uid, display_name: profile.display_name, avatar_url: profile.avatar_url })}
-                  className="flex items-center gap-3 rounded-[14px] border border-border/60 bg-card p-3 text-left hover:border-primary"
+                  className="flex items-center gap-3 rounded-xl border border-border/60 bg-card p-3 text-left hover:border-primary"
                 >
                   <InitialAvatar
                     name={profile.display_name}
@@ -912,7 +912,7 @@ export default function Index() {
                   <span className="flex-1 text-sm font-bold text-foreground">
                     {uid === userId ? `${profile.display_name} (você)` : profile.display_name}
                   </span>
-                  <span className="font-mono text-[10px] uppercase text-muted-foreground/60">Ver perfil</span>
+                  <span className="text-[10px] text-muted-foreground/60">Ver perfil</span>
                 </button>
               ))}
             </div>
@@ -922,23 +922,23 @@ export default function Index() {
 
       {/* Código de convite */}
       {selectedGroup && (
-        <div className="order-7 flex items-center gap-2.5 rounded-[14px] border border-border bg-card px-4 py-3">
+        <div className="order-7 flex items-center gap-2.5 rounded-xl border border-border bg-card px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className="mb-0.5 text-xs text-muted-foreground">Convide para {selectedGroup.name}</p>
-            <code className="font-mono text-base font-bold tracking-[0.15em] text-primary">{selectedGroup.invite_code}</code>
+            <code className="text-base font-bold tracking-[0.15em] text-lime">{selectedGroup.invite_code}</code>
           </div>
           <button
             type="button"
             aria-label="Copiar código de convite"
             onClick={() => copyInviteCode(selectedGroup.invite_code)}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border bg-secondary text-muted-foreground hover:border-primary hover:text-primary"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] border border-border bg-secondary text-muted-foreground hover:border-primary hover:text-lime"
           >
-            {copied ? <Check className="h-4 w-4 text-primary" /> : <Copy className="h-4 w-4" />}
+            {copied ? <Check className="h-4 w-4 text-lime" /> : <Copy className="h-4 w-4" />}
           </button>
           <ShareInviteButton
             groupName={selectedGroup.name}
             inviteCode={selectedGroup.invite_code}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary text-primary-foreground shadow-hard-sm active-hard"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[10px] bg-primary text-primary-foreground active-hard"
           />
         </div>
       )}
@@ -947,7 +947,7 @@ export default function Index() {
           que é o que se pede em suporte. */}
       <p
         title={versionTitle()}
-        className="order-last pt-1 text-center font-mono text-[9px] text-muted-foreground/50 lg:col-span-2"
+        className="order-last pt-1 text-center text-[9px] text-muted-foreground/50 lg:col-span-2"
       >
         v{APP_VERSION}
       </p>
@@ -1001,7 +1001,7 @@ export default function Index() {
                 e.preventDefault();
                 handleDeleteWorkout();
               }}
-              className="bg-destructive text-destructive-foreground shadow-hard-destructive hover:bg-destructive/90"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {deleteWorkout.isPending ? "Excluindo…" : "Excluir"}
             </AlertDialogAction>

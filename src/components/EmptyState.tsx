@@ -21,13 +21,13 @@ export function EmptyState({ icon: Icon, figure, title, description, action, cla
       )}
     >
       {figure ? (
-        <span className="font-mono text-5xl font-bold text-primary">{figure}</span>
+        <span className="text-5xl font-bold text-lime">{figure}</span>
       ) : Icon ? (
         <span className="flex h-[52px] w-[52px] items-center justify-center rounded-2xl border border-border bg-secondary text-muted-foreground/50">
           <Icon className="h-6 w-6" />
         </span>
       ) : null}
-      <span className="text-base font-extrabold text-foreground">{title}</span>
+      <span className="text-base font-semibold text-foreground">{title}</span>
       {description && <span className="text-xs leading-relaxed text-muted-foreground">{description}</span>}
       {action && <div className="mt-1">{action}</div>}
     </div>

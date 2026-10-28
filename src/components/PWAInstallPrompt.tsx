@@ -73,14 +73,14 @@ export function PWAInstallPrompt() {
   if (!deferredPrompt && !showIOSHint) return null;
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto flex max-w-md items-center gap-3 rounded-[20px] border border-border bg-gradient-to-br from-secondary to-card p-4 shadow-2xl animate-rise-in">
-      <BrandMark className="h-11 w-11 shrink-0 rounded-[13px]" />
+    <div className="fixed bottom-24 left-4 right-4 z-50 mx-auto flex max-w-md items-center gap-3 rounded-2xl border border-border bg-gradient-to-br from-secondary to-card p-4 shadow-2xl animate-fade-up">
+      <BrandMark className="h-11 w-11 shrink-0 rounded-xl" />
       <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <p className="text-[13px] font-extrabold leading-tight text-foreground">Instale o FitRank</p>
+        <p className="text-[13px] font-semibold leading-tight text-foreground">Instale o FitRank</p>
         {showIOSHint ? (
           <p className="text-[11px] leading-snug text-muted-foreground">
             Toque em{" "}
-            <span className="inline-block align-middle text-primary">
+            <span className="inline-block align-middle text-lime">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="inline"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
             </span>{" "}
             Compartilhar → <strong>Adicionar à Tela</strong>.

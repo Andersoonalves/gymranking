@@ -25,7 +25,7 @@ type InitialAvatarProps = {
 /** Avatar quadrado arredondado com fallback de inicial — padrão do sistema Placar. */
 export function InitialAvatar({ name, avatarUrl, isSelf, className }: InitialAvatarProps) {
   const base = cn(
-    "flex shrink-0 items-center justify-center overflow-hidden rounded-[10px] font-black uppercase",
+    "flex shrink-0 items-center justify-center overflow-hidden rounded-[10px] font-bold uppercase",
     className,
   );
   if (avatarUrl) {

@@ -119,7 +119,7 @@ export function ProgressPhotoUpload({ userId, onUploaded, onClear, uploadedPath 
                 <div
                     onClick={openPicker}
                     className={cn(
-                        "flex h-40 w-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/40 transition-colors hover:bg-muted/70",
+                        "flex h-40 w-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-border bg-muted/40 transition-colors hover:bg-muted/70",
                         uploading && "pointer-events-none opacity-60"
                     )}
                 >

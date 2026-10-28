@@ -77,7 +77,7 @@ export function CreateGroupDialog({
         {inviteCode ? (
           <div className="space-y-4 py-2">
             <div className="flex items-center gap-2 rounded-lg border bg-muted/50 p-4">
-              <code className="flex-1 text-center text-2xl font-mono font-bold tracking-widest text-foreground">
+              <code className="flex-1 text-center text-2xl tabular-nums font-bold tracking-widest text-foreground">
                 {inviteCode}
               </code>
               <Button type="button" variant="outline" size="icon" onClick={copyCode}>

@@ -236,18 +236,18 @@ export function EcgBackground() {
   return (
     <>
       <canvas ref={canvasRef} className="absolute inset-0 block" />
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent from-[46%] via-[#0A0907]/80 via-[72%] to-[#0A0907] to-[88%]" />
-      <div className="relative flex items-center gap-2 px-7 pt-3 font-mono">
-        <HeartPulse className="h-4 w-4 animate-[flame_1s_cubic-bezier(0.3,0.7,0.3,1)_infinite] text-primary" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent from-[46%] via-background/80 via-[72%] to-background to-[88%]" />
+      <div className="relative flex items-center gap-2 px-7 pt-3">
+        <HeartPulse className="h-4 w-4 animate-[flame_1s_cubic-bezier(0.3,0.7,0.3,1)_infinite] text-lime" />
         <span ref={bpmRef} className="text-[17px] font-bold tabular-nums text-foreground">
           58
         </span>
-        <span className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground">BPM</span>
+        <span className="text-[10px] font-semibold tracking-wide text-muted-foreground">BPM</span>
         <span className="flex-1" />
-        <span ref={stateRef} className="text-[10px] font-bold tracking-[0.14em] text-muted-foreground">
+        <span ref={stateRef} className="text-[10px] font-bold tracking-wide text-muted-foreground">
           EM REPOUSO
         </span>
-        <span className="text-[10px] font-semibold tracking-[0.14em] text-muted-foreground/50">25 mm/s</span>
+        <span className="text-[10px] font-semibold tracking-wide text-muted-foreground/50">25 mm/s</span>
       </div>
     </>
   );

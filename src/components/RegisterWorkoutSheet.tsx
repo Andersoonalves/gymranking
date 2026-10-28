@@ -192,21 +192,21 @@ export function RegisterWorkoutSheet({
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal lg:!w-[920px]"
+        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card/90 p-0 backdrop-blur-[8px] sheet-desktop-modal lg:!w-[920px]"
       >
-        <div className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
+        <div className="flex flex-col gap-3.5 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom,0px))] pt-3">
           <div className="h-1 w-9 self-center rounded-full bg-border" />
 
           <div className="flex flex-col gap-1">
-            <SheetTitle className="display-title text-[22px] text-foreground">Registrar treino</SheetTitle>
-            <span className="hidden font-mono text-xs text-muted-foreground lg:block">Leva menos de 10 segundos</span>
+            <SheetTitle className="font-semibold tracking-tight text-[22px] text-foreground">Registrar treino</SheetTitle>
+            <span className="hidden tabular-nums text-xs text-muted-foreground lg:block">Leva menos de 10 segundos</span>
           </div>
 
           {/* Atalhos de 1 toque */}
           {myPrograms.length > 0 && (
             <>
               <div className="flex flex-col gap-2">
-                <span className="mono-label">Repetir um treino salvo · 1 toque</span>
+                <span className="text-xs font-medium text-muted-foreground">Repetir um treino salvo · 1 toque</span>
                 <div className="flex gap-2 overflow-x-auto scrollbar-hide">
                   {myPrograms.slice(0, 4).map((p) => {
                     const count = p.training_exercises?.length ?? 0;
@@ -220,7 +220,7 @@ export function RegisterWorkoutSheet({
                       >
                         <Zap className="h-[18px] w-[18px] fill-primary/20 text-primary" />
                         <span className="w-full truncate text-xs font-extrabold text-foreground">{p.title}</span>
-                        <span className="font-mono text-[9px] uppercase text-muted-foreground">
+                        <span className="tabular-nums text-[9px] text-muted-foreground">
                           {count} {count === 1 ? "exercício" : "exercícios"}
                         </span>
                       </button>
@@ -238,7 +238,7 @@ export function RegisterWorkoutSheet({
             {/* Tipos */}
             <div className="order-1 flex flex-col gap-2 lg:order-none">
               <div className="flex items-center justify-between">
-                <span className="mono-label">
+                <span className="text-xs font-medium text-muted-foreground">
                   Tipos{selectedTypes.length > 0 && ` · ${selectedTypes.length} ${selectedTypes.length === 1 ? "selecionado" : "selecionados"}`}
                 </span>
                 <div className="flex gap-0.5 rounded-lg border border-border bg-secondary p-0.5">
@@ -341,7 +341,7 @@ export function RegisterWorkoutSheet({
             <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-3.5">
             {/* Quando */}
             <div className="order-2 flex flex-col gap-1.5 lg:order-none">
-              <span className="mono-label">Quando</span>
+              <span className="text-xs font-medium text-muted-foreground">Quando</span>
               <div className="flex gap-1.5">
                 <button
                   type="button"
@@ -385,7 +385,7 @@ export function RegisterWorkoutSheet({
                   value={customDateTime}
                   onChange={(e) => setCustomDateTime(e.target.value)}
                   disabled={isPending}
-                  className="rounded-[11px] border border-border bg-background p-3 font-mono text-sm text-foreground outline-none focus:border-primary"
+                  className="rounded-[11px] border border-border bg-background p-3 tabular-nums text-sm text-foreground outline-none focus:border-primary"
                 />
               )}
             </div>
@@ -393,12 +393,12 @@ export function RegisterWorkoutSheet({
             {/* Observações */}
             <div className="order-3 flex flex-col gap-1.5 lg:order-none">
               <div className="flex items-baseline justify-between gap-2">
-                <label htmlFor="workout-notes" className="mono-label">
+                <label htmlFor="workout-notes" className="text-xs font-medium text-muted-foreground">
                   Observações · opcional
                 </label>
                 <span
                   className={cn(
-                    "font-mono text-[10px] tabular-nums",
+                    "tabular-nums text-[10px]",
                     notes.length >= NOTES_MAX_LENGTH ? "text-accent" : "text-muted-foreground/60",
                   )}
                 >
@@ -419,7 +419,7 @@ export function RegisterWorkoutSheet({
 
             {/* Foto-prova opcional */}
             <div className="order-4 flex flex-col gap-1.5 lg:order-none">
-              <span className="mono-label">Foto de prova · opcional</span>
+              <span className="text-xs font-medium text-muted-foreground">Foto de prova · opcional</span>
               <input
                 ref={photoInputRef}
                 type="file"
@@ -470,7 +470,7 @@ export function RegisterWorkoutSheet({
 
             {/* Resumo (desktop) */}
             <div className="hidden flex-col gap-3 rounded-[14px] border border-border bg-secondary/40 p-4 lg:flex">
-              <span className="mono-label">Resumo</span>
+              <span className="text-xs font-medium text-muted-foreground">Resumo</span>
               <div className="flex items-start justify-between gap-3">
                 <span className="text-xs font-semibold text-muted-foreground">Tipos</span>
                 <span className="text-right text-[13px] font-bold text-foreground">
@@ -479,7 +479,7 @@ export function RegisterWorkoutSheet({
               </div>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-xs font-semibold text-muted-foreground">Data</span>
-                <span className="font-mono text-[13px] font-bold text-foreground">
+                <span className="tabular-nums text-[13px] font-bold text-foreground">
                   {when === "now"
                     ? "Agora"
                     : when === "yesterday"
@@ -490,16 +490,16 @@ export function RegisterWorkoutSheet({
               <div className="h-px bg-border" />
               <div className="flex items-center justify-between gap-3">
                 <span className="text-xs font-semibold text-muted-foreground">Grupos</span>
-                <span className="font-mono text-[13px] font-bold text-primary">{groupIds.length}</span>
+                <span className="tabular-nums text-[13px] font-bold text-primary">{groupIds.length}</span>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={selectedTypes.length === 0 || isPending || uploadingPhoto}
-              className="order-5 relative flex w-full items-center justify-center overflow-hidden rounded-[14px] bg-primary p-[17px] text-[15px] font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50 lg:order-none"
+              className="order-5 relative flex w-full items-center justify-center overflow-hidden rounded-[14px] bg-primary p-[17px] text-[15px] font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50 lg:order-none"
             >
-              <span className="absolute left-0 top-0 h-full w-2/5 animate-sheen bg-gradient-to-r from-transparent via-white/55 to-transparent [animation-duration:3.2s]" />
+              <span className="absolute left-0 top-0 h-full w-2/5 animate-shine bg-gradient-to-r from-transparent via-white/55 to-transparent [animation-duration:3.2s]" />
               {isPending ? "Registrando…" : "Registrar treino"}
             </button>
             </div>

@@ -68,7 +68,7 @@ export function JoinGroupDialog({
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
               disabled={isJoining}
-              className="font-mono tracking-widest uppercase"
+              className="tabular-nums tracking-widest uppercase"
               maxLength={12}
               autoFocus
             />

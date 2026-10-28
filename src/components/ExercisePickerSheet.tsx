@@ -60,9 +60,9 @@ export function ExercisePickerSheet({ open, onOpenChange, onPick }: ExercisePick
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
+        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card/90 p-0 backdrop-blur-[8px] sheet-desktop-modal"
       >
-        <div className="flex flex-col gap-3.5 px-5 pb-6 pt-3 safe-area-bottom">
+        <div className="flex flex-col gap-3.5 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3">
           <div className="h-1 w-9 self-center rounded-full bg-border" />
 
           <div className="flex items-center gap-2.5">
@@ -77,11 +77,11 @@ export function ExercisePickerSheet({ open, onOpenChange, onPick }: ExercisePick
               </button>
             )}
             <div className="flex flex-1 flex-col gap-0.5">
-              <span className="mono-label">{group ? `Exercícios · ${group}` : "Exercícios"}</span>
-              <SheetTitle className="display-title text-xl text-foreground">Escolher exercício</SheetTitle>
+              <span className="text-xs font-medium text-muted-foreground">{group ? `Exercícios · ${group}` : "Exercícios"}</span>
+              <SheetTitle className="font-semibold tracking-tight text-xl text-foreground">Escolher exercício</SheetTitle>
             </div>
             {group && (
-              <span className="font-mono text-[11px] font-semibold text-muted-foreground">
+              <span className="tabular-nums text-[11px] font-semibold text-muted-foreground">
                 {EXERCISES_BY_MUSCLE_GROUP[group]?.length ?? 0}
               </span>
             )}
@@ -113,7 +113,7 @@ export function ExercisePickerSheet({ open, onOpenChange, onPick }: ExercisePick
                   className="flex items-center justify-between rounded-[13px] border border-border bg-secondary/60 px-3.5 py-3 text-left hover:border-primary"
                 >
                   <span className="text-[13px] font-bold text-foreground">{g}</span>
-                  <span className="font-mono text-[10px] text-muted-foreground/70">
+                  <span className="tabular-nums text-[10px] text-muted-foreground/70">
                     {EXERCISES_BY_MUSCLE_GROUP[g]?.length ?? 0}
                   </span>
                 </button>
@@ -132,7 +132,7 @@ export function ExercisePickerSheet({ open, onOpenChange, onPick }: ExercisePick
                 >
                   <div className="flex min-w-0 flex-1 flex-col gap-0.5">
                     <span className="truncate text-[13px] font-bold text-foreground">{ex.name}</span>
-                    <span className="font-mono text-[10px] uppercase text-muted-foreground/70">{ex.group}</span>
+                    <span className="tabular-nums text-[10px] text-muted-foreground/70">{ex.group}</span>
                   </div>
                   <span className="flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground/60">
                     <Plus className="h-4 w-4" />
@@ -160,7 +160,7 @@ export function ExercisePickerSheet({ open, onOpenChange, onPick }: ExercisePick
                 type="button"
                 disabled={!customName.trim()}
                 onClick={() => pick(customName.trim())}
-                className="rounded-xl bg-primary px-4 text-sm font-extrabold text-primary-foreground shadow-hard-sm active-hard disabled:opacity-50"
+                className="rounded-xl bg-primary px-4 text-sm font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
               >
                 Usar
               </button>

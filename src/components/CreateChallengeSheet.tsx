@@ -66,21 +66,21 @@ export function CreateChallengeSheet({ open, onOpenChange, onCreate, isPending }
     <Sheet open={open} onOpenChange={handleOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card p-0 shadow-[0_-20px_50px_rgba(0,0,0,0.4)] sheet-desktop-modal"
+        className="max-h-[92dvh] overflow-y-auto rounded-t-[26px] border-t border-border bg-card/90 p-0 backdrop-blur-[8px] sheet-desktop-modal"
       >
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-5 pb-6 pt-3 safe-area-bottom">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-4 px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-3">
           <div className="h-1 w-9 self-center rounded-full bg-border" />
 
           <div className="flex items-center gap-3">
             <span className="flex h-11 w-11 items-center justify-center rounded-[13px] bg-accent/15 text-2xl">{emoji}</span>
             <div className="flex flex-col gap-0.5">
-              <SheetTitle className="display-title text-[22px] text-foreground">Lançar desafio</SheetTitle>
+              <SheetTitle className="font-semibold tracking-tight text-[22px] text-foreground">Lançar desafio</SheetTitle>
               <span className="text-xs text-muted-foreground">Quem treina mais até o fim, leva.</span>
             </div>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="challenge-title" className="mono-label">
+            <label htmlFor="challenge-title" className="text-xs font-medium text-muted-foreground">
               Nome do desafio
             </label>
             <input
@@ -95,7 +95,7 @@ export function CreateChallengeSheet({ open, onOpenChange, onCreate, isPending }
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <span className="mono-label">Símbolo</span>
+            <span className="text-xs font-medium text-muted-foreground">Símbolo</span>
             <div className="flex gap-1.5">
               {EMOJIS.map((e) => (
                 <button
@@ -114,7 +114,7 @@ export function CreateChallengeSheet({ open, onOpenChange, onCreate, isPending }
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <span className="mono-label">Duração</span>
+            <span className="text-xs font-medium text-muted-foreground">Duração</span>
             <div className="flex gap-1.5">
               {DURATIONS.map((d) => (
                 <button
@@ -132,13 +132,13 @@ export function CreateChallengeSheet({ open, onOpenChange, onCreate, isPending }
                 </button>
               ))}
             </div>
-            <span className="font-mono text-[10px] uppercase text-muted-foreground/70">
+            <span className="tabular-nums text-[10px] text-muted-foreground/70">
               Começa hoje · termina {format(endsAt, "dd 'de' MMMM", { locale: ptBR })}
             </span>
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <span className="mono-label">Meta individual · opcional</span>
+            <span className="text-xs font-medium text-muted-foreground">Meta individual · opcional</span>
             <div className="flex gap-1.5">
               {TARGETS.map((t) => (
                 <button
@@ -146,7 +146,7 @@ export function CreateChallengeSheet({ open, onOpenChange, onCreate, isPending }
                   type="button"
                   onClick={() => setTarget(t)}
                   className={cn(
-                    "flex-1 rounded-[11px] py-3 font-mono text-xs",
+                    "flex-1 rounded-[11px] py-3 tabular-nums text-xs",
                     target === t
                       ? "bg-primary font-bold text-primary-foreground"
                       : "border border-border bg-secondary/60 font-semibold text-muted-foreground",
@@ -166,9 +166,9 @@ export function CreateChallengeSheet({ open, onOpenChange, onCreate, isPending }
           <button
             type="submit"
             disabled={isPending || !title.trim()}
-            className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[14px] bg-primary p-[17px] text-[15px] font-extrabold text-primary-foreground shadow-hard active-hard disabled:opacity-50"
+            className="relative flex w-full items-center justify-center gap-2 overflow-hidden rounded-[14px] bg-primary p-[17px] text-[15px] font-extrabold text-primary-foreground transition-transform active:scale-[0.98] disabled:opacity-50"
           >
-            <span className="absolute left-0 top-0 h-full w-2/5 animate-sheen bg-gradient-to-r from-transparent via-white/55 to-transparent [animation-duration:3s]" />
+            <span className="absolute left-0 top-0 h-full w-2/5 animate-shine bg-gradient-to-r from-transparent via-white/55 to-transparent [animation-duration:3s]" />
             <Swords className="h-5 w-5" />
             {isPending ? "Lançando…" : "Lançar desafio"}
           </button>
