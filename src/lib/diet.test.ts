@@ -7,6 +7,9 @@ import {
   adherenceStreak,
   rangeAdherence,
   macrosForDate,
+  planSections,
+  variationGroups,
+  type DietVariation,
   type DietMeal,
   type DietMealLog,
 } from "./diet";
@@ -171,5 +174,60 @@ describe("toItems", () => {
     expect(toItems([{ name: "  " }, "arroz", null, 42, { qty: "150 g" }])).toEqual([]);
     expect(toItems(null)).toEqual([]);
     expect(toItems({ name: "Arroz" })).toEqual([]);
+  });
+});
+
+describe("planSections", () => {
+  it("agrupa por dia com 'todo dia' primeiro e ordena por horário", () => {
+    const meals = [
+      meal({ id: "a", day_of_week: 1, time_of_day: "12:30", kcal: 650 }),
+      meal({ id: "b", day_of_week: null, time_of_day: "06:30", kcal: 450 }),
+      meal({ id: "c", day_of_week: 1, time_of_day: "08:00", kcal: 300 }),
+      meal({ id: "d", day_of_week: null, time_of_day: null }),
+    ];
+    const sections = planSections(meals);
+    expect(sections.map((s) => s.day)).toEqual([null, 1]);
+    expect(sections[0].meals.map((m) => m.id)).toEqual(["b", "d"]);
+    expect(sections[1].meals.map((m) => m.id)).toEqual(["c", "a"]);
+    expect(sections[1].kcal).toBe(950);
+    // "d" está sem kcal, então o total da seção não pode mentir.
+    expect(sections[0].kcal).toBeNull();
+  });
+
+  it("plano vazio não gera seção", () => {
+    expect(planSections([])).toEqual([]);
+  });
+});
+
+describe("variationGroups", () => {
+  const variation = (over: Partial<DietVariation> & { id: string }): DietVariation => ({
+    category: "Café da manhã",
+    name: "Opção 1",
+    items: [],
+    note: null,
+    position: 0,
+    ...over,
+  });
+
+  it("agrupa por categoria na ordem de criação, não alfabética", () => {
+    const groups = variationGroups([
+      variation({ id: "a", category: "Proteínas", position: 2 }),
+      variation({ id: "b", category: "Café da manhã", position: 0 }),
+      variation({ id: "c", category: "Proteínas", position: 1, name: "Opção 0" }),
+    ]);
+    expect(groups.map((g) => g.category)).toEqual(["Café da manhã", "Proteínas"]);
+    expect(groups[1].variations.map((v) => v.id)).toEqual(["c", "a"]);
+  });
+
+  it("categoria com espaço extra cai no mesmo grupo", () => {
+    const groups = variationGroups([
+      variation({ id: "a", category: "Frutas" }),
+      variation({ id: "b", category: " Frutas " }),
+    ]);
+    expect(groups).toHaveLength(1);
+  });
+
+  it("vazio não gera grupo", () => {
+    expect(variationGroups([])).toEqual([]);
   });
 });

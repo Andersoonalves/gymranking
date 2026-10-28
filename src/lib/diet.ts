@@ -126,6 +126,60 @@ export function rangeAdherence(
   return { days, goodDays, ratio: days === 0 ? 0 : goodDays / days };
 }
 
+/** Ordem de exibição do plano semanal: "todo dia" primeiro, depois seg..dom. */
+const PLAN_DAY_ORDER: (number | null)[] = [null, 1, 2, 3, 4, 5, 6, 0];
+
+export type PlanSection = {
+  /** null = refeições que valem todo dia. */
+  day: number | null;
+  meals: DietMeal[];
+  /** Soma de kcal da seção; null quando alguma refeição está sem kcal. */
+  kcal: number | null;
+};
+
+/** Agrupa o plano vigente por dia, cada grupo ordenado por horário. */
+export function planSections(meals: DietMeal[]): PlanSection[] {
+  const byTime = (a: DietMeal, b: DietMeal) =>
+    (a.time_of_day === null ? 1 : 0) - (b.time_of_day === null ? 1 : 0) ||
+    (a.time_of_day ?? "").localeCompare(b.time_of_day ?? "") ||
+    a.position - b.position ||
+    a.name.localeCompare(b.name, "pt-BR");
+  return PLAN_DAY_ORDER.flatMap((day) => {
+    const group = meals.filter((m) => m.day_of_week === day).sort(byTime);
+    if (group.length === 0) return [];
+    const complete = group.every((m) => m.kcal !== null);
+    return [{ day, meals: group, kcal: complete ? group.reduce((acc, m) => acc + (m.kcal ?? 0), 0) : null }];
+  });
+}
+
+/** Alternativa de troca do banco de variações — referência, sem aderência. */
+export type DietVariation = {
+  id: string;
+  category: string;
+  name: string;
+  items: DietItem[];
+  note: string | null;
+  position: number;
+};
+
+export type VariationGroup = { category: string; variations: DietVariation[] };
+
+/**
+ * Agrupa variações por categoria. Categorias aparecem na ordem em que o usuário
+ * começou cada uma (menor position primeiro), não em ordem alfabética.
+ */
+export function variationGroups(variations: DietVariation[]): VariationGroup[] {
+  const sorted = [...variations].sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, "pt-BR"));
+  const groups = new Map<string, DietVariation[]>();
+  for (const v of sorted) {
+    const key = v.category.trim();
+    const list = groups.get(key);
+    if (list) list.push(v);
+    else groups.set(key, [v]);
+  }
+  return [...groups.entries()].map(([category, vars]) => ({ category, variations: vars }));
+}
+
 export type DayMacros = {
   /** false quando alguma refeição do dia está sem macro: aí o total mentiria. */
   complete: boolean;

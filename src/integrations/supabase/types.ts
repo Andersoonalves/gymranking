@@ -240,6 +240,39 @@ export type Database = {
         }
         Relationships: []
       }
+      diet_variations: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          items: Json
+          name: string
+          note: string | null
+          position: number
+          user_id: string
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          items?: Json
+          name: string
+          note?: string | null
+          position?: number
+          user_id: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          items?: Json
+          name?: string
+          note?: string | null
+          position?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       exercise_history: {
         Row: {
           exercise_title: string

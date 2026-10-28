@@ -1,9 +1,17 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { toDateKey, toItems, type DietItem, type DietMeal, type DietMealLog } from "@/lib/diet";
+import {
+  toDateKey,
+  toItems,
+  type DietItem,
+  type DietMeal,
+  type DietMealLog,
+  type DietVariation,
+} from "@/lib/diet";
 
 const MEALS_KEY = "diet-meals";
 const LOGS_KEY = "diet-logs";
+const VARIATIONS_KEY = "diet-variations";
 
 /** Campos que o usuário edita — o resto (vigência, dono) é do hook. */
 export type DietMealInput = {
@@ -169,5 +177,66 @@ export function useToggleDietLog(userId: string | undefined) {
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: [LOGS_KEY, userId] }),
+  });
+}
+
+/** Campos que o usuário edita numa variação — position e dono são do hook. */
+export type DietVariationInput = {
+  category: string;
+  name: string;
+  items: DietItem[];
+  note: string | null;
+};
+
+export function useDietVariations(userId: string | undefined) {
+  return useQuery({
+    queryKey: [VARIATIONS_KEY, userId],
+    enabled: !!userId,
+    queryFn: async (): Promise<DietVariation[]> => {
+      const { data, error } = await supabase
+        .from("diet_variations")
+        .select("id, category, name, items, note, position")
+        .eq("user_id", userId!)
+        .order("position", { ascending: true });
+      if (error) throw error;
+      return (data ?? []).map((row) => ({ ...row, items: toItems(row.items) }));
+    },
+  });
+}
+
+export function useAddDietVariation(userId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: DietVariationInput & { position: number }) => {
+      if (!userId) throw new Error("Usuário não autenticado.");
+      const { error } = await supabase.from("diet_variations").insert({ ...input, user_id: userId });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: [VARIATIONS_KEY, userId] }),
+  });
+}
+
+/** Variação é referência, não plano cumprido: editar é UPDATE direto, sem versão. */
+export function useUpdateDietVariation(userId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, input }: { id: string; input: DietVariationInput }) => {
+      if (!userId) throw new Error("Usuário não autenticado.");
+      const { error } = await supabase.from("diet_variations").update(input).eq("id", id).eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: [VARIATIONS_KEY, userId] }),
+  });
+}
+
+export function useDeleteDietVariation(userId: string | undefined) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      if (!userId) throw new Error("Usuário não autenticado.");
+      const { error } = await supabase.from("diet_variations").delete().eq("id", id).eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: [VARIATIONS_KEY, userId] }),
   });
 }
