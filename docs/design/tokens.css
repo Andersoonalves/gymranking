@@ -1,0 +1,163 @@
+/* Tokens extraídos de fitness.aniq-ui.com (Kinora) — valores HSL sem `hsl()`, formato shadcn.
+   Colar dentro de `@layer base` em src/index.css, substituindo os blocos :root e .dark atuais.
+   Fonte: CSS renderizado (:root / .dark) do site. Hex original entre comentários. */
+
+:root {
+  --background: 200 18% 97%;            /* #f5f7f8 */
+  --foreground: 0 0% 4%;                /* #0a0a0a */
+
+  --card: 0 0% 100%;                    /* #ffffff (--surface) */
+  --card-foreground: 0 0% 4%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 0 0% 4%;
+
+  --primary: 80 100% 45%;               /* #9ae600 lima */
+  --primary-foreground: 73 90% 4%;      /* #101401 (--on-accent-ink) */
+  --primary-edge: 80 100% 36%;          /* mantém compat. com .shadow-hard; Kinora não usa sombra dura */
+  --primary-text: 83 97% 24%;           /* #4c7a02 — lima legível como TEXTO no claro */
+
+  --secondary: 195 13% 94%;             /* #eef1f2 (--field-bg) */
+  --secondary-foreground: 0 0% 4%;
+  --muted: 200 13% 95%;                 /* #f2f4f5 (--surface-raised) */
+  --muted-foreground: 192 2% 40%;       /* #636768 (--text-subtle) */
+
+  --accent: 80 100% 45% / 0.16;         /* tinta lima p/ item ativo/hover (#9ae600 a 16%) */
+  --accent-foreground: 83 97% 24%;
+
+  --destructive: 0 84% 60%;             /* #ef4444 */
+  --destructive-foreground: 0 0% 100%;
+  --destructive-edge: 0 70% 45%;
+
+  --border: 220 13% 91%;                /* #e5e7eb */
+  --input: 220 13% 91%;
+  --ring: 80 100% 45%;
+
+  --radius: 0.625rem;                   /* 10px — base do site */
+
+  --chart-1: 80 100% 45%;               /* #9ae600 */
+  --chart-2: 45 100% 43%;               /* #d9a400 âmbar */
+  --chart-3: 217 91% 60%;               /* #3b82f6 */
+  --chart-4: 142 71% 45%;               /* #22c55e */
+  --chart-5: 0 0% 60%;                  /* cinza série secundária */
+
+  --sidebar-background: 195 13% 94%;    /* #eef1f2 */
+  --sidebar-foreground: 0 0% 4%;
+  --sidebar-primary: 80 100% 45%;
+  --sidebar-primary-foreground: 73 90% 4%;
+  --sidebar-accent: 0 0% 100%;          /* item ativo = card branco com rim lima */
+  --sidebar-accent-foreground: 83 97% 24%;
+  --sidebar-border: 220 13% 91%;
+  --sidebar-ring: 80 100% 45%;
+  --sidebar: 195 13% 94%;
+
+  /* extras Kinora (usar via utilitários/arbitrary values) */
+  --amber: 45 100% 43%;
+  --success: 142 71% 45%;
+  --warning: 38 92% 50%;
+  --info: 217 91% 60%;
+  --surface-hover: 200 13% 95%;         /* #f0f2f3 */
+  --track: 120 9% 91%;                  /* #e6e9e6 trilho de barra/anel */
+
+  --card-gradient: linear-gradient(180deg, #fff 0%, #fafbfa 100%);
+  --card-rim: linear-gradient(140deg, #00000016 0%, #0000000e 22%, #00000008 52%, #0000000a 82%, #0000000f 100%);
+  --card-edge-glow: none;
+  --panel-glass: linear-gradient(180deg, #fafbfbb8 0%, #f3f5f6c7 100%);
+  --cta-gradient: linear-gradient(180deg, #70b10f 0%, #5b9c0a 100%);
+  --stat-bar-gradient: linear-gradient(180deg, #9ae600 0%, #cdf380 55%, #9ae60029 100%);
+  --accent-glow: transparent;
+
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji';
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+
+  --ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-spring-out: cubic-bezier(0.2, 0.8, 0.2, 1);   /* entradas de figura/card */
+  --ease-collapse: cubic-bezier(0.87, 0, 0.13, 1);     /* accordion/collapsible */
+
+  --shadow-2xs: 0 1px 2px 0 hsl(0 0% 0% / 0.04);
+  --shadow-xs: 0 1px 3px 0 hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 2px 6px -1px hsl(0 0% 0% / 0.06);
+  --shadow: 0 2px 8px -2px hsl(0 0% 0% / 0.08);
+  --shadow-md: 0 4px 12px -2px hsl(0 0% 0% / 0.08);
+  --shadow-lg: 0 8px 24px -6px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 16px 40px -12px hsl(0 0% 0% / 0.14);
+  --shadow-2xl: 0 40px 70px -30px hsl(0 0% 0% / 0.2);
+  --spacing: 0.25rem;
+}
+
+.dark {
+  --background: 240 9% 2%;              /* #050506 */
+  --foreground: 0 0% 96%;               /* #f5f5f5 */
+
+  --card: 200 10% 6%;                   /* #0e1011 (--surface) */
+  --card-foreground: 0 0% 96%;
+  --popover: 200 8% 8%;                 /* #121415 (--surface-raised) */
+  --popover-foreground: 0 0% 96%;
+
+  --primary: 80 100% 45%;               /* #9ae600 igual ao claro */
+  --primary-foreground: 73 90% 4%;      /* #101401 */
+  --primary-edge: 80 100% 36%;
+  --primary-text: 80 100% 45%;          /* #9ae600 vira texto no escuro */
+
+  --secondary: 220 5% 12%;              /* #1c1d1f (--surface-hover) */
+  --secondary-foreground: 0 0% 96%;
+  --muted: 0 0% 15%;                    /* #262626 (--control-bg) */
+  --muted-foreground: 0 0% 56%;         /* #8e8e8e */
+
+  --accent: 80 100% 45% / 0.14;
+  --accent-foreground: 80 100% 45%;
+
+  --destructive: 0 91% 71%;             /* #f87171 */
+  --destructive-foreground: 0 37% 8%;
+  --destructive-edge: 0 60% 45%;
+
+  --border: 0 0% 100% / 0.10;           /* #ffffff1a */
+  --input: 0 0% 28%;                    /* #474747 (--input-border) */
+  --ring: 80 100% 45%;
+
+  --chart-1: 80 100% 45%;
+  --chart-2: 41 98% 49%;                /* #faab02 */
+  --chart-3: 213 94% 68%;               /* #60a5fa */
+  --chart-4: 160 60% 52%;               /* #34d399 */
+  --chart-5: 0 0% 69%;                  /* #b0b0b0 série "semana passada" */
+
+  --sidebar-background: 0 0% 0%;        /* #000 */
+  --sidebar-foreground: 0 0% 96%;
+  --sidebar-primary: 80 100% 45%;
+  --sidebar-primary-foreground: 73 90% 4%;
+  --sidebar-accent: 220 5% 12%;
+  --sidebar-accent-foreground: 80 100% 45%;
+  --sidebar-border: 0 0% 100% / 0.10;
+  --sidebar-ring: 80 100% 45%;
+  --sidebar: 0 0% 0%;
+
+  --amber: 41 98% 49%;
+  --success: 160 60% 52%;
+  --warning: 43 96% 56%;
+  --info: 213 94% 68%;
+  --surface-hover: 220 5% 12%;
+  --track: 240 3% 14%;                  /* #232325 */
+
+  --card-gradient: linear-gradient(180deg, #08090a 0%, #010102 40%, #000 100%);
+  --card-rim: linear-gradient(140deg, #fff6 0%, #ffffff42 12%, #ffffff2e 26%, #ffffff24 42%, #ffffff1f 58%, #ffffff1f 72%, #ffffff24 84%, #ffffff2b 100%);
+  --card-sheen: linear-gradient(128deg, #ffffff24 0%, #ffffff12 12%, #ffffff08 28%, #ffffff03 38%, transparent 50%);
+  --card-edge-glow: inset 0 0 46px #c8cdd20d, inset 0 0 13px #c8cdd20a;
+  --panel-glass: linear-gradient(180deg, #0a0c0d4d 0%, #05060757 100%);
+  --cta-gradient: linear-gradient(180deg, #adff00 0%, #9ae600 100%);
+  --stat-bar-gradient: linear-gradient(180deg, #9ae600 0%, #4c7a02 55%, #9ae60024 100%);
+  --accent-glow: #9ae60073;
+
+  --shadow-2xs: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+  --shadow-xs: 0 1px 3px 0 hsl(0 0% 0% / 0.35);
+  --shadow-sm: 0 2px 6px -1px hsl(0 0% 0% / 0.4);
+  --shadow: 0 2px 8px -2px hsl(0 0% 0% / 0.45);
+  --shadow-md: 0 4px 12px -2px hsl(0 0% 0% / 0.5);
+  --shadow-lg: 0 8px 24px -6px hsl(0 0% 0% / 0.6);
+  --shadow-xl: 0 16px 40px -12px hsl(0 0% 0% / 0.7);
+  --shadow-2xl: 0 40px 70px -30px hsl(0 0% 0% / 0.7);
+}
+
+/* Nota: `--border: 0 0% 100% / 0.10` e `--accent: ... / 0.16` usam alpha dentro da triplet.
+   `hsl(var(--border))` NÃO aceita `/ alpha` aninhado em todas as versões do Tailwind v3
+   (`border-border/50` quebra). Se quebrar, trocar por valor sólido: dark border = 240 2% 10%
+   (#1a1a1b), accent claro = 80 60% 90%, accent escuro = 80 40% 12%. */
